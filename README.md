@@ -25,15 +25,13 @@ Melissa Alejandra Chávez — TSU en Desarrollo de Software Multiplataforma, Uni
 🚧 En desarrollo — estadía en curso.
 
 ## Estructura del repositorio
-
-```
 /src
-  /components   → Componentes reutilizables de UI
-  /pages        → Vistas principales (dashboard, encuesta, form builder)
-  /services     → Conexión a Firebase y a la API de Gemini
-  /hooks        → Custom hooks de React
-/functions      → Cloud Functions en Python
-```
+/components → Componentes reutilizables de UI
+/pages → Vistas principales (dashboard, encuesta, form builder)
+/services → Conexión a Firebase y a la API de Gemini
+/hooks → Custom hooks de React
+/functions → Cloud Functions en Python
+
 
 ## Notas
 
