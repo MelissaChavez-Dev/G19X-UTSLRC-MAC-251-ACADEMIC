@@ -1,0 +1,70 @@
+export const DEPARTMENTS = [
+  { id: "desarrollo-software", name: "Desarrollo de Software" },
+  { id: "comercial", name: "Comercial" },
+  { id: "operaciones", name: "Operaciones" },
+  { id: "capacitacion", name: "Capacitación (TODO Academy)" },
+  { id: "recursos-humanos", name: "Recursos Humanos" },
+];
+
+export const COGNITIVE_LOAD_OPTIONS = [
+  { value: "shift-handoff", label: "Cambios de contexto y entregas entre tareas" },
+  { value: "emr-integration", label: "Demoras de herramientas o sistemas" },
+  { value: "unclear-protocols", label: "Prioridades o protocolos poco claros" },
+  { value: "balanced", label: "Ninguno / ritmo balanceado" },
+];
+
+export const SURVEY_STEPS = [
+  {
+    id: "enps",
+    type: "scale",
+    category: "Employee Net Promoter Score",
+    label: "eNPS",
+    title: "¿Qué tan probable es que recomiendes esta organización como lugar para trabajar?",
+    helper: "Considera tu experiencia de las últimas dos semanas.",
+    min: 0,
+    max: 10,
+    lowLabel: "Nada probable",
+    highLabel: "Muy probable",
+  },
+  {
+    id: "workLifeBalance",
+    type: "scale",
+    category: "Psychological Safety & Pulse",
+    label: "Weekly Well-Being",
+    title: "¿Cómo calificarías tu balance vida-trabajo esta semana?",
+    helper: "Considera tus límites de carga laboral, tiempo de desconexión y tus reservas de energía mental.",
+    min: 1,
+    max: 10,
+    lowLabel: "Completamente agotado",
+    highLabel: "En armonía y con energía",
+  },
+  {
+    id: "cognitiveLoad",
+    type: "choice",
+    category: "Cognitive Load",
+    label: "Friction Source",
+    title: "¿Cuál es actualmente tu principal fuente de fricción o fatiga en el trabajo?",
+    helper: "Selecciona la dimensión con mayor impacto en tu día a día.",
+    options: COGNITIVE_LOAD_OPTIONS,
+  },
+  {
+    id: "psychSafety",
+    type: "scale",
+    category: "Psychological Safety & Pulse",
+    label: "Psych Safety",
+    title: "¿Qué tan seguro te sientes de expresar tu opinión o admitir un error en tu equipo?",
+    helper: "1 significa nada seguro, 10 significa totalmente seguro.",
+    min: 1,
+    max: 10,
+    lowLabel: "Nada seguro",
+    highLabel: "Totalmente seguro",
+  },
+  {
+    id: "openText",
+    type: "text",
+    category: "Open Feedback",
+    label: "Comentario libre",
+    title: "¿Algo más que quieras compartir sobre tu semana?",
+    helper: "Opcional. Tu respuesta es confidencial.",
+  },
+];
