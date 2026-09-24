@@ -1,47 +1,113 @@
 @import "tailwindcss";
 
 @theme {
-  /* Tipografía */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  /* Canvas y slates */
-  --color-canvas: #F8FAFC;
-  --color-navy: #0F172A;
-  --color-slate: #1E293B;
-  --color-card: #FFFFFF;
-  --color-border: #E2E8F0;
-  --color-border-active: #CBD5E1;
+  /* Superficie */
+  --color-surface: #F8F9FF;
+  --color-surface-dim: #CBDBF5;
+  --color-surface-bright: #F8F9FF;
+  --color-surface-container-lowest: #FFFFFF;
+  --color-surface-container-low: #EFF4FF;
+  --color-surface-container: #E5EEFF;
+  --color-surface-container-high: #DCE9FF;
+  --color-surface-container-highest: #D3E4FE;
+  --color-surface-variant: #D3E4FE;
+  --color-surface-tint: #565E74;
 
-  /* Vitalidad / trayectoria positiva (teal-emerald) */
-  --color-vitality: #10B981;
-  --color-vitality-container: #ECFDF5;
+  --color-on-surface: #0B1C30;
+  --color-on-surface-variant: #45464D;
+  --color-inverse-surface: #213145;
+  --color-inverse-on-surface: #EAF1FF;
 
-  /* Riesgo / alerta (coral-rojo) */
-  --color-risk: #F43F5E;
-  --color-risk-container: #FFF1F2;
+  --color-outline: #76777D;
+  --color-outline-variant: #C6C6CD;
 
-  /* IA sintética (indigo-violeta) */
-  --color-ai-start: #6366F1;
-  --color-ai-end: #A855F7;
+  /* Primario / Secundario / Terciario */
+  --color-primary: #000000;
+  --color-on-primary: #FFFFFF;
+  --color-primary-container: #131B2E;
+  --color-on-primary-container: #7C839B;
+  --color-inverse-primary: #BEC6E0;
+  --color-primary-fixed: #DAE2FD;
+  --color-primary-fixed-dim: #BEC6E0;
+  --color-on-primary-fixed: #131B2E;
+  --color-on-primary-fixed-variant: #3F465C;
 
-  /* Neutral */
-  --color-neutral: #F1F5F9;
-  --color-neutral-text: #475569;
+  --color-secondary: #006C49;
+  --color-on-secondary: #FFFFFF;
+  --color-secondary-container: #6CF8BB;
+  --color-on-secondary-container: #00714D;
+  --color-secondary-fixed: #6FFBBE;
+  --color-secondary-fixed-dim: #4EDEA3;
+  --color-on-secondary-fixed: #002113;
+  --color-on-secondary-fixed-variant: #005236;
+
+  --color-tertiary: #000000;
+  --color-on-tertiary: #FFFFFF;
+  --color-tertiary-container: #07006C;
+  --color-on-tertiary-container: #7073FF;
+  --color-tertiary-fixed: #E1E0FF;
+  --color-tertiary-fixed-dim: #C0C1FF;
+  --color-on-tertiary-fixed: #07006C;
+  --color-on-tertiary-fixed-variant: #2F2EBE;
+
+  --color-error: #BA1A1A;
+  --color-on-error: #FFFFFF;
+  --color-error-container: #FFDAD6;
+  --color-on-error-container: #93000A;
+
+  --color-background: #F8F9FF;
+  --color-on-background: #0B1C30;
 
   /* Radios */
   --radius-sm: 0.25rem;
+  --radius: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
   --radius-xl: 1.5rem;
 
   /* Espaciados */
+  --spacing-space-xs: 0.25rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 1rem;
   --spacing-gutter: 1.5rem;
+  --spacing-space-lg: 1.5rem;
   --spacing-margin: 2rem;
+  --spacing-space-xl: 2rem;
 }
 
+/* Escala tipográfica "Executive Pulse" (de DESIGN.md) */
+.text-display-lg       { font: 700 40px/48px var(--font-sans); letter-spacing: -0.03em; }
+.text-display-lg-mobile{ font: 700 32px/40px var(--font-sans); letter-spacing: -0.025em; }
+.text-headline-xl       { font: 700 30px/38px var(--font-sans); letter-spacing: -0.025em; }
+.text-headline-xl-mobile{ font: 700 24px/32px var(--font-sans); letter-spacing: -0.02em; }
+.text-headline-lg       { font: 600 24px/32px var(--font-sans); letter-spacing: -0.02em; }
+.text-headline-md       { font: 600 20px/28px var(--font-sans); letter-spacing: -0.015em; }
+.text-headline-sm       { font: 600 16px/24px var(--font-sans); letter-spacing: -0.01em; }
+.text-body-lg           { font: 400 16px/26px var(--font-sans); letter-spacing: -0.005em; }
+.text-body-md           { font: 400 14px/22px var(--font-sans); }
+.text-body-sm           { font: 400 13px/18px var(--font-sans); letter-spacing: 0.005em; }
+.text-label-md          { font: 600 12px/16px var(--font-sans); letter-spacing: 0.02em; }
+.text-label-sm          { font: 600 11px/14px var(--font-sans); letter-spacing: 0.04em; }
+.text-metric-val        { font: 700 28px/34px var(--font-sans); letter-spacing: -0.03em; }
+
 body {
-  background-color: var(--color-canvas);
-  color: var(--color-navy);
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
   font-variant-numeric: tabular-nums;
 }
-/*hola*/
+
+/* Íconos Material Symbols, tal como los usa Stitch */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+}
