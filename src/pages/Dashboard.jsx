@@ -6,6 +6,10 @@ import { useDepartmentRisk } from "../hooks/useDepartmentRisk";
 import RiskHeatmap from "../components/RiskHeatmap";
 import RiskAlertBanner from "../components/RiskAlertBanner";
 import AIStrategistPanel from "../components/AIStrategistPanel";
+import { explainMetric } from "../services/aiService";
+import { useWeeklySentiment } from "../hooks/useWeeklySentiment";
+import WeeklySentimentTrend from "../components/WeeklySentimentTrend";
+import FrictionHotspots from "../components/FrictionHotspots";
 
 function delta(current, previous) {
   if (previous === undefined || previous === null) return null;
@@ -17,6 +21,7 @@ function delta(current, previous) {
 export default function Dashboard() {
   const { metrics, previousMetrics, loading, error } = useOrgHealthMetrics();
   const { rows: deptRows, loading: deptLoading } = useDepartmentRisk();
+  const { trend, hotspots, loading: sentimentLoading } = useWeeklySentiment();
 
   return (
     <div className="min-h-screen bg-surface">
@@ -54,6 +59,14 @@ export default function Dashboard() {
                 }
                 footerLabel="Muestra del periodo"
                 footerValue={`${metrics.sampleSize} respuestas`}
+                onExplain={() => explainMetric({
+                  label: "eNPS (Net Employee Health)",
+                  context: {
+                    valorActual: metrics.enps,
+                    valorAnterior: previousMetrics?.enps,
+                    muestra: metrics.sampleSize,
+                  },
+                })}
               />
               {(() => {
   const attritionDelta = previousMetrics
@@ -69,6 +82,14 @@ export default function Dashboard() {
       deltaDirection={attritionDelta !== null && attritionDelta > 0 ? "up" : "down"}
       footerLabel="Basado en"
       footerValue="Fatiga + carga emocional reportada"
+      onExplain={() => explainMetric({
+        label: "90-Day Attrition Risk",
+        context: {
+          valorActual: metrics.attritionRisk,
+          valorAnterior: previousMetrics?.attritionRisk,
+          muestra: metrics.sampleSize,
+        },
+      })}
     />
   );
 })()}
@@ -79,6 +100,15 @@ export default function Dashboard() {
                 suffix={`~${metrics.avgPerWeek} / 78 por semana`}
                 footerLabel="Participación semanal promedio"
                 footerValue={`${metrics.sampleSize} respuestas totales (30 días)`}
+                onExplain={() => explainMetric({
+                  label: "Active Pulse Sample",
+                  context: {
+                    valorActual: metrics.activePulseRate,
+                    valorAnterior: previousMetrics?.activePulseRate,
+                    promedioSemanal: metrics.avgPerWeek,
+                    muestra: metrics.sampleSize,
+                  },
+                })}
               />
               <KpiCard
                 icon="verified_user"
@@ -87,6 +117,15 @@ export default function Dashboard() {
                 suffix="/ 5.0"
                 footerLabel="Promedio del periodo"
                 footerValue={metrics.psychSafety >= 3.5 ? "Estable" : "Requiere atención"}
+                onExplain={() => explainMetric({
+                  label: "Psychological Safety Index",
+                  context: {
+                    valorActual: metrics.psychSafety,
+                    valorAnterior: previousMetrics?.psychSafety,
+                    escala: "1-5",
+                    muestra: metrics.sampleSize,
+                  },
+                })}
               />
             </div>
           )}
@@ -98,6 +137,13 @@ export default function Dashboard() {
             </div>
           )}
           {deptRows && <RiskAlertBanner rows={deptRows} />}
+          {trend && hotspots && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-space-md">
+              <WeeklySentimentTrend rows={trend} />
+              <FrictionHotspots items={hotspots} />
+            </div>
+          )}
+          {sentimentLoading && <p className="text-body-md text-on-surface-variant">Analizando sentimiento de comentarios...</p>}
           {deptLoading && <p className="text-body-md text-on-surface-variant">Calculando matriz de riesgo...</p>}
         </div>
       </main>
