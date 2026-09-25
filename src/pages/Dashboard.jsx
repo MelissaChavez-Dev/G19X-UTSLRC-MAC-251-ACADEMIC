@@ -2,6 +2,10 @@ import Sidebar from "../components/Sidebar";
 import TopBar from "../components/TopBar";
 import KpiCard from "../components/KpiCard";
 import { useOrgHealthMetrics } from "../hooks/useOrgHealthMetrics";
+import { useDepartmentRisk } from "../hooks/useDepartmentRisk";
+import RiskHeatmap from "../components/RiskHeatmap";
+import RiskAlertBanner from "../components/RiskAlertBanner";
+import AIStrategistPanel from "../components/AIStrategistPanel";
 
 function delta(current, previous) {
   if (previous === undefined || previous === null) return null;
@@ -12,6 +16,7 @@ function delta(current, previous) {
 
 export default function Dashboard() {
   const { metrics, previousMetrics, loading, error } = useOrgHealthMetrics();
+  const { rows: deptRows, loading: deptLoading } = useDepartmentRisk();
 
   return (
     <div className="min-h-screen bg-surface">
@@ -85,6 +90,15 @@ export default function Dashboard() {
               />
             </div>
           )}
+
+          {deptRows && metrics && (
+            <div className="grid grid-cols-1 xl:grid-cols-[65%_35%] gap-space-md items-stretch">
+              <RiskHeatmap rows={deptRows} />
+              <AIStrategistPanel orgMetrics={metrics} departmentRisk={deptRows} />
+            </div>
+          )}
+          {deptRows && <RiskAlertBanner rows={deptRows} />}
+          {deptLoading && <p className="text-body-md text-on-surface-variant">Calculando matriz de riesgo...</p>}
         </div>
       </main>
     </div>

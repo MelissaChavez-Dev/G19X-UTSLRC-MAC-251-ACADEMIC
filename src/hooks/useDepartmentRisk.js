@@ -1,0 +1,72 @@
+import { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../services/firebase";
+import { DEPARTMENTS } from "../data/surveyQuestion";
+
+const FACTOR_KEYS = ["cognitiveLoad", "roleAmbiguity", "emotionalLabor", "shiftFatigue", "autonomy", "psychSafety"];
+const PROTECTIVE_FACTORS = ["autonomy", "psychSafety"];
+
+function average(nums) {
+  if (nums.length === 0) return 0;
+  return nums.reduce((a, b) => a + b, 0) / nums.length;
+}
+
+function riskTier(avgRisk) {
+  if (avgRisk >= 4) return { label: "CRÍTICO", tone: "critical" };
+  if (avgRisk >= 3) return { label: "ELEVADO", tone: "elevated" };
+  if (avgRisk >= 2) return { label: "CONTROLADO", tone: "controlled" };
+  return { label: "BAJO RIESGO", tone: "low" };
+}
+
+export function useDepartmentRisk() {
+  const [rows, setRows] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const snapshot = await getDocs(collection(db, "responses"));
+        const all = snapshot.docs.map((d) => d.data());
+
+        const result = DEPARTMENTS.map((dept) => {
+          const deptResponses = all.filter((r) => r.departmentId === dept.id);
+          const factors = {};
+          const riskEquivalents = [];
+
+          FACTOR_KEYS.forEach((key) => {
+            const values = deptResponses
+              .map((r) => r.psychosocialFactors?.[key])
+              .filter((v) => v !== undefined);
+            const avg = Math.round(average(values) * 10) / 10;
+            factors[key] = avg;
+            riskEquivalents.push(PROTECTIVE_FACTORS.includes(key) ? 6 - avg : avg);
+          });
+
+          const avgRisk = average(riskEquivalents);
+
+          return {
+            id: dept.id,
+            name: dept.name,
+            headcount: dept.headcount,
+            factors,
+            avgRisk,
+            tier: riskTier(avgRisk),
+            sampleSize: deptResponses.length,
+          };
+        });
+
+        result.sort((a, b) => b.avgRisk - a.avgRisk);
+        setRows(result);
+      } catch (err) {
+        console.error(err);
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  return { rows, loading, error };
+}
