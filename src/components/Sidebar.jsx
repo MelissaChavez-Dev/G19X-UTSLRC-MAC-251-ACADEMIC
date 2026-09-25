@@ -1,12 +1,12 @@
 import { signOut } from "firebase/auth";
 import { auth } from "../services/firebase";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const NAV_ITEMS = [
-  { icon: "grid_view", label: "Overview", active: true },
-  { icon: "assignment_add", label: "Survey Builder", active: false },
-  { icon: "groups", label: "Team Directory", active: false },
-  { icon: "auto_awesome", label: "AI Insights", active: false },
+  { icon: "grid_view", label: "Resumen", active: true, to: "/dashboard" },
+  { icon: "assignment_add", label: "Constructor de encuestas", active: true, to: "/survey-builder" },
+  { icon: "groups", label: "Directorio del equipo", active: false },
+  { icon: "auto_awesome", label: "Análisis", active: false },
 ];
 
 export default function Sidebar() {
@@ -32,20 +32,30 @@ export default function Sidebar() {
           </div>
         </div>
         <nav className="px-space-sm mt-space-md flex flex-col gap-1">
-          {NAV_ITEMS.map((item) => (
-            <div
-              key={item.label}
-              className={`flex items-center gap-space-sm px-space-sm py-2.5 rounded-lg transition-colors ${
-                item.active
-                  ? "bg-surface-container-highest text-on-surface font-semibold"
-                  : "text-inverse-on-surface opacity-40 cursor-not-allowed"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-              <span className="text-body-md">{item.label}</span>
-              {!item.active && <span className="text-label-sm ml-auto">Próx.</span>}
-            </div>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            const className = `flex items-center gap-space-sm px-space-sm py-2.5 rounded-lg transition-colors ${
+              item.active
+                ? "bg-surface-container-highest text-on-surface font-semibold"
+                : "text-inverse-on-surface opacity-40 cursor-not-allowed"
+            }`;
+            const content = (
+              <>
+                <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                <span className="text-body-md">{item.label}</span>
+                {!item.active && <span className="text-label-sm ml-auto">Próx.</span>}
+              </>
+            );
+
+            return item.active ? (
+              <Link key={item.label} to={item.to} className={className}>
+                {content}
+              </Link>
+            ) : (
+              <div key={item.label} className={className}>
+                {content}
+              </div>
+            );
+          })}
         </nav>
       </div>
 

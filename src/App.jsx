@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import WellnessSurvey from "./pages/WellnessSurvey";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import SurveyBuilder from "./pages/SurveyBuilder";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -16,6 +17,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/survey-builder/:templateId?"
+          element={
+            <ProtectedRoute>
+              <SurveyBuilder />
             </ProtectedRoute>
           }
         />

@@ -1,0 +1,16 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /surveyTemplates/{templateId} {
+      allow read: if resource.data.status == "published" || request.auth != null;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    match /responses/{responseId} {
+      allow create: if true;
+      allow read: if request.auth != null;
+      allow update, delete: if false;
+    }
+  }
+}

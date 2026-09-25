@@ -1,9 +1,9 @@
 import { httpsCallable } from "firebase/functions";
 import { functions } from "./firebase";
 
-export async function generateStrategy({ orgMetrics, departmentRisk }) {
+export async function generateStrategy({ orgMetrics, departmentRisk, openComments = [] }) {
   const callable = httpsCallable(functions, "generate_strategy");
-  const result = await callable({ orgMetrics, departmentRisk });
+  const result = await callable({ orgMetrics, departmentRisk, openComments });
   return result.data.markdown;
 }
 

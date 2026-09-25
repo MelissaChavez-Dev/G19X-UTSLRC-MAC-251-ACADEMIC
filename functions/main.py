@@ -15,6 +15,7 @@ def generate_strategy(req: https_fn.CallableRequest) -> dict:
 
     org_metrics = req.data.get("orgMetrics", {})
     department_risk = req.data.get("departmentRisk", [])
+    open_comments = req.data.get("openComments", [])
 
     prompt = f"""
 Eres un consultor experto en salud organizacional y factores psicosociales
@@ -28,15 +29,21 @@ DATOS AGREGADOS DE LA ORGANIZACION (ultimos 30 dias):
 RIESGO POR DEPARTAMENTO (escala 1-5 por factor, tier de riesgo):
 {json.dumps(department_risk, ensure_ascii=False, indent=2)}
 
+COMENTARIOS ABIERTOS RECIENTES DEL PERSONAL:
+{json.dumps(open_comments[-40:], ensure_ascii=False, indent=2)}
+
 Responde en espanol, en formato Markdown, con esta estructura exacta:
 
-**Diagnóstico general:** (1-2 oraciones, tono ejecutivo, directo)
+**Resumen ejecutivo:** (1-2 oraciones sobre el estado general y el tono de los comentarios)
 
-1. **[Título corto de la recomendación]** — Descripción breve de la acción concreta (máximo 2 líneas).
-2. **[Título corto de la recomendación]** — Descripción breve de la acción concreta (máximo 2 líneas).
-3. **[Título corto de la recomendación]** — Descripción breve de la acción concreta (máximo 2 líneas).
+**Necesidades principales:** (2-4 necesidades concretas mencionadas o inferidas de los comentarios; indica el departamento cuando sea posible)
 
-No agregues introducciones ni despedidas. No repitas los datos numéricos tal cual, interprétalos.
+**Acciones recomendadas:**
+1. **[Título corto]** — Acción concreta, responsable sugerido y área prioritaria (máximo 2 líneas).
+2. **[Título corto]** — Acción concreta, responsable sugerido y área prioritaria (máximo 2 líneas).
+3. **[Título corto]** — Acción concreta, responsable sugerido y área prioritaria (máximo 2 líneas).
+
+No inventes testimonios ni atribuyas comentarios a personas. No repitas los datos numéricos tal cual, interprétalos. No agregues introducciones ni despedidas.
 """
 
     try:

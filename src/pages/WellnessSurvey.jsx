@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { SURVEY_STEPS, DEPARTMENTS } from "../data/surveyQuestion";
+import { SURVEY_STEPS as DEFAULT_STEPS, DEPARTMENTS } from "../data/surveyQuestion";
 import { submitSurveyResponse } from "../services/surveyService";
+import { getActivePublishedTemplate } from "../services/templateService";
+import { validateSurveyTemplate } from "../data/surveyTemplate";
 import ScaleQuestion from "../components/ScaleQuestions";
 import ChoiceQuestion from "../components/ChoiceQuestion";
 import OpenTextQuestion from "../components/OpenTextQuestion";
@@ -10,13 +12,34 @@ export default function WellnessSurvey() {
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [status, setStatus] = useState("idle"); // idle | submitting | done | error
+  const [surveySteps, setSurveySteps] = useState(DEFAULT_STEPS);
+  const [loadingTemplate, setLoadingTemplate] = useState(true);
 
-  const step = SURVEY_STEPS[stepIndex];
-  const isLast = stepIndex === SURVEY_STEPS.length - 1;
-  const progress = Math.round(((stepIndex + 1) / SURVEY_STEPS.length) * 100);
+  useEffect(() => {
+    async function loadTemplate() {
+      try {
+        const published = await getActivePublishedTemplate();
+        const templateErrors = published ? validateSurveyTemplate(published) : [];
+        if (published && templateErrors.length === 0) {
+          setSurveySteps(published.questions);
+        } else if (published && templateErrors.length > 0) {
+          console.error("La plantilla publicada no es compatible; se usará la encuesta por defecto.", templateErrors);
+        }
+      } catch (err) {
+        console.error("No se pudo cargar la plantilla publicada, usando la encuesta por defecto.", err);
+      } finally {
+        setLoadingTemplate(false);
+      }
+    }
+    loadTemplate();
+  }, []);
+
+  const step = surveySteps[stepIndex];
+  const isLast = stepIndex === surveySteps.length - 1;
+  const progress = Math.round(((stepIndex + 1) / surveySteps.length) * 100);
 
   const currentValue = answers[step?.id];
-  const canAdvance = step?.type === "text" || currentValue !== undefined;
+  const canAdvance = step?.required === false || currentValue !== undefined;
 
   const goNext = useCallback(async () => {
     if (!canAdvance || status === "submitting") return;
@@ -28,21 +51,21 @@ export default function WellnessSurvey() {
 
     setStatus("submitting");
     try {
-      await submitSurveyResponse({ departmentId, answers });
+      await submitSurveyResponse({ departmentId, answers, questions: surveySteps });
       setStatus("done");
     } catch (err) {
       console.error(err);
       setStatus("error");
     }
-  }, [canAdvance, isLast, departmentId, answers, status]);
+  }, [canAdvance, isLast, departmentId, answers, status, surveySteps]);
 
-  const goBack = () => {
+  const goBack = useCallback(() => {
     if (stepIndex > 0) setStepIndex((i) => i - 1);
-  };
+  }, [stepIndex]);
 
-  const setAnswer = (value) => {
+  const setAnswer = useCallback((value) => {
     setAnswers((prev) => ({ ...prev, [step.id]: value }));
-  };
+  }, [step]);
 
   // Atajos de teclado: Enter = siguiente, Shift+Tab = atrás, 0-9 = escala
   useEffect(() => {
@@ -61,7 +84,15 @@ export default function WellnessSurvey() {
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [step, goNext]);
+  }, [step, goNext, goBack, setAnswer]);
+
+  if (loadingTemplate) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface">
+        <p className="text-body-md text-on-surface-variant">Cargando encuesta...</p>
+      </div>
+    );
+  }
 
   if (status === "done") {
     return (
@@ -92,12 +123,12 @@ export default function WellnessSurvey() {
                 {step.category}
               </span>
               <span className="text-on-surface-variant text-label-sm">
-                Question {stepIndex + 1} of {SURVEY_STEPS.length}
+                Pregunta {stepIndex + 1} de {surveySteps.length}
               </span>
             </div>
             <span className="inline-flex items-center gap-1 text-secondary text-label-sm bg-surface-container-low px-2.5 py-1 rounded-full">
               <span className="material-symbols-outlined text-[14px]">lock</span>
-              Confidential
+              Confidencial
             </span>
           </div>
 
@@ -172,7 +203,7 @@ export default function WellnessSurvey() {
               className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-md text-on-surface text-headline-sm hover:bg-surface-container-low transition-colors disabled:opacity-30"
             >
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-              <span>Back</span>
+              <span>Atrás</span>
             </button>
 
             <button
@@ -181,7 +212,7 @@ export default function WellnessSurvey() {
               disabled={!canAdvance || status === "submitting"}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-md bg-primary text-on-primary text-headline-sm shadow-sm hover:opacity-90 transition-all disabled:opacity-40"
             >
-              <span>{isLast ? (status === "submitting" ? "Enviando..." : "Enviar") : "Next"}</span>
+              <span>{isLast ? (status === "submitting" ? "Enviando..." : "Enviar") : "Siguiente"}</span>
               <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
             </button>
           </div>

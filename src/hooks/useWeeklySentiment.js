@@ -7,6 +7,7 @@ import { DEPARTMENTS } from "../data/surveyQuestion";
 export function useWeeklySentiment() {
   const [trend, setTrend] = useState(null);
   const [hotspots, setHotspots] = useState(null);
+  const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,7 +22,12 @@ export function useWeeklySentiment() {
         // Limitar la muestra para no disparar prompts enormes a Gemini
         const sample = withText.slice(-120);
 
-        const comments = sample.map((r) => ({ id: r.id, text: r.openText }));
+        const comments = sample.map((r) => ({
+          id: r.id,
+          text: r.openText,
+          departmentName: DEPARTMENTS.find((dept) => dept.id === r.departmentId)?.name || r.departmentId,
+        }));
+        setComments(comments);
         const classified = await classifySentiment(comments);
         const sentimentById = Object.fromEntries(classified.map((c) => [c.id, c.sentiment]));
 
@@ -65,5 +71,5 @@ export function useWeeklySentiment() {
     load();
   }, []);
 
-  return { trend, hotspots, loading };
+  return { trend, hotspots, comments, loading };
 }

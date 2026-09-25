@@ -44,7 +44,7 @@ export default function KpiCard({
 
       <span className="text-label-sm text-primary-container mt-space-sm flex items-center gap-1">
         <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
-        Ver análisis con IA
+        Ver análisis
       </span>
     </motion.div>
   );

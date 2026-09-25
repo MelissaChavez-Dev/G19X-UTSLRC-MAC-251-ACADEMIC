@@ -5,6 +5,7 @@ import TopBar from "../components/TopBar";
 import KpiCard from "../components/KpiCard";
 import RiskHeatmap from "../components/RiskHeatmap";
 import RiskAlertBanner from "../components/RiskAlertBanner";
+import AIStrategistPanel from "../components/AIStrategistPanel";
 import WeeklySentimentTrend from "../components/WeeklySentimentTrend";
 import FrictionHotspots from "../components/FrictionHotspots";
 import MetricDetailModal from "../components/MetricDetailModal";
@@ -25,7 +26,7 @@ const KPI_DEFS = [
   {
     id: "kpi-enps",
     icon: "sentiment_very_satisfied",
-    label: "Net Employee Health (eNPS)",
+    label: "Salud neta del equipo (eNPS)",
     dataKey: "enps",
     getValue: (m) => m.enps,
     getSuffix: () => null,
@@ -35,7 +36,7 @@ const KPI_DEFS = [
   {
     id: "kpi-attrition",
     icon: "trending_down",
-    label: "90-Day Attrition Risk (modelado)",
+    label: "Riesgo de rotación a 90 días (modelado)",
     dataKey: "attritionRisk",
     getValue: (m) => `${m.attritionRisk}%`,
     getSuffix: () => null,
@@ -45,7 +46,7 @@ const KPI_DEFS = [
   {
     id: "kpi-pulse",
     icon: "how_to_reg",
-    label: "Active Pulse Sample",
+    label: "Participación en pulsos",
     dataKey: "activePulseRate",
     getValue: (m) => `${m.activePulseRate}%`,
     getSuffix: (m) => `~${m.avgPerWeek} / 78 por semana`,
@@ -55,10 +56,10 @@ const KPI_DEFS = [
   {
     id: "kpi-safety",
     icon: "verified_user",
-    label: "Psychological Safety Index",
+    label: "Índice de seguridad psicológica",
     dataKey: "psychSafety",
     getValue: (m) => m.psychSafety,
-    getSuffix: () => "/ 5.0",
+    getSuffix: () => "/ 5,0",
     getFooterLabel: () => "Promedio del periodo",
     getFooterValue: (m) => (m.psychSafety >= 3.5 ? "Estable" : "Requiere atención"),
   },
@@ -67,7 +68,7 @@ const KPI_DEFS = [
 export default function Dashboard() {
   const { metrics, previousMetrics, loading } = useOrgHealthMetrics();
   const { rows: deptRows, loading: deptLoading } = useDepartmentRisk();
-  const { trend, hotspots, loading: sentimentLoading } = useWeeklySentiment();
+  const { trend, hotspots, comments, loading: sentimentLoading } = useWeeklySentiment();
   const { trends: weeklyTrends } = useWeeklyTrends();
 
   const [expanded, setExpanded] = useState(null); // { id, def }
@@ -89,13 +90,13 @@ export default function Dashboard() {
         },
       });
       const explanation = /429|RESOURCE_EXHAUSTED/i.test(text)
-        ? "Se alcanzó el límite diario de consultas a la IA en el nivel gratuito. Vuelve a intentar mañana, o activa facturación en Google AI Studio para límites más altos."
+        ? "Se alcanzó el límite diario de consultas automáticas. Vuelve a intentarlo mañana o activa una cuenta con límites más altos."
         : text;
       setExplanations((prev) => ({ ...prev, [def.id]: explanation }));
     } catch (error) {
       const errorText = error instanceof Error ? error.message : String(error);
       const explanation = /429|RESOURCE_EXHAUSTED/i.test(errorText)
-        ? "Se alcanzó el límite diario de consultas a la IA en el nivel gratuito. Vuelve a intentar mañana, o activa facturación en Google AI Studio para límites más altos."
+        ? "Se alcanzó el límite diario de consultas automáticas. Vuelve a intentarlo mañana o activa una cuenta con límites más altos."
         : "No se pudo generar la explicación en este momento.";
       setExplanations((prev) => ({
         ...prev,
@@ -115,7 +116,7 @@ export default function Dashboard() {
           <div className="flex flex-col">
             <div className="flex items-center gap-space-xs mb-1">
               <span className="text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">
-                Executive Intelligence
+                Inteligencia ejecutiva
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
               <span className="text-label-sm text-on-surface-variant font-medium">
@@ -165,18 +166,11 @@ export default function Dashboard() {
           {deptRows && (
             <div className="grid grid-cols-1 xl:grid-cols-[65%_35%] gap-space-md items-stretch">
               <RiskHeatmap rows={deptRows} />
-              <div className="bg-primary-container rounded-xl shadow-sm p-space-lg flex flex-col h-full">
-                <div className="flex items-center gap-space-sm mb-1">
-                  <span className="material-symbols-outlined text-secondary-container text-[22px]">
-                    auto_awesome
-                  </span>
-                  <h2 className="text-headline-sm text-on-primary">Gemini AI Strategist</h2>
-                </div>
-                <p className="text-body-sm text-inverse-on-surface opacity-80">
-                  Usa el panel de estrategia general más abajo, o expande cualquier tarjeta KPI
-                  para un análisis puntual.
-                </p>
-              </div>
+              <AIStrategistPanel
+                orgMetrics={metrics}
+                departmentRisk={deptRows}
+                openComments={comments}
+              />
             </div>
           )}
           {deptLoading && <p className="text-body-md text-on-surface-variant">Calculando matriz de riesgo...</p>}
@@ -204,6 +198,7 @@ export default function Dashboard() {
             explanation={explanations[expanded.id]}
             loadingExplanation={loadingExplanation}
             trendData={weeklyTrends}
+            departmentRows={deptRows}
             dataKey={expanded.dataKey}
             onClose={() => setExpanded(null)}
           />

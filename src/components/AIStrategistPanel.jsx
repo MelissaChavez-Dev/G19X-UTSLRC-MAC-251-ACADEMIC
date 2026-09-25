@@ -2,16 +2,21 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { generateStrategy } from "../services/aiService";
 
-export default function AIStrategistPanel({ orgMetrics, departmentRisk }) {
+export default function AIStrategistPanel({ orgMetrics, departmentRisk, openComments = [] }) {
   const [markdown, setMarkdown] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const departmentNames = [...new Set(openComments.map((comment) => comment.departmentName).filter(Boolean))];
 
   async function handleGenerate() {
     setLoading(true);
     setError("");
     try {
-      const result = await generateStrategy({ orgMetrics, departmentRisk });
+      const result = await generateStrategy({
+        orgMetrics,
+        departmentRisk,
+        openComments: openComments.slice(-40),
+      });
       setMarkdown(result);
     } catch (err) {
       console.error(err);
@@ -27,22 +32,35 @@ export default function AIStrategistPanel({ orgMetrics, departmentRisk }) {
         <span className="material-symbols-outlined text-secondary-container text-[22px]">
           auto_awesome
         </span>
-        <h2 className="text-headline-sm text-on-primary">Gemini AI Strategist</h2>
+        <h2 className="text-headline-sm text-on-primary">Resumen de las respuestas</h2>
       </div>
       <span className="text-label-sm text-secondary-container uppercase tracking-widest mb-4">
         Modo asesoría ejecutiva
       </span>
 
       {!markdown && !loading && (
-        <p className="text-body-sm text-inverse-on-surface opacity-80 mb-6">
-          Genera un diagnóstico ejecutivo y 3 recomendaciones accionables basadas en los
-          datos actuales del cohorte.
-        </p>
+        <>
+          <p className="text-body-sm text-inverse-on-surface opacity-80 mb-4">
+            Convierte los comentarios del personal en necesidades principales y acciones
+            concretas para cada área de la organización.
+          </p>
+          <div className="rounded-lg bg-black/15 p-space-sm mb-6">
+            <span className="text-label-sm text-secondary-container uppercase tracking-widest block">
+              Base disponible
+            </span>
+            <strong className="text-body-md text-on-primary block mt-1">
+              {openComments.length} comentarios recientes
+            </strong>
+            <span className="text-body-sm text-inverse-on-surface opacity-80 block mt-1">
+              Áreas representadas: {departmentNames.length > 0 ? departmentNames.join(", ") : "aún no hay comentarios"}
+            </span>
+          </div>
+        </>
       )}
 
       {loading && (
         <p className="text-body-sm text-inverse-on-surface opacity-80 mb-6">
-          Analizando datos del cohorte...
+          Analizando comentarios y resultados...
         </p>
       )}
 
@@ -60,7 +78,7 @@ export default function AIStrategistPanel({ orgMetrics, departmentRisk }) {
         className="mt-auto w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-secondary-container text-on-secondary-container text-headline-sm font-semibold shadow-sm hover:opacity-90 transition-all disabled:opacity-40"
       >
         <span className="material-symbols-outlined text-[18px]">bolt</span>
-        {loading ? "Generando..." : markdown ? "Generar nuevo análisis" : "Generar estrategia"}
+        {loading ? "Preparando resumen..." : markdown ? "Actualizar resumen" : "Ver necesidades y acciones"}
       </button>
     </div>
   );

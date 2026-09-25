@@ -34,6 +34,15 @@ export function useDepartmentRisk() {
           const factors = {};
           const riskEquivalents = [];
 
+          const promoters = deptResponses.filter((r) => r.enps >= 9).length;
+          const detractors = deptResponses.filter((r) => r.enps <= 6).length;
+          const enps = deptResponses.length > 0
+            ? Math.round(((promoters - detractors) / deptResponses.length) * 100)
+            : 0;
+          const averageWorkLifeBalance = deptResponses.length > 0
+            ? deptResponses.reduce((sum, response) => sum + (response.workLifeBalance || 0), 0) / deptResponses.length
+            : 0;
+
           FACTOR_KEYS.forEach((key) => {
             const values = deptResponses
               .map((r) => r.psychosocialFactors?.[key])
@@ -44,6 +53,8 @@ export function useDepartmentRisk() {
           });
 
           const avgRisk = average(riskEquivalents);
+          const attritionRisk = Math.round((((factors.shiftFatigue + factors.emotionalLabor) / 2) / 5) * 100 * 0.6);
+          const pulseRate = Math.min(100, Math.round((deptResponses.length / dept.headcount) * 100));
 
           return {
             id: dept.id,
@@ -51,6 +62,10 @@ export function useDepartmentRisk() {
             headcount: dept.headcount,
             factors,
             avgRisk,
+            enps,
+            attritionRisk,
+            activePulseRate: pulseRate,
+            workLifeBalance: Math.round(averageWorkLifeBalance * 10) / 10,
             tier: riskTier(avgRisk),
             sampleSize: deptResponses.length,
           };

@@ -10,17 +10,17 @@ const COLUMNS = [
 ];
 
 const TIER_STYLES = {
-  critical: "bg-error-container text-on-error-container",
-  elevated: "bg-surface-container-high text-on-surface",
-  controlled: "bg-secondary-container/40 text-on-secondary-container",
-  low: "bg-secondary-container/40 text-on-secondary-container",
+  critical: "bg-red-700 text-white",
+  elevated: "bg-orange-300 text-orange-950",
+  controlled: "bg-amber-100 text-amber-950",
+  low: "bg-emerald-100 text-emerald-950",
 };
 
 const TIER_DOT = {
-  critical: "bg-error",
-  elevated: "bg-outline",
-  controlled: "bg-secondary",
-  low: "bg-secondary",
+  critical: "bg-red-700",
+  elevated: "bg-orange-500",
+  controlled: "bg-amber-500",
+  low: "bg-emerald-500",
 };
 
 function LegendDot({ colorClass, label, bold }) {
@@ -45,10 +45,10 @@ export default function RiskHeatmap({ rows }) {
           </p>
         </div>
         <div className="flex items-center gap-2 text-label-sm flex-wrap">
-          <LegendDot colorClass="bg-secondary-container" label="1.0-1.9 Bajo" />
-          <LegendDot colorClass="bg-surface-container-highest" label="2.0-2.9 Mod" />
-          <LegendDot colorClass="bg-surface-container-high" label="3.0-3.9 Elev" />
-          <LegendDot colorClass="bg-error-container" label="4.0+ Crít" bold />
+          <LegendDot colorClass="bg-emerald-500" label="1,0-1,9 Bajo" />
+          <LegendDot colorClass="bg-amber-500" label="2,0-2,9 Moderado" />
+          <LegendDot colorClass="bg-orange-500" label="3,0-3,9 Elevado" />
+          <LegendDot colorClass="bg-red-700" label="4,0+ Crítico" bold />
         </div>
       </div>
 
@@ -71,7 +71,7 @@ export default function RiskHeatmap({ rows }) {
                     <span className={`w-2 h-2 rounded-full ${TIER_DOT[row.tier.tone]}`} />
                     {row.name}
                     <span className="text-label-sm text-on-surface-variant font-normal">
-                      ({row.headcount} FTE)
+                      ({row.headcount} personas)
                     </span>
                   </div>
                 </td>
