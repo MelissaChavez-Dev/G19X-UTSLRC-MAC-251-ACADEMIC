@@ -1,34 +1,17 @@
-import { useState } from "react";
+import { motion } from "framer-motion";
 
 export default function KpiCard({
-  label,
-  value,
-  suffix,
-  delta,
-  deltaDirection,
-  footerLabel,
-  footerValue,
-  onExplain,
+  id, icon, label, value, suffix, delta, deltaDirection,
+  footerLabel, footerValue, onExpand,
 }) {
-  const [explanation, setExplanation] = useState("");
-  const [loadingExplain, setLoadingExplain] = useState(false);
   const hasDelta = delta !== undefined && delta !== null;
 
-  async function handleExplainClick() {
-    if (!onExplain) return;
-    setLoadingExplain(true);
-    try {
-      const text = await onExplain();
-      setExplanation(text);
-    } catch {
-      setExplanation("No se pudo generar la explicación.");
-    } finally {
-      setLoadingExplain(false);
-    }
-  }
-
   return (
-    <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+    <motion.div
+      layoutId={id}
+      onClick={onExpand}
+      className="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between cursor-pointer"
+    >
       <div className="flex items-start justify-between">
         <div className="flex flex-col">
           <span className="text-label-md uppercase tracking-wider text-on-surface-variant font-semibold">
@@ -47,23 +30,10 @@ export default function KpiCard({
             )}
           </div>
         </div>
-        <button
-          onClick={handleExplainClick}
-          disabled={loadingExplain}
-          title="Explicar con IA"
-          className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary-container flex-shrink-0 hover:bg-surface-container-high transition-colors disabled:opacity-50"
-        >
-          <span className="material-symbols-outlined text-[22px]">
-            {loadingExplain ? "hourglass_empty" : "auto_awesome"}
-          </span>
-        </button>
+        <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary-container flex-shrink-0">
+          <span className="material-symbols-outlined text-[22px]">{icon}</span>
+        </div>
       </div>
-
-      {explanation && (
-        <p className="text-body-sm text-on-surface-variant mt-space-sm bg-surface-container-low rounded-md p-space-sm">
-          {explanation}
-        </p>
-      )}
 
       {footerLabel && (
         <div className="mt-space-md flex flex-col">
@@ -71,6 +41,11 @@ export default function KpiCard({
           <span className="text-label-sm text-on-surface font-semibold">{footerValue}</span>
         </div>
       )}
-    </div>
+
+      <span className="text-label-sm text-primary-container mt-space-sm flex items-center gap-1">
+        <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
+        Ver análisis con IA
+      </span>
+    </motion.div>
   );
 }

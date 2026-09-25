@@ -1,13 +1,12 @@
 import firebase_admin
 firebase_admin.initialize_app()
-
 from firebase_functions import https_fn, options
 from firebase_functions.params import SecretParam
 from google import genai
 import json
 
 GEMINI_API_KEY = SecretParam("GEMINI_API_KEY")
-MODEL_NAME = "gemini-3.5-flash"
+MODEL_NAME = "gemini-3.5-flash-lite"
 
 
 @https_fn.on_call(secrets=[GEMINI_API_KEY], region="us-central1")
@@ -78,7 +77,10 @@ No repitas los numeros tal cual, interpretalos. No agregues titulos ni listas.
         )
         return {"explanation": response.text}
     except Exception as e:
-        return {"explanation": f"No se pudo generar la explicación en este momento ({str(e)[:80]})."}
+        error_str = str(e)
+        if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+            return {"explanation": "Se alcanzó el límite diario de consultas a la IA en el nivel gratuito. Vuelve a intentar mañana, o activa facturación en Google AI Studio para límites más altos."}
+        return {"explanation": f"No se pudo generar la explicación en este momento ({error_str[:80]})."}
 
 
 @https_fn.on_call(secrets=[GEMINI_API_KEY], region="us-central1")
