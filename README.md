@@ -22,7 +22,7 @@ Melissa Alejandra Chávez — TSU en Desarrollo de Software Multiplataforma, Uni
 
 ## Estado del proyecto
 
-🚧 En desarrollo — estadía en curso.
+En desarrollo 
 
 ## Estructura del repositorio
 /src
