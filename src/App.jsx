@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import WellnessSurvey from "./pages/WellnessSurvey";
-import Login from "./pages/Login";
+import Login from "./pages/login";
 import Dashboard from "./pages/Dashboard";
 import SurveyBuilder from "./pages/SurveyBuilder";
 import ProtectedRoute from "./components/ProtectedRoute";
