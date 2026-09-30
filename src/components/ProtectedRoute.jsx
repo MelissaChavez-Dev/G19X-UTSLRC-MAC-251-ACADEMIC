@@ -1,25 +1,31 @@
-import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../services/firebase";
+import { useAuth } from "../hooks/useAuth";
+import LoadingScreen from "./LoadingScreen";
 
-export default function ProtectedRoute({ children }) {
-  const [user, setUser] = useState(undefined); // undefined = cargando
+const ROLE_HOME = {
+  admin: "/dashboard",
+  team_lead: "/mi-equipo",
+  employee: "/mi-espacio",
+};
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, setUser);
-    return unsubscribe;
-  }, []);
+/**
+ * Protege rutas por autenticación y (opcionalmente) por rol.
+ * - roles: array de roles permitidos, ej. ["admin"].
+ * - skipPasswordCheck: úsese solo en la propia pantalla de cambio de contraseña.
+ */
+export default function ProtectedRoute({ children, roles, skipPasswordCheck = false }) {
+  const { user, loading, role, mustChangePassword } = useAuth();
 
-  if (user === undefined) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-surface">
-        <p className="text-body-md text-on-surface-variant">Cargando...</p>
-      </div>
-    );
+  if (loading) return <LoadingScreen />;
+  if (!user) return <Navigate to="/login" replace />;
+
+  if (!skipPasswordCheck && mustChangePassword) {
+    return <Navigate to="/cambiar-password" replace />;
   }
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (roles && (!role || !roles.includes(role))) {
+    return <Navigate to={ROLE_HOME[role] || "/"} replace />;
+  }
 
   return children;
 }

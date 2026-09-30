@@ -4,7 +4,7 @@ import { db } from "../services/firebase";
 import { classifySentiment } from "../services/aiService";
 import { DEPARTMENTS } from "../data/surveyQuestion";
 
-export function useWeeklySentiment() {
+export function useWeeklySentiment(departmentId = null) {
   const [trend, setTrend] = useState(null);
   const [hotspots, setHotspots] = useState(null);
   const [comments, setComments] = useState([]);
@@ -12,12 +12,14 @@ export function useWeeklySentiment() {
 
   useEffect(() => {
     async function load() {
+      setLoading(true);
       try {
         const q = query(collection(db, "responses"), where("openText", "!=", ""));
         const snapshot = await getDocs(q);
         const withText = snapshot.docs
           .map((d) => ({ id: d.id, ...d.data() }))
-          .filter((r) => r.openText && r.openText.trim().length > 0);
+          .filter((r) => r.openText && r.openText.trim().length > 0)
+          .filter((r) => !departmentId || r.departmentId === departmentId);
 
         // Limitar la muestra para no disparar prompts enormes a Gemini
         const sample = withText.slice(-120);
@@ -41,7 +43,11 @@ export function useWeeklySentiment() {
           if (sentiment === "negative") byDept[r.departmentId].negative += 1;
         });
 
-        const trendRows = DEPARTMENTS.map((dept) => {
+        const visibleDepts = departmentId
+          ? DEPARTMENTS.filter((d) => d.id === departmentId)
+          : DEPARTMENTS;
+
+        const trendRows = visibleDepts.map((dept) => {
           const stats = byDept[dept.id] || { positive: 0, negative: 0, total: 0 };
           const shift = stats.total > 0
             ? Math.round(((stats.positive - stats.negative) / stats.total) * 100)
@@ -69,7 +75,7 @@ export function useWeeklySentiment() {
       }
     }
     load();
-  }, []);
+  }, [departmentId]);
 
   return { trend, hotspots, comments, loading };
 }

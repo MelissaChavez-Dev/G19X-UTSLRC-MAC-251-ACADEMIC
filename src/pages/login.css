@@ -1,20 +1,20 @@
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 
 :root {
-  --coral: #ff4d30;
-  --coral-hover: #e83e22;
-  --coral-soft: #fff5ee;
-  --peach: #fdeee4;
-  --ink: #0f172a;
-  --slate-800: #1e293b;
-  --slate-600: #475569;
-  --slate-500: #64748b;
-  --slate-400: #94a3b8;
-  --slate-300: #cbd5e1;
-  --slate-200: #e2e8f0;
-  --slate-100: #f1f5f9;
-  --surface: #ffffff;
-  --canvas: #f8f9fa;
+  --coral: var(--color-primary);
+  --coral-hover: color-mix(in srgb, var(--color-primary) 82%, black);
+  --coral-soft: var(--color-primary-container);
+  --peach: var(--color-primary-container);
+  --ink: var(--color-on-surface);
+  --slate-800: var(--color-on-surface);
+  --slate-600: var(--color-on-surface-variant);
+  --slate-500: var(--color-on-surface-variant);
+  --slate-400: var(--color-outline);
+  --slate-300: var(--color-outline-variant);
+  --slate-200: var(--color-outline-variant);
+  --slate-100: var(--color-surface-container-low);
+  --surface: var(--color-surface-container-lowest);
+  --canvas: var(--color-surface);
   --font: "Plus Jakarta Sans", Inter, sans-serif;
 }
 
@@ -76,8 +76,8 @@ body {
   height: 34px;
   place-items: center;
   border-radius: 10px;
-  background: linear-gradient(145deg, #1e40af, #3b82f6);
-  box-shadow: 0 4px 10px rgba(30, 64, 175, 0.25);
+  background: linear-gradient(145deg, var(--color-primary), var(--color-secondary));
+  box-shadow: 0 4px 10px rgba(110, 135, 99, 0.2);
   color: #fff;
   font-size: 17px;
 }
@@ -89,7 +89,7 @@ body {
 }
 
 .login-story-wordmark strong {
-  color: #0f172a;
+  color: #2a2a22;
   font-size: 16px;
   font-weight: 800;
 }
@@ -113,7 +113,7 @@ body {
   align-items: center;
   gap: 6px;
   padding: 44px 34px 20px;
-  background: linear-gradient(to top, rgba(15, 23, 42, 0.55), transparent);
+  background: linear-gradient(to top, rgba(42, 42, 34, 0.5), transparent);
   color: #fff;
   font-size: 12px;
 }
@@ -335,14 +335,14 @@ body {
 
 .login-error {
   margin: 0;
-  color: #b42318;
+  color: var(--color-error);
   font-size: 12px;
   line-height: 1.5;
 }
 
 .login-success {
   margin: 0;
-  color: #047857;
+  color: var(--color-success);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -356,7 +356,7 @@ body {
   border: 0;
   border-radius: 999px;
   background: var(--coral);
-  box-shadow: 0 10px 22px -8px rgba(255, 77, 48, 0.45);
+  box-shadow: 0 8px 18px -10px rgba(110, 135, 99, 0.4);
   color: #fff;
   cursor: pointer;
   font: inherit;
@@ -367,9 +367,8 @@ body {
 }
 
 .login-submit:hover:not(:disabled) {
-  transform: translateY(-1px);
   background: var(--coral-hover);
-  box-shadow: 0 12px 24px -8px rgba(255, 77, 48, 0.5);
+  box-shadow: 0 10px 20px -10px rgba(110, 135, 99, 0.45);
 }
 
 .login-submit:disabled {
@@ -452,7 +451,7 @@ body {
 .login-security-note svg {
   width: 16px;
   height: 16px;
-  color: #10a675;
+  color: var(--color-success);
 }
 
 .login-form-footer {

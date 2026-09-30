@@ -1,7 +1,14 @@
-export default function TopBar() {
+import ThemeToggle from "./ThemeToggle";
+import { AdminNotificationBell } from "./NotificationBell";
+import { DEPARTMENTS } from "../data/surveyQuestion";
+import { useSidebarState } from "../hooks/useSidebarState";
+
+export default function TopBar({ departmentId, onDepartmentChange }) {
+  const { collapsed } = useSidebarState();
+
   return (
-    <header className="fixed top-0 left-64 right-0 h-16 bg-surface/80 backdrop-blur-xl shadow-sm z-40 flex items-center justify-between px-space-xl">
-      <div className="flex items-center gap-space-sm bg-surface-container-low rounded-lg px-space-md py-1.5 w-96">
+    <header className={`fixed top-0 ${collapsed ? "left-20" : "left-64"} right-0 h-16 bg-surface/80 backdrop-blur-xl shadow-sm z-40 flex items-center justify-between px-space-xl transition-[left] duration-300 ease-out`}>
+      <div className="flex items-center gap-space-sm bg-surface-container-low rounded-full px-space-md py-1.5 w-96 transition-colors">
         <span className="material-symbols-outlined text-on-surface-variant text-[20px]">search</span>
         <input
           type="text"
@@ -10,10 +17,28 @@ export default function TopBar() {
         />
       </div>
       <div className="flex items-center gap-space-md">
-        <div className="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1.5 rounded-lg text-on-surface-variant">
+        {onDepartmentChange && (
+          <div className="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1.5 rounded-full text-on-surface-variant">
+            <span className="material-symbols-outlined text-[18px]">domain</span>
+            <select
+              value={departmentId || ""}
+              onChange={(e) => onDepartmentChange(e.target.value || null)}
+              className="bg-transparent border-none outline-none text-label-md text-on-surface cursor-pointer"
+              aria-label="Filtrar por departamento"
+            >
+              <option value="">Todos los departamentos</option>
+              {DEPARTMENTS.map((d) => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        <div className="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1.5 rounded-full text-on-surface-variant">
           <span className="material-symbols-outlined text-[18px]">calendar_today</span>
           <span className="text-label-md text-on-surface">Últimos 30 días</span>
         </div>
+        <AdminNotificationBell />
+        <ThemeToggle />
       </div>
     </header>
   );

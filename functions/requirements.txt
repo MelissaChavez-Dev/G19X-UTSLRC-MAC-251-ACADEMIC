@@ -1,3 +1,4 @@
 firebase-functions~=0.5.0
 firebase-admin
 google-genai
+tzdata

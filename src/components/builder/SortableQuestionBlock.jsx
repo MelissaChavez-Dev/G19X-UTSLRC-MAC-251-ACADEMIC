@@ -23,12 +23,6 @@ export default function SortableQuestionBlock({ question, index, onChange, onRem
     onChange({ ...question, [field]: value });
   }
 
-  function updateOption(index, field, value) {
-    const options = [...(question.options || [])];
-    options[index] = { ...options[index], [field]: value };
-    updateField("options", options);
-  }
-
   function updateOptionLabel(index, label) {
     const options = [...(question.options || [])];
     const option = { ...options[index], label };

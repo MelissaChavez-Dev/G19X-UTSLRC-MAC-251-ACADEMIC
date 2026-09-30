@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
-
-const TOTAL_HEADCOUNT = 78; // suma de headcount de los 5 departamentos (scripts/seed.js)
+import { useHeadcount } from "./useHeadcount";
 
 function daysAgo(n) {
   const d = new Date();
@@ -18,8 +17,8 @@ function average(arr, selector) {
 // Participacion semanal promedio: cuantas respuestas llegan en una semana
 // tipica, contra el headcount total. Mas representativo que dividir el
 // total acumulado del mes (que cuenta varias semanas de pulso recurrente).
-function computeWeeklyParticipation(responses) {
-  if (responses.length === 0) return { rate: 0, avgPerWeek: 0 };
+function computeWeeklyParticipation(responses, headcount) {
+  if (responses.length === 0 || headcount <= 0) return { rate: 0, avgPerWeek: 0 };
 
   const byWeek = {};
   responses.forEach((r) => {
@@ -28,12 +27,12 @@ function computeWeeklyParticipation(responses) {
 
   const weekCounts = Object.values(byWeek);
   const avgPerWeek = weekCounts.reduce((a, b) => a + b, 0) / weekCounts.length;
-  const rate = Math.min(100, Math.round((avgPerWeek / TOTAL_HEADCOUNT) * 100));
+  const rate = Math.min(100, Math.round((avgPerWeek / headcount) * 100));
 
   return { rate, avgPerWeek: Math.round(avgPerWeek) };
 }
 
-function computeMetrics(responses) {
+function computeMetrics(responses, headcount) {
   if (responses.length === 0) {
     return { enps: 0, attritionRisk: 0, activePulseRate: 0, avgPerWeek: 0, psychSafety: 0, sampleSize: 0 };
   }
@@ -46,25 +45,30 @@ function computeMetrics(responses) {
   const avgEmotionalLabor = average(responses, (r) => r.psychosocialFactors?.emotionalLabor);
   const attritionRisk = Math.round((((avgFatigue + avgEmotionalLabor) / 2) / 5) * 100 * 0.6);
 
-  const { rate: activePulseRate, avgPerWeek } = computeWeeklyParticipation(responses);
+  const { rate: activePulseRate, avgPerWeek } = computeWeeklyParticipation(responses, headcount);
 
   const psychSafety = Math.round(average(responses, (r) => r.psychosocialFactors?.psychSafety) * 10) / 10;
 
   return { enps, attritionRisk, activePulseRate, avgPerWeek, psychSafety, sampleSize: responses.length };
 }
 
-export function useOrgHealthMetrics() {
+export function useOrgHealthMetrics(departmentId = null) {
   const [metrics, setMetrics] = useState(null);
   const [previousMetrics, setPreviousMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { total: totalHeadcount, forDepartment } = useHeadcount();
 
   useEffect(() => {
     async function load() {
+      setLoading(true);
       try {
         const snapshot = await getDocs(collection(db, "responses"));
-        const all = snapshot.docs.map((d) => d.data());
+        const all = snapshot.docs
+          .map((d) => d.data())
+          .filter((r) => !departmentId || r.departmentId === departmentId);
 
+        const headcount = departmentId ? forDepartment(departmentId) : totalHeadcount;
         const cutoff30 = daysAgo(30);
         const cutoff60 = daysAgo(60);
 
@@ -74,8 +78,8 @@ export function useOrgHealthMetrics() {
           return date >= cutoff60 && date < cutoff30;
         });
 
-        setMetrics(computeMetrics(current.length ? current : all));
-        setPreviousMetrics(computeMetrics(previous.length ? previous : current));
+        setMetrics(computeMetrics(current.length ? current : all, headcount));
+        setPreviousMetrics(computeMetrics(previous.length ? previous : current, headcount));
       } catch (err) {
         console.error(err);
         setError(err);
@@ -84,7 +88,7 @@ export function useOrgHealthMetrics() {
       }
     }
     load();
-  }, []);
+  }, [departmentId, totalHeadcount, forDepartment]);
 
-  return { metrics, previousMetrics, loading, error };
+  return { metrics, previousMetrics, loading, error, headcount: departmentId ? forDepartment(departmentId) : totalHeadcount };
 }

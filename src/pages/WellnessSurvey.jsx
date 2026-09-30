@@ -1,38 +1,52 @@
 import { useState, useEffect, useCallback } from "react";
 import { SURVEY_STEPS as DEFAULT_STEPS, DEPARTMENTS } from "../data/surveyQuestion";
 import { submitSurveyResponse } from "../services/surveyService";
-import { getActivePublishedTemplate } from "../services/templateService";
+import {
+  getActivePublishedTemplate,
+  getCurrentCycleId,
+  getTemplate,
+} from "../services/templateService";
 import { validateSurveyTemplate } from "../data/surveyTemplate";
 import ScaleQuestion from "../components/ScaleQuestions";
 import ChoiceQuestion from "../components/ChoiceQuestion";
 import OpenTextQuestion from "../components/OpenTextQuestion";
 
-export default function WellnessSurvey() {
-  const [departmentId, setDepartmentId] = useState(DEPARTMENTS[0].id);
+/**
+ * Flujo de respuesta de encuesta.
+ * - Sin props: modo público/legado (carga la plantilla publicada más reciente).
+ * - Con templateId: carga esa plantilla; con fixedDepartmentId oculta el
+ *   selector de departamento; con onCompleted muestra botón de regreso.
+ */
+export default function WellnessSurvey({ templateId = null, fixedDepartmentId = null, onCompleted = null }) {
+  const [departmentId, setDepartmentId] = useState(fixedDepartmentId || DEPARTMENTS[0].id);
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [status, setStatus] = useState("idle"); // idle | submitting | done | error
   const [surveySteps, setSurveySteps] = useState(DEFAULT_STEPS);
+  const [template, setTemplate] = useState(null);
   const [loadingTemplate, setLoadingTemplate] = useState(true);
 
   useEffect(() => {
     async function loadTemplate() {
       try {
-        const published = await getActivePublishedTemplate();
-        const templateErrors = published ? validateSurveyTemplate(published) : [];
-        if (published && templateErrors.length === 0) {
-          setSurveySteps(published.questions);
-        } else if (published && templateErrors.length > 0) {
-          console.error("La plantilla publicada no es compatible; se usará la encuesta por defecto.", templateErrors);
+        const source = templateId
+          ? await getTemplate(templateId)
+          : await getActivePublishedTemplate();
+        const templateErrors = source ? validateSurveyTemplate(source) : [];
+        if (source && templateErrors.length === 0) {
+          setSurveySteps(source.questions);
+          setTemplate(source);
+        } else if (source && templateErrors.length > 0) {
+          console.error("La plantilla no es compatible; se usará la encuesta por defecto.", templateErrors);
         }
       } catch (err) {
-        console.error("No se pudo cargar la plantilla publicada, usando la encuesta por defecto.", err);
+        console.error("No se pudo cargar la plantilla, usando la encuesta por defecto.", err);
       } finally {
         setLoadingTemplate(false);
       }
     }
     loadTemplate();
-  }, []);
+  }, [templateId]);
 
   const step = surveySteps[stepIndex];
   const isLast = stepIndex === surveySteps.length - 1;
@@ -51,13 +65,19 @@ export default function WellnessSurvey() {
 
     setStatus("submitting");
     try {
-      await submitSurveyResponse({ departmentId, answers, questions: surveySteps });
+      await submitSurveyResponse({
+        departmentId,
+        answers,
+        questions: surveySteps,
+        templateId: template?.id ?? null,
+        cycleId: template ? getCurrentCycleId(template.cycle) : null,
+      });
       setStatus("done");
     } catch (err) {
       console.error(err);
       setStatus("error");
     }
-  }, [canAdvance, isLast, departmentId, answers, status, surveySteps]);
+  }, [canAdvance, isLast, departmentId, answers, status, surveySteps, template]);
 
   const goBack = useCallback(() => {
     if (stepIndex > 0) setStepIndex((i) => i - 1);
@@ -97,12 +117,21 @@ export default function WellnessSurvey() {
   if (status === "done") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface px-4">
-        <div className="max-w-md text-center bg-surface-container-lowest rounded-xl shadow-xl p-10">
+        <div className="max-w-md text-center bg-surface-container-lowest rounded-xl shadow-xl p-10 animate-enter">
           <span className="material-symbols-outlined text-secondary text-[48px]">check_circle</span>
           <h1 className="text-headline-lg text-on-surface mt-4 mb-2">¡Gracias por tu respuesta!</h1>
           <p className="text-body-md text-on-surface-variant">
             Tu retroalimentación fue registrada de forma confidencial.
           </p>
+          {onCompleted && (
+            <button
+              type="button"
+              onClick={onCompleted}
+              className="motion-press mt-6 rounded-full bg-primary text-on-primary px-space-lg py-2.5 text-label-md"
+            >
+              Volver a mi espacio
+            </button>
+          )}
         </div>
       </div>
     );
@@ -140,8 +169,8 @@ export default function WellnessSurvey() {
             />
           </div>
 
-          {/* Selector de departamento solo en el primer paso */}
-          {stepIndex === 0 && (
+          {/* Selector de departamento solo en el primer paso del modo público */}
+          {stepIndex === 0 && !fixedDepartmentId && (
             <div className="mb-6">
               <label className="text-label-sm text-on-surface-variant uppercase tracking-widest">
                 Departamento

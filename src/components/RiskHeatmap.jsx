@@ -10,17 +10,17 @@ const COLUMNS = [
 ];
 
 const TIER_STYLES = {
-  critical: "bg-red-700 text-white",
-  elevated: "bg-orange-300 text-orange-950",
-  controlled: "bg-amber-100 text-amber-950",
-  low: "bg-emerald-100 text-emerald-950",
+  critical: "bg-error text-on-error",
+  elevated: "bg-warning-container text-on-warning-container",
+  controlled: "bg-tertiary-container text-on-tertiary-container",
+  low: "bg-success-container text-on-success-container",
 };
 
 const TIER_DOT = {
-  critical: "bg-red-700",
-  elevated: "bg-orange-500",
-  controlled: "bg-amber-500",
-  low: "bg-emerald-500",
+  critical: "bg-error",
+  elevated: "bg-warning",
+  controlled: "bg-tertiary",
+  low: "bg-success",
 };
 
 function LegendDot({ colorClass, label, bold }) {
@@ -45,10 +45,10 @@ export default function RiskHeatmap({ rows }) {
           </p>
         </div>
         <div className="flex items-center gap-2 text-label-sm flex-wrap">
-          <LegendDot colorClass="bg-emerald-500" label="1,0-1,9 Bajo" />
-          <LegendDot colorClass="bg-amber-500" label="2,0-2,9 Moderado" />
-          <LegendDot colorClass="bg-orange-500" label="3,0-3,9 Elevado" />
-          <LegendDot colorClass="bg-red-700" label="4,0+ Crítico" bold />
+          <LegendDot colorClass="bg-success" label="1,0-1,9 Bajo" />
+          <LegendDot colorClass="bg-tertiary" label="2,0-2,9 Moderado" />
+          <LegendDot colorClass="bg-warning" label="3,0-3,9 Elevado" />
+          <LegendDot colorClass="bg-error" label="4,0+ Crítico" bold />
         </div>
       </div>
 
@@ -70,9 +70,6 @@ export default function RiskHeatmap({ rows }) {
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${TIER_DOT[row.tier.tone]}`} />
                     {row.name}
-                    <span className="text-label-sm text-on-surface-variant font-normal">
-                      ({row.headcount} personas)
-                    </span>
                   </div>
                 </td>
                 {COLUMNS.map((col) => (
@@ -89,7 +86,7 @@ export default function RiskHeatmap({ rows }) {
                 ))}
                 <td className="py-3 px-space-md text-right">
                   <span
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-label-sm font-bold ${TIER_STYLES[row.tier.tone]}`}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-label-sm font-bold tracking-wide shadow-sm ${TIER_STYLES[row.tier.tone]}`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${TIER_DOT[row.tier.tone]}`} />
                     {row.tier.label}

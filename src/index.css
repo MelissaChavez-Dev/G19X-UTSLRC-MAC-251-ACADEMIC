@@ -1,87 +1,256 @@
 @import "tailwindcss";
 
-@theme {
+/* Dark mode activado por clase (.dark en <html>) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   PluriOne Health — Design System "Calma Expresiva"
+   Inspirado en Material 3 Expressive, con una paleta tipo spa
+   (salvia, arena, crema) para transmitir calma, orden y salud
+   mental. Minimalista, aireado, con formas orgánicas suaves y
+   movimiento casi imperceptible.
+   ============================================================ */
+
+:root {
+  /* Superficie (claro) — crema cálido, acogedor y limpio */
+  --surface: #FBF8F2;
+  --surface-dim: #E7DFCD;
+  --surface-bright: #FBF8F2;
+  --surface-container-lowest: #FFFFFF;
+  --surface-container-low: #F6F1E6;
+  --surface-container: #F1EADB;
+  --surface-container-high: #EAE1CD;
+  --surface-container-highest: #E2D8C0;
+  --surface-variant: #E2D8C0;
+  --surface-tint: #6E8763;
+
+  --on-surface: #2A2A22;
+  --on-surface-variant: #5B5A4C;
+  --inverse-surface: #33322A;
+  --inverse-on-surface: #F5F1E5;
+
+  --outline: #8C8A78;
+  --outline-variant: #DAD2BA;
+
+  /* Primario — salvia: calma, equilibrio, naturaleza */
+  --primary: #6E8763;
+  --on-primary: #FFFFFF;
+  --primary-container: #DBE7CF;
+  --on-primary-container: #33422C;
+  --inverse-primary: #B8CBAA;
+  --primary-fixed: #DBE7CF;
+  --primary-fixed-dim: #B8CBAA;
+  --on-primary-fixed: #1E2A18;
+  --on-primary-fixed-variant: #47573C;
+
+  /* Secundario — azul cielo suave: calma, confianza, claridad */
+  --secondary: #5C88B0;
+  --on-secondary: #FFFFFF;
+  --secondary-container: #D7E6F0;
+  --on-secondary-container: #1D3A4F;
+  --secondary-fixed: #D7E6F0;
+  --secondary-fixed-dim: #A8C6DA;
+  --on-secondary-fixed: #0F2A3B;
+  --on-secondary-fixed-variant: #2E5872;
+
+  /* Terciario — verde agua suave: un puente entre salvia y azul */
+  --tertiary: #6FA39A;
+  --on-tertiary: #FFFFFF;
+  --tertiary-container: #DCEEEA;
+  --on-tertiary-container: #1F3D38;
+  --tertiary-fixed: #DCEEEA;
+  --tertiary-fixed-dim: #AFD6CD;
+  --on-tertiary-fixed: #10231F;
+  --on-tertiary-fixed-variant: #3D615A;
+
+  --error: #A5453D;
+  --on-error: #FFFFFF;
+  --error-container: #F5DAD6;
+  --on-error-container: #5C1B15;
+
+  /* Éxito / advertencia (apoyo emocional para estados) */
+  --success: #557E52;
+  --success-container: #DCEEDA;
+  --on-success-container: #23401F;
+  --warning: #A5813A;
+  --warning-container: #F3E6C8;
+  --on-warning-container: #4A3A14;
+
+  --background: var(--surface);
+  --on-background: var(--on-surface);
+
+  /* Movimiento sutil — casi imperceptible, sin rebote */
+  --ease-emphasized: cubic-bezier(0.3, 0, 0.2, 1);
+  --ease-emphasized-decelerate: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.3, 0, 0.2, 1);
+  --dur-short: 140ms;
+  --dur-med: 240ms;
+  --dur-long: 380ms;
+
+  /* Elevación muy suave, casi plana */
+  --shadow-1: 0 1px 2px rgb(42 42 34 / 0.05), 0 2px 10px rgb(110 135 99 / 0.05);
+  --shadow-2: 0 2px 6px rgb(42 42 34 / 0.06), 0 8px 20px rgb(110 135 99 / 0.07);
+  --shadow-3: 0 4px 12px rgb(42 42 34 / 0.08), 0 16px 36px rgb(110 135 99 / 0.09);
+}
+
+.dark {
+  /* Superficie (oscuro) — espresso cálido, no negro puro ni azul noche */
+  --surface: #1E1C16;
+  --surface-dim: #1E1C16;
+  --surface-bright: #46432F;
+  --surface-container-lowest: #17150F;
+  --surface-container-low: #26231B;
+  --surface-container: #2C2921;
+  --surface-container-high: #36322A;
+  --surface-container-highest: #413C31;
+  --surface-variant: #413C31;
+  --surface-tint: #B8CBAA;
+
+  --on-surface: #EBE6D8;
+  --on-surface-variant: #CBC5B2;
+  --inverse-surface: #EBE6D8;
+  --inverse-on-surface: #33322A;
+
+  --outline: #948E7A;
+  --outline-variant: #4A4636;
+
+  --primary: #B8CBAA;
+  --on-primary: #263420;
+  --primary-container: #47573C;
+  --on-primary-container: #DBE7CF;
+  --inverse-primary: #6E8763;
+  --primary-fixed: #DBE7CF;
+  --primary-fixed-dim: #B8CBAA;
+  --on-primary-fixed: #1E2A18;
+  --on-primary-fixed-variant: #47573C;
+
+  --secondary: #A8C6DA;
+  --on-secondary: #123047;
+  --secondary-container: #2E5872;
+  --on-secondary-container: #D7E6F0;
+  --secondary-fixed: #D7E6F0;
+  --secondary-fixed-dim: #A8C6DA;
+  --on-secondary-fixed: #0F2A3B;
+  --on-secondary-fixed-variant: #2E5872;
+
+  --tertiary: #AFD6CD;
+  --on-tertiary: #17332D;
+  --tertiary-container: #3D615A;
+  --on-tertiary-container: #DCEEEA;
+  --tertiary-fixed: #DCEEEA;
+  --tertiary-fixed-dim: #AFD6CD;
+  --on-tertiary-fixed: #10231F;
+  --on-tertiary-fixed-variant: #3D615A;
+
+  --error: #E2A29B;
+  --on-error: #5C1B15;
+  --error-container: #7A2E26;
+  --on-error-container: #F5DAD6;
+
+  --success: #A0C89B;
+  --success-container: #3A5836;
+  --on-success-container: #DCEEDA;
+  --warning: #D8B96E;
+  --warning-container: #5A4620;
+  --on-warning-container: #F3E6C8;
+
+  --background: var(--surface);
+  --on-background: var(--on-surface);
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.35), 0 2px 10px rgb(0 0 0 / 0.25);
+  --shadow-2: 0 2px 6px rgb(0 0 0 / 0.4), 0 8px 20px rgb(0 0 0 / 0.3);
+  --shadow-3: 0 4px 14px rgb(0 0 0 / 0.45), 0 16px 36px rgb(0 0 0 / 0.35);
+}
+
+@theme inline {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  /* Superficie */
-  --color-surface: #F8F9FF;
-  --color-surface-dim: #CBDBF5;
-  --color-surface-bright: #F8F9FF;
-  --color-surface-container-lowest: #FFFFFF;
-  --color-surface-container-low: #EFF4FF;
-  --color-surface-container: #E5EEFF;
-  --color-surface-container-high: #DCE9FF;
-  --color-surface-container-highest: #D3E4FE;
-  --color-surface-variant: #D3E4FE;
-  --color-surface-tint: #565E74;
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-bright: var(--surface-bright);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-surface-variant: var(--surface-variant);
+  --color-surface-tint: var(--surface-tint);
 
-  --color-on-surface: #0B1C30;
-  --color-on-surface-variant: #45464D;
-  --color-inverse-surface: #213145;
-  --color-inverse-on-surface: #EAF1FF;
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-inverse-surface: var(--inverse-surface);
+  --color-inverse-on-surface: var(--inverse-on-surface);
 
-  --color-outline: #76777D;
-  --color-outline-variant: #C6C6CD;
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
 
-  /* Primario / Secundario / Terciario */
-  --color-primary: #000000;
-  --color-on-primary: #FFFFFF;
-  --color-primary-container: #131B2E;
-  --color-on-primary-container: #7C839B;
-  --color-inverse-primary: #BEC6E0;
-  --color-primary-fixed: #DAE2FD;
-  --color-primary-fixed-dim: #BEC6E0;
-  --color-on-primary-fixed: #131B2E;
-  --color-on-primary-fixed-variant: #3F465C;
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-inverse-primary: var(--inverse-primary);
+  --color-primary-fixed: var(--primary-fixed);
+  --color-primary-fixed-dim: var(--primary-fixed-dim);
+  --color-on-primary-fixed: var(--on-primary-fixed);
+  --color-on-primary-fixed-variant: var(--on-primary-fixed-variant);
 
-  --color-secondary: #006C49;
-  --color-on-secondary: #FFFFFF;
-  --color-secondary-container: #6CF8BB;
-  --color-on-secondary-container: #00714D;
-  --color-secondary-fixed: #6FFBBE;
-  --color-secondary-fixed-dim: #4EDEA3;
-  --color-on-secondary-fixed: #002113;
-  --color-on-secondary-fixed-variant: #005236;
+  --color-secondary: var(--secondary);
+  --color-on-secondary: var(--on-secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-secondary-fixed: var(--secondary-fixed);
+  --color-secondary-fixed-dim: var(--secondary-fixed-dim);
+  --color-on-secondary-fixed: var(--on-secondary-fixed);
+  --color-on-secondary-fixed-variant: var(--on-secondary-fixed-variant);
 
-  --color-tertiary: #000000;
-  --color-on-tertiary: #FFFFFF;
-  --color-tertiary-container: #07006C;
-  --color-on-tertiary-container: #7073FF;
-  --color-tertiary-fixed: #E1E0FF;
-  --color-tertiary-fixed-dim: #C0C1FF;
-  --color-on-tertiary-fixed: #07006C;
-  --color-on-tertiary-fixed-variant: #2F2EBE;
+  --color-tertiary: var(--tertiary);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary-container: var(--on-tertiary-container);
+  --color-tertiary-fixed: var(--tertiary-fixed);
+  --color-tertiary-fixed-dim: var(--tertiary-fixed-dim);
+  --color-on-tertiary-fixed: var(--on-tertiary-fixed);
+  --color-on-tertiary-fixed-variant: var(--on-tertiary-fixed-variant);
 
-  --color-error: #BA1A1A;
-  --color-on-error: #FFFFFF;
-  --color-error-container: #FFDAD6;
-  --color-on-error-container: #93000A;
+  --color-error: var(--error);
+  --color-on-error: var(--on-error);
+  --color-error-container: var(--error-container);
+  --color-on-error-container: var(--on-error-container);
 
-  --color-background: #F8F9FF;
-  --color-on-background: #0B1C30;
+  --color-success: var(--success);
+  --color-success-container: var(--success-container);
+  --color-on-success-container: var(--on-success-container);
+  --color-warning: var(--warning);
+  --color-warning-container: var(--warning-container);
+  --color-on-warning-container: var(--on-warning-container);
 
-  /* Radios */
-  --radius-sm: 0.25rem;
-  --radius: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
+  --color-background: var(--background);
+  --color-on-background: var(--on-background);
 
-  /* Espaciados */
-  --spacing-space-xs: 0.25rem;
-  --spacing-space-sm: 0.5rem;
-  --spacing-space-md: 1rem;
-  --spacing-gutter: 1.5rem;
-  --spacing-space-lg: 1.5rem;
-  --spacing-margin: 2rem;
-  --spacing-space-xl: 2rem;
+  /* Radios orgánicos — esquinas generosas, formas suaves */
+  --radius-sm: 0.5rem;
+  --radius: 0.875rem;
+  --radius-md: 1.25rem;
+  --radius-lg: 1.75rem;
+  --radius-xl: 2.5rem;
+  --radius-full: 9999px;
+
+  /* Espaciados aireados */
+  --spacing-space-xs: 0.375rem;
+  --spacing-space-sm: 0.625rem;
+  --spacing-space-md: 1.25rem;
+  --spacing-gutter: 1.75rem;
+  --spacing-space-lg: 2rem;
+  --spacing-margin: 2.5rem;
+  --spacing-space-xl: 2.75rem;
 }
 
 /* Escala tipográfica "Executive Pulse" (de DESIGN.md) */
-.text-display-lg       { font: 700 40px/48px var(--font-sans); letter-spacing: -0.03em; }
-.text-display-lg-mobile{ font: 700 32px/40px var(--font-sans); letter-spacing: -0.025em; }
-.text-headline-xl       { font: 700 30px/38px var(--font-sans); letter-spacing: -0.025em; }
-.text-headline-xl-mobile{ font: 700 24px/32px var(--font-sans); letter-spacing: -0.02em; }
+.text-display-lg        { font: 600 40px/48px var(--font-sans); letter-spacing: -0.03em; }
+.text-display-lg-mobile { font: 600 32px/40px var(--font-sans); letter-spacing: -0.025em; }
+.text-headline-xl       { font: 600 30px/38px var(--font-sans); letter-spacing: -0.025em; }
+.text-headline-xl-mobile{ font: 600 24px/32px var(--font-sans); letter-spacing: -0.02em; }
 .text-headline-lg       { font: 600 24px/32px var(--font-sans); letter-spacing: -0.02em; }
 .text-headline-md       { font: 600 20px/28px var(--font-sans); letter-spacing: -0.015em; }
 .text-headline-sm       { font: 600 16px/24px var(--font-sans); letter-spacing: -0.01em; }
@@ -90,15 +259,64 @@
 .text-body-sm           { font: 400 13px/18px var(--font-sans); letter-spacing: 0.005em; }
 .text-label-md          { font: 600 12px/16px var(--font-sans); letter-spacing: 0.02em; }
 .text-label-sm          { font: 600 11px/14px var(--font-sans); letter-spacing: 0.04em; }
-.text-metric-val        { font: 700 28px/34px var(--font-sans); letter-spacing: -0.03em; }
+.text-metric-val        { font: 600 28px/34px var(--font-sans); letter-spacing: -0.03em; }
 
 body {
   background-color: var(--color-surface);
   color: var(--color-on-surface);
   font-variant-numeric: tabular-nums;
+  transition: background-color var(--dur-med) var(--ease-emphasized),
+              color var(--dur-med) var(--ease-emphasized);
 }
 
-/* Íconos Material Symbols, tal como los usa Stitch */
+html {
+  background-color: var(--color-surface);
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}
+
+/* Fondo ambiental: manchas orgánicas muy suaves (salvia/arena) que dan
+   profundidad sin distraer. Se aplica a los contenedores de página. */
+.app-canvas {
+  position: relative;
+  min-height: 100vh;
+  background-color: var(--color-surface);
+  overflow-x: hidden;
+}
+.app-canvas::before,
+.app-canvas::after {
+  content: "";
+  position: fixed;
+  filter: blur(110px);
+  pointer-events: none;
+  z-index: 0;
+}
+.app-canvas::before {
+  width: 40vw;
+  height: 40vw;
+  top: -16vw;
+  right: -10vw;
+  border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%;
+  background: rgb(110 135 99 / 0.10);
+}
+.app-canvas::after {
+  width: 34vw;
+  height: 34vw;
+  bottom: -12vw;
+  left: 6vw;
+  border-radius: 63% 37% 42% 58% / 58% 42% 58% 42%;
+  background: rgb(169 130 94 / 0.08);
+}
+.dark .app-canvas::before {
+  background: rgb(184 203 170 / 0.06);
+}
+.dark .app-canvas::after {
+  background: rgb(217 185 142 / 0.05);
+}
+
+/* Íconos Material Symbols */
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined';
   font-weight: normal;
@@ -111,3 +329,85 @@ body {
   word-wrap: normal;
   direction: ltr;
 }
+
+/* ============================================================
+   Utilidades de movimiento — sutiles, sin rebote, casi quietas
+   ============================================================ */
+
+/* Tarjeta interactiva: solo cambia borde/sombra, sin desplazamiento */
+.motion-card {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--outline-variant);
+  box-shadow: var(--shadow-1);
+  transition:
+    box-shadow var(--dur-med) var(--ease-emphasized),
+    border-color var(--dur-med) var(--ease-emphasized),
+    background-color var(--dur-med) var(--ease-emphasized);
+}
+.motion-card:hover {
+  border-color: var(--outline);
+  box-shadow: var(--shadow-2);
+}
+
+/* Botones: transición de color/opacidad, sin salto */
+.motion-press {
+  transition:
+    box-shadow var(--dur-med) var(--ease-emphasized),
+    background-color var(--dur-med) var(--ease-emphasized),
+    color var(--dur-med) var(--ease-emphasized),
+    opacity var(--dur-short) var(--ease-emphasized);
+}
+.motion-press:active { opacity: 0.75; transition-duration: 90ms; }
+
+/* Entradas suaves (para listas, tarjetas, secciones) */
+@keyframes expressive-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-enter {
+  animation: expressive-enter var(--dur-long) var(--ease-emphasized-decelerate) both;
+}
+
+/* Aparición suave (chips, badges, notificaciones) */
+@keyframes expressive-pop {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-pop {
+  animation: expressive-pop var(--dur-med) var(--ease-emphasized) both;
+}
+
+/* Pulso ambiental (indicadores vivos, puntos de estado) — lento y tenue */
+@keyframes ambient-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(110 135 99 / 0.25); }
+  50%      { box-shadow: 0 0 0 6px rgb(110 135 99 / 0); }
+}
+.animate-ambient {
+  animation: ambient-pulse 3.2s var(--ease-emphasized) infinite;
+}
+
+/* Estado de carga: shimmer suave */
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(
+    100deg,
+    var(--surface-container) 40%,
+    var(--surface-container-high) 50%,
+    var(--surface-container) 60%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s var(--ease-emphasized) infinite;
+}
+
+/* Accesibilidad: respetar reducción de movimiento */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+

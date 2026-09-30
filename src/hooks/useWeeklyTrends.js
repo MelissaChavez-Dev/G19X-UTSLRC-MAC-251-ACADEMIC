@@ -1,18 +1,22 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
+import { useHeadcount } from "./useHeadcount";
 
-const TOTAL_HEADCOUNT = 78;
-
-export function useWeeklyTrends() {
+export function useWeeklyTrends(departmentId = null) {
   const [trends, setTrends] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { total: totalHeadcount, forDepartment } = useHeadcount();
 
   useEffect(() => {
     async function load() {
+      setLoading(true);
       try {
+        const headcount = departmentId ? forDepartment(departmentId) : totalHeadcount;
         const snapshot = await getDocs(collection(db, "responses"));
-        const all = snapshot.docs.map((d) => d.data());
+        const all = snapshot.docs
+          .map((d) => d.data())
+          .filter((r) => !departmentId || r.departmentId === departmentId);
 
         const byWeek = {};
         all.forEach((r) => {
@@ -34,7 +38,7 @@ export function useWeeklyTrends() {
           const avgEmotional = items.reduce((s, r) => s + (r.psychosocialFactors?.emotionalLabor || 0), 0) / n;
           const attritionRisk = Math.round((((avgFatigue + avgEmotional) / 2) / 5) * 100 * 0.6);
 
-          const activePulseRate = Math.min(100, Math.round((items.length / TOTAL_HEADCOUNT) * 100));
+          const activePulseRate = Math.min(100, Math.round((items.length / headcount) * 100));
 
           const psychSafety = Math.round(
             (items.reduce((s, r) => s + (r.psychosocialFactors?.psychSafety || 0), 0) / n) * 10
@@ -51,7 +55,7 @@ export function useWeeklyTrends() {
       }
     }
     load();
-  }, []);
+  }, [departmentId, totalHeadcount, forDepartment]);
 
   return { trends, loading };
 }

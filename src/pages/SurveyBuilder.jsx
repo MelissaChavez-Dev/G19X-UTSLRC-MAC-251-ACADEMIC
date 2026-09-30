@@ -14,9 +14,18 @@ import Sidebar from "../components/Sidebar";
 import TopBar from "../components/TopBar";
 import SortableQuestionBlock from "../components/builder/SortableQuestionBlock";
 import { BLOCK_TYPES } from "../data/blockLibrary";
+import { DEPARTMENTS } from "../data/surveyQuestion";
 import {
-  createTemplate, saveTemplateQuestions, publishTemplate, getTemplate,
+  createTemplate, saveTemplateQuestions, publishTemplate, archiveTemplate,
+  getTemplate, listTemplates, CYCLE_LABELS,
 } from "../services/templateService";
+import { useSidebarState } from "../hooks/useSidebarState";
+
+const STATUS_LABELS = {
+  draft: { label: "Borrador", className: "bg-surface-container-high text-on-surface-variant" },
+  published: { label: "Activa", className: "bg-success-container text-on-success-container" },
+  archived: { label: "Archivada", className: "bg-error-container text-on-error-container" },
+};
 
 let nextId = 1;
 
@@ -50,6 +59,7 @@ function DraggableBlockButton({ block, onAdd }) {
 export default function SurveyBuilder() {
   const { templateId: paramId } = useParams();
   const navigate = useNavigate();
+  const { collapsed } = useSidebarState();
 
   const [templateId, setTemplateId] = useState(paramId || null);
   const [title, setTitle] = useState("Nueva encuesta");
@@ -58,6 +68,9 @@ export default function SurveyBuilder() {
   const [savedAt, setSavedAt] = useState(null);
   const [error, setError] = useState("");
   const [loadingTemplate, setLoadingTemplate] = useState(Boolean(paramId));
+  const [targetDepartments, setTargetDepartments] = useState([]);
+  const [cycle, setCycle] = useState("weekly");
+  const [templateList, setTemplateList] = useState(null); // lista cuando no hay :templateId
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -68,7 +81,15 @@ export default function SurveyBuilder() {
   useEffect(() => {
     async function init() {
       if (!paramId) {
-        setLoadingTemplate(false);
+        // Sin :templateId → vista de lista de plantillas
+        try {
+          setTemplateList(await listTemplates());
+        } catch (err) {
+          console.error(err);
+          setTemplateList([]);
+        } finally {
+          setLoadingTemplate(false);
+        }
         return;
       }
 
@@ -79,6 +100,8 @@ export default function SurveyBuilder() {
         }
         setTitle(tpl.title || "Nueva encuesta");
         setQuestions(tpl.questions || []);
+        setTargetDepartments(tpl.targetDepartments || []);
+        setCycle(tpl.cycle || "weekly");
       } catch (err) {
         setError(err.message || "No se pudo cargar la plantilla.");
       } finally {
@@ -172,14 +195,30 @@ export default function SurveyBuilder() {
     try {
       const id = await ensureTemplateId();
       await saveTemplateQuestions(id, questions, title.trim() || "Nueva encuesta");
-      await publishTemplate(id);
+      await publishTemplate(id, { targetDepartments, cycle });
       setSavedAt(new Date());
-      alert("Encuesta publicada. Ahora es la que se muestra en /survey.");
+      alert("Encuesta publicada. Ya está disponible para los departamentos seleccionados.");
     } catch (err) {
       setError(err.message || "No se pudo publicar la encuesta.");
     } finally {
       setSaving(false);
     }
+  }
+
+  function toggleTargetDepartment(deptId) {
+    setTargetDepartments((prev) =>
+      prev.includes(deptId) ? prev.filter((d) => d !== deptId) : [...prev, deptId]
+    );
+  }
+
+  async function handleCreateNew() {
+    const id = await createTemplate("Nueva encuesta");
+    navigate(`/survey-builder/${id}`);
+  }
+
+  async function handleArchive(id) {
+    await archiveTemplate(id);
+    setTemplateList(await listTemplates());
   }
 
   if (loadingTemplate) {
@@ -190,11 +229,90 @@ export default function SurveyBuilder() {
     );
   }
 
+  // Vista de lista: varias encuestas activas simultáneamente
+  if (!paramId && templateList) {
+    return (
+      <div className="min-h-screen bg-surface">
+        <Sidebar />
+        <TopBar />
+        <main className={`${collapsed ? "pl-20" : "pl-64"} pt-16 transition-[padding] duration-300 ease-out`}>
+          <div className="px-space-xl py-space-lg flex flex-col gap-space-lg max-w-5xl">
+            <div className="flex items-end justify-between animate-enter">
+              <div>
+                <span className="text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">
+                  Encuestas
+                </span>
+                <h1 className="text-headline-xl text-on-surface tracking-tight">Plantillas de encuesta</h1>
+                <p className="text-body-md text-on-surface-variant mt-1">
+                  Puedes tener varias encuestas activas al mismo tiempo, cada una dirigida a sus departamentos.
+                </p>
+              </div>
+              <button
+                onClick={handleCreateNew}
+                className="motion-press rounded-full bg-primary text-on-primary px-space-lg py-2.5 text-label-md"
+              >
+                Nueva encuesta
+              </button>
+            </div>
+
+            {templateList.length === 0 ? (
+              <p className="text-body-md text-on-surface-variant">Aún no hay encuestas. Crea la primera.</p>
+            ) : (
+              <div className="flex flex-col gap-space-sm">
+                {templateList.map((tpl, index) => {
+                  const status = STATUS_LABELS[tpl.status] || STATUS_LABELS.draft;
+                  const targets = tpl.targetDepartments?.length
+                    ? tpl.targetDepartments
+                        .map((id) => DEPARTMENTS.find((d) => d.id === id)?.name || id)
+                        .join(", ")
+                    : "Todos los departamentos";
+                  return (
+                    <div
+                      key={tpl.id}
+                      className="motion-card bg-surface-container-lowest p-space-md flex items-center gap-space-md animate-enter"
+                      style={{ animationDelay: `${index * 60}ms` }}
+                    >
+                      <span className={`text-label-md px-space-sm py-1 rounded-full shrink-0 ${status.className}`}>
+                        {status.label}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-body-md text-on-surface font-semibold block truncate">
+                          {tpl.title}
+                        </span>
+                        <span className="text-body-sm text-on-surface-variant">
+                          {(tpl.questions || []).length} preguntas · {CYCLE_LABELS[tpl.cycle] || "Semanal"} · {targets}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => navigate(`/survey-builder/${tpl.id}`)}
+                        className="motion-press text-label-md text-primary hover:underline shrink-0"
+                      >
+                        Editar
+                      </button>
+                      {tpl.status === "published" && (
+                        <button
+                          onClick={() => handleArchive(tpl.id)}
+                          className="motion-press text-label-md text-error hover:underline shrink-0"
+                        >
+                          Archivar
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-surface">
       <Sidebar />
       <TopBar />
-      <main className="pl-64 pt-16">
+      <main className={`${collapsed ? "pl-20" : "pl-64"} pt-16 transition-[padding] duration-300 ease-out`}>
         <div className="px-space-xl py-space-lg">
           <div className="flex items-center justify-between mb-space-md">
             <div>
@@ -235,6 +353,54 @@ export default function SurveyBuilder() {
             </p>
           )}
           {error && <p className="text-body-sm text-error mb-space-md">{error}</p>}
+
+          {/* Segmentación al publicar */}
+          <div className="motion-card bg-surface-container-lowest p-space-md mb-space-lg flex flex-col gap-space-sm">
+            <span className="text-label-md text-on-surface font-semibold">
+              ¿A quién va dirigida esta encuesta?
+            </span>
+            <div className="flex flex-wrap items-center gap-space-xs">
+              {DEPARTMENTS.map((dept) => {
+                const selected = targetDepartments.includes(dept.id);
+                return (
+                  <button
+                    key={dept.id}
+                    type="button"
+                    onClick={() => toggleTargetDepartment(dept.id)}
+                    aria-pressed={selected}
+                    className={`motion-press text-label-md px-space-md py-1.5 rounded-full ${
+                      selected
+                        ? "bg-primary text-on-primary"
+                        : "bg-surface-container-low text-on-surface-variant"
+                    }`}
+                  >
+                    {dept.name}
+                  </button>
+                );
+              })}
+              <span className="text-body-sm text-on-surface-variant ml-space-xs">
+                {targetDepartments.length === 0 ? "Todos los departamentos" : `${targetDepartments.length} seleccionados`}
+              </span>
+            </div>
+            <div className="flex items-center gap-space-sm">
+              <span className="text-label-md text-on-surface">Periodicidad:</span>
+              {Object.entries(CYCLE_LABELS).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setCycle(id)}
+                  aria-pressed={cycle === id}
+                  className={`motion-press text-label-md px-space-md py-1.5 rounded-full ${
+                    cycle === id
+                      ? "bg-tertiary text-on-tertiary"
+                      : "bg-surface-container-low text-on-surface-variant"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-space-sm mb-space-lg">
             <div className="rounded-lg bg-surface-container-low p-space-sm">

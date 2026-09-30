@@ -81,7 +81,7 @@ export default function MetricDetailModal({
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={departmentData} margin={{ top: 8, right: 8, left: -16, bottom: 18 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#d7dee8" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--outline-variant)" />
                   <XAxis dataKey="name" angle={-18} textAnchor="end" height={48} tick={{ fontSize: 10 }} />
                   <YAxis tick={{ fontSize: 10 }} width={32} />
                   <Tooltip
@@ -93,7 +93,7 @@ export default function MetricDetailModal({
                     {departmentData.map((item, index) => (
                       <Cell
                         key={item.fullName}
-                        fill={index === bestIndex ? "#0f766e" : index === attentionIndex ? "#ea580c" : "#5b8def"}
+                        fill={index === bestIndex ? "var(--success)" : index === attentionIndex ? "var(--secondary)" : "var(--tertiary)"}
                       />
                     ))}
                   </Bar>
@@ -101,10 +101,10 @@ export default function MetricDetailModal({
               </ResponsiveContainer>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-label-sm">
-              <p className="rounded-md bg-emerald-50 text-emerald-950 p-2">
+              <p className="rounded-md bg-success-container text-on-success-container p-2">
                 Mejor resultado: <strong>{bestDepartment.fullName}</strong> ({formatValue(bestDepartment)})
               </p>
-              <p className="rounded-md bg-orange-50 text-orange-950 p-2">
+              <p className="rounded-md bg-warning-container text-on-warning-container p-2">
                 {config.higherIsBetter ? "Más oportunidad" : "Mayor atención"}: <strong>{attentionDepartment.fullName}</strong> ({formatValue(attentionDepartment)})
               </p>
             </div>
@@ -122,7 +122,7 @@ export default function MetricDetailModal({
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
                   labelFormatter={(w) => `Semana ${w}`}
                 />
-                <Line type="monotone" dataKey={dataKey} stroke="#000000" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey={dataKey} stroke="var(--primary)" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </section>

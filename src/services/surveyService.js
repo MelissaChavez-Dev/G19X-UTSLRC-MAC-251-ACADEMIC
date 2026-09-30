@@ -1,7 +1,9 @@
 import { collection, addDoc, Timestamp } from "firebase/firestore";
-import { db } from "./firebase";
+import { auth, db } from "./firebase";
 import { getISOWeek } from "../utils/dateUtils";
 import { SURVEY_STEPS as DEFAULT_STEPS } from "../data/surveyQuestion";
+import { markSurveyCompleted } from "./templateService";
+import { logActivity } from "./activityService";
 
 // Traduce las respuestas crudas de la encuesta al esquema de "responses"
 // que ya usa el script de datos simulados (scripts/seed.js).
@@ -33,7 +35,7 @@ function getAnswerFor(questions, answers, mapsTo, fallbackId) {
   return question ? answers[question.id] : undefined;
 }
 
-export async function submitSurveyResponse({ departmentId, answers, questions = DEFAULT_STEPS }) {
+export async function submitSurveyResponse({ departmentId, answers, questions = DEFAULT_STEPS, templateId = null, cycleId = null }) {
   const now = new Date();
   const surveyQuestions = questions?.length ? questions : DEFAULT_STEPS;
 
@@ -43,6 +45,7 @@ export async function submitSurveyResponse({ departmentId, answers, questions = 
     submittedAt: Timestamp.fromDate(now),
     source: "live", // distingue respuestas reales de las simuladas por el script
   };
+  if (templateId) payload.templateId = templateId;
 
   surveyQuestions.forEach((question) => {
     const value = answers[question.id];
@@ -69,4 +72,14 @@ export async function submitSurveyResponse({ departmentId, answers, questions = 
   if (payload.openText === undefined) payload.openText = "";
 
   await addDoc(collection(db, "responses"), payload);
+
+  // Si quien responde es un colaborador autenticado, registramos su
+  // participación (para "encuestas pendientes") y su presencia digital.
+  const currentUser = auth.currentUser;
+  if (currentUser) {
+    if (templateId && cycleId) {
+      await markSurveyCompleted({ userId: currentUser.uid, templateId, cycleId });
+    }
+    logActivity("survey_submit");
+  }
 }

@@ -2,8 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  updateProfile,
   signInWithPopup,
   GoogleAuthProvider,
   FacebookAuthProvider,
@@ -35,59 +33,24 @@ function getAuthErrorMessage(code) {
 }
 
 export default function Login() {
-  const [mode, setMode] = useState("signin"); // "signin" | "signup"
-  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [agreeTerms, setAgreeTerms] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(null); // null | "google" | "facebook" | "apple"
   const [resetStatus, setResetStatus] = useState(null); // null | "sending" | "sent"
   const navigate = useNavigate();
 
-  const isSignUp = mode === "signup";
-
-  function switchMode(nextMode) {
-    setMode(nextMode);
-    setError("");
-    setResetStatus(null);
-  }
-
-  function validate() {
-    if (isSignUp) {
-      if (fullName.trim().length < 2) return "Ingresa tu nombre completo.";
-      if (password.length < 8) return "La contraseña debe tener al menos 8 caracteres.";
-      if (password !== confirmPassword) return "Las contraseñas no coinciden.";
-      if (!agreeTerms) return "Debes aceptar los Términos para continuar.";
-    }
-    return "";
-  }
-
   async function handleSubmit(e) {
     e.preventDefault();
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
     setError("");
     setLoading(true);
     try {
-      if (isSignUp) {
-        const credential = await createUserWithEmailAndPassword(auth, email, password);
-        if (fullName.trim()) {
-          await updateProfile(credential.user, { displayName: fullName.trim() });
-        }
-      } else {
-        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-        await signInWithEmailAndPassword(auth, email, password);
-      }
-      navigate("/dashboard");
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate("/");
     } catch (err) {
       setError(getAuthErrorMessage(err.code));
     } finally {
@@ -110,7 +73,7 @@ export default function Login() {
           ? new FacebookAuthProvider()
           : new OAuthProvider("apple.com");
       await signInWithPopup(auth, provider);
-      navigate("/dashboard");
+      navigate("/");
     } catch (err) {
       setError(getAuthErrorMessage(err.code));
     } finally {
@@ -160,43 +123,11 @@ export default function Login() {
         <section className="login-form-panel">
           <div className="login-form-content">
             <div className="login-form-heading">
-              <h2>{isSignUp ? "Crea tu cuenta" : "Inicia sesión"}</h2>
-              {isSignUp ? (
-                <p>
-                  ¿Ya tienes una cuenta? Puedes{" "}
-                  <button type="button" className="login-inline-link" onClick={() => switchMode("signin")}>
-                    inicia sesión aquí
-                  </button>
-                </p>
-              ) : (
-                <p>
-                  ¿No tienes una cuenta? Puedes{" "}
-                  <button type="button" className="login-inline-link" onClick={() => switchMode("signup")}>
-                    regístrate aquí
-                  </button>
-                </p>
-              )}
+              <h2>Inicia sesión</h2>
+              <p>Tu cuenta es creada por la administración de tu organización.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="login-form" noValidate>
-              {isSignUp && (
-                <div className="login-field">
-                  <label htmlFor="login-name">Nombre completo</label>
-                  <div className="login-input-wrap">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7Z" /></svg>
-                    <input
-                      id="login-name"
-                      type="text"
-                      autoComplete="name"
-                      placeholder="Tu nombre"
-                      required
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-
               <div className="login-field">
                 <label htmlFor="login-email">Correo electrónico</label>
                 <div className="login-input-wrap">
@@ -204,7 +135,7 @@ export default function Login() {
                   <input
                     id="login-email"
                     type="email"
-                    autoComplete={isSignUp ? "email" : "username"}
+                    autoComplete="username"
                     placeholder="Ingresa tu correo electrónico"
                     required
                     value={email}
@@ -220,7 +151,7 @@ export default function Login() {
                   <input
                     id="login-password"
                     type={showPassword ? "text" : "password"}
-                    autoComplete={isSignUp ? "new-password" : "current-password"}
+                    autoComplete="current-password"
                     placeholder="Ingresa tu contraseña"
                     required
                     value={password}
@@ -240,42 +171,9 @@ export default function Login() {
                     )}
                   </button>
                 </div>
-                {isSignUp && <span className="login-hint">Usa al menos 8 caracteres.</span>}
               </div>
 
-              {isSignUp && (
-                <div className="login-field">
-                  <label htmlFor="login-confirm-password">Confirmar contraseña</label>
-                  <div className="login-input-wrap">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3m-11 0h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Zm5 5v2" /></svg>
-                    <input
-                      id="login-confirm-password"
-                      type={showConfirmPassword ? "text" : "password"}
-                      autoComplete="new-password"
-                      placeholder="Confirma tu contraseña"
-                      required
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                    />
-                    <button
-                      className="login-password-toggle"
-                      type="button"
-                      onClick={() => setShowConfirmPassword((visible) => !visible)}
-                      aria-label={showConfirmPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                      aria-pressed={showConfirmPassword}
-                    >
-                      {showConfirmPassword ? (
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.2A10.8 10.8 0 0 1 12 5c4.5 0 8.3 2.9 9.5 7a10.8 10.8 0 0 1-3 4.5M6.2 6.2A10.8 10.8 0 0 0 2.5 12c1.2 4.1 5 7 9.5 7 1 0 2-.2 2.9-.5" /></svg>
-                      ) : (
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.3-7 9.5-7 9.5 7 9.5 7-3.3 7-9.5 7-9.5-7-9.5-7Z" /><circle cx="12" cy="12" r="3" /></svg>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {!isSignUp && (
-                <div className="login-row-between">
+              <div className="login-row-between">
                   <label className="login-checkbox">
                     <input
                       type="checkbox"
@@ -293,7 +191,6 @@ export default function Login() {
                     {resetStatus === "sending" ? "Enviando..." : "¿Olvidaste tu contraseña?"}
                   </button>
                 </div>
-              )}
 
               {resetStatus === "sent" && (
                 <p className="login-success" role="status">
@@ -301,26 +198,10 @@ export default function Login() {
                 </p>
               )}
 
-              {isSignUp && (
-                <label className="login-terms">
-                  <input
-                    type="checkbox"
-                    checked={agreeTerms}
-                    onChange={(e) => setAgreeTerms(e.target.checked)}
-                    required
-                  />
-                  <span>
-                    Acepto los <a href="/terminos">Términos</a> y el <a href="/privacidad">Aviso de privacidad</a>.
-                  </span>
-                </label>
-              )}
-
               {error && <p className="login-error" role="alert">{error}</p>}
 
               <button className="login-submit" type="submit" disabled={loading}>
-                {loading
-                  ? (isSignUp ? "Creando cuenta..." : "Ingresando...")
-                  : (isSignUp ? "Registrarme" : "Ingresar")}
+                {loading ? "Ingresando..." : "Ingresar"}
               </button>
 
               <div className="login-divider"><span>o continúa con</span></div>

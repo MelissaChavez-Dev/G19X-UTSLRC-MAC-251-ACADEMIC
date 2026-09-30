@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { DEPARTMENTS } from "../data/surveyQuestion";
+import { useHeadcount } from "./useHeadcount";
 
 const FACTOR_KEYS = ["cognitiveLoad", "roleAmbiguity", "emotionalLabor", "shiftFatigue", "autonomy", "psychSafety"];
 const PROTECTIVE_FACTORS = ["autonomy", "psychSafety"];
@@ -18,18 +19,21 @@ function riskTier(avgRisk) {
   return { label: "BAJO RIESGO", tone: "low" };
 }
 
-export function useDepartmentRisk() {
+export function useDepartmentRisk(departmentId = null) {
   const [rows, setRows] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { forDepartment } = useHeadcount();
 
   useEffect(() => {
     async function load() {
+      setLoading(true);
       try {
         const snapshot = await getDocs(collection(db, "responses"));
         const all = snapshot.docs.map((d) => d.data());
 
         const result = DEPARTMENTS.map((dept) => {
+          const deptHeadcount = forDepartment(dept.id);
           const deptResponses = all.filter((r) => r.departmentId === dept.id);
           const factors = {};
           const riskEquivalents = [];
@@ -54,12 +58,14 @@ export function useDepartmentRisk() {
 
           const avgRisk = average(riskEquivalents);
           const attritionRisk = Math.round((((factors.shiftFatigue + factors.emotionalLabor) / 2) / 5) * 100 * 0.6);
-          const pulseRate = Math.min(100, Math.round((deptResponses.length / dept.headcount) * 100));
+          const pulseRate = deptHeadcount > 0
+            ? Math.min(100, Math.round((deptResponses.length / deptHeadcount) * 100))
+            : 0;
 
           return {
             id: dept.id,
             name: dept.name,
-            headcount: dept.headcount,
+            headcount: deptHeadcount,
             factors,
             avgRisk,
             enps,
@@ -72,7 +78,7 @@ export function useDepartmentRisk() {
         });
 
         result.sort((a, b) => b.avgRisk - a.avgRisk);
-        setRows(result);
+        setRows(departmentId ? result.filter((row) => row.id === departmentId) : result);
       } catch (err) {
         console.error(err);
         setError(err);
@@ -81,7 +87,7 @@ export function useDepartmentRisk() {
       }
     }
     load();
-  }, []);
+  }, [departmentId, forDepartment]);
 
   return { rows, loading, error };
 }

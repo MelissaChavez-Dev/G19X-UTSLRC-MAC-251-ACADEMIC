@@ -1,7 +1,7 @@
 export function getRiskColorClasses(value, invert = false) {
   const v = invert ? 6 - value : value;
-  if (v >= 4) return "bg-red-700 text-white font-bold";
-  if (v >= 3) return "bg-orange-300 text-orange-950 font-semibold";
-  if (v >= 2) return "bg-amber-100 text-amber-950 font-semibold";
-  return "bg-emerald-100 text-emerald-950 font-semibold";
+  if (v >= 4) return "bg-error text-on-error font-semibold";
+  if (v >= 3) return "bg-warning-container text-on-warning-container font-semibold";
+  if (v >= 2) return "bg-tertiary-container text-on-tertiary-container font-semibold";
+  return "bg-success-container text-on-success-container font-semibold";
 }
