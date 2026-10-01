@@ -44,7 +44,7 @@ export function exportDashboardPdf({ metrics, deptRows = [], aiMarkdown = "", de
     head: [["Métrica", "Valor"]],
     body: [
       ["Salud neta del equipo (eNPS)", `${metrics?.enps ?? "—"}`],
-      ["Riesgo de rotación a 90 días (modelado)", `${metrics?.attritionRisk ?? "—"}%`],
+      ["Índice de presión laboral (0-100 puntos; no es probabilidad)", Number.isFinite(metrics?.attritionRisk) ? `${metrics.attritionRisk}/100` : "—"],
       ["Participación en pulsos", `${metrics?.activePulseRate ?? "—"}%`],
       ["Índice de seguridad psicológica", `${metrics?.psychSafety ?? "—"} / 5.0`],
       ["Respuestas del periodo", `${metrics?.sampleSize ?? 0}`],
@@ -57,14 +57,14 @@ export function exportDashboardPdf({ metrics, deptRows = [], aiMarkdown = "", de
   // Heatmap de riesgo
   cursorY = doc.lastAutoTable.finalY + 10;
   doc.setFontSize(12);
-  doc.text("Riesgo por departamento", 14, cursorY);
+  doc.text("Presión laboral por departamento (índice / 100)", 14, cursorY);
   autoTable(doc, {
     startY: cursorY + 3,
-    head: [["Departamento", "eNPS", "Riesgo rotación", "Participación", "Nivel"]],
+    head: [["Departamento", "eNPS", "Presión laboral / 100", "Participación", "Nivel"]],
     body: deptRows.map((row) => [
       row.name,
       `${row.enps}`,
-      `${row.attritionRisk}%`,
+      Number.isFinite(row.attritionRisk) ? `${row.attritionRisk}/100` : "—",
       `${row.activePulseRate}%`,
       row.tier?.label || "—",
     ]),
@@ -108,6 +108,7 @@ export async function exportResponsesExcel({ metrics, deptRows = [], departments
     departamento: departmentName(r.departmentId, departments),
     eNPS: r.enps ?? "",
     balanceVidaTrabajo: r.workLifeBalance ?? "",
+    estadoAnimo: r.mood ?? "",
     fatiga: r.psychosocialFactors?.shiftFatigue ?? "",
     cargaEmocional: r.psychosocialFactors?.emotionalLabor ?? "",
     seguridadPsicologica: r.psychosocialFactors?.psychSafety ?? "",
@@ -118,7 +119,7 @@ export async function exportResponsesExcel({ metrics, deptRows = [], departments
   // Hoja 2: resumen de KPIs
   const kpiRows = [
     { métrica: "eNPS", valor: metrics?.enps ?? "" },
-    { métrica: "Riesgo de rotación (%)", valor: metrics?.attritionRisk ?? "" },
+    { métrica: "Índice de presión laboral (0-100, no probabilidad)", valor: metrics?.attritionRisk ?? "" },
     { métrica: "Participación en pulsos (%)", valor: metrics?.activePulseRate ?? "" },
     { métrica: "Seguridad psicológica (1-5)", valor: metrics?.psychSafety ?? "" },
     { métrica: "Respuestas (30 días)", valor: metrics?.sampleSize ?? 0 },
@@ -129,7 +130,7 @@ export async function exportResponsesExcel({ metrics, deptRows = [], departments
   const riskRows = deptRows.map((row) => ({
     departamento: row.name,
     eNPS: row.enps,
-    riesgoRotación: row.attritionRisk,
+    indicePresionLaboral: row.attritionRisk,
     participación: row.activePulseRate,
     nivel: row.tier?.label || "",
     respuestas: row.sampleSize,

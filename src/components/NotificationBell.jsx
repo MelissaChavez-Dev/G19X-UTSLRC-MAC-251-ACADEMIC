@@ -87,7 +87,7 @@ export function AdminNotificationBell() {
                   {row.name} está en nivel {row.tier.label.toLowerCase()}
                 </p>
                 <p className="text-body-sm text-on-surface-variant">
-                  Riesgo de rotación estimado: {row.attritionRisk}%
+                  Índice de presión laboral: {Number.isFinite(row.attritionRisk) ? `${row.attritionRisk}/100 puntos` : "—"}
                 </p>
               </div>
             </div>
@@ -106,12 +106,33 @@ export function EmployeeNotificationBell() {
   const { tasks } = useTeamTasks(team?.id ?? null);
   useDismissOnOutsideClick(open, () => setOpen(false));
 
-  const [dayAgo] = useState(() => Date.now() - 24 * 60 * 60 * 1000);
-  const recentTasks = tasks.filter(
-    (t) => (t.createdAt?.toMillis?.() || 0) > dayAgo
-  );
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dayAgo = now.getTime() - 24 * 60 * 60 * 1000;
+  const taskAlerts = tasks.flatMap((task) => {
+    if (task.dueDate && task.status !== "done") {
+      const [year, month, day] = task.dueDate.split("-").map(Number);
+      const [hours = 23, minutes = 59] = (task.dueTime || "23:59").split(":").map(Number);
+      const dueDate = new Date(year, month - 1, day, hours, minutes);
+      const dueDay = new Date(year, month - 1, day);
+      const daysUntilDue = Math.round((dueDay.getTime() - today.getTime()) / 86400000);
 
-  const count = pending.length + recentTasks.length;
+      if (dueDate.getTime() < now.getTime()) {
+        return [{ task, label: `Vencida hace ${Math.abs(daysUntilDue)} d`, icon: "event_busy", tone: "text-error" }];
+      }
+      if (daysUntilDue <= 3) {
+        const deadline = task.dueTime ? ` · ${task.dueTime}` : "";
+        return [{ task, label: daysUntilDue === 0 ? `Vence hoy${deadline}` : `Vence en ${daysUntilDue} d${deadline}`, icon: "event", tone: "text-warning" }];
+      }
+    }
+
+    if ((task.createdAt?.toMillis?.() || 0) > dayAgo) {
+      return [{ task, label: "Tarea nueva en tu equipo", icon: "view_kanban", tone: "text-tertiary" }];
+    }
+    return [];
+  });
+
+  const count = pending.length + taskAlerts.length;
 
   return (
     <div onClick={(e) => e.stopPropagation()}>
@@ -137,14 +158,14 @@ export function EmployeeNotificationBell() {
                 </div>
               </Link>
             ))}
-            {recentTasks.map((task) => (
+            {taskAlerts.map(({ task, label, icon, tone }) => (
               <div
                 key={task.id}
                 className="flex items-start gap-space-sm p-space-sm rounded-lg hover:bg-surface-container-low transition-colors"
               >
-                <span className="material-symbols-outlined text-[20px] text-tertiary">view_kanban</span>
+                <span className={`material-symbols-outlined text-[20px] ${tone}`}>{icon}</span>
                 <div>
-                  <p className="text-body-sm text-on-surface font-semibold">Tarea nueva en tu equipo</p>
+                  <p className="text-body-sm text-on-surface font-semibold">{label}</p>
                   <p className="text-body-sm text-on-surface-variant">{task.title}</p>
                 </div>
               </div>

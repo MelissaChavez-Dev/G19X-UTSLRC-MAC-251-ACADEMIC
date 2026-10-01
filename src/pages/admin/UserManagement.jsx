@@ -347,7 +347,7 @@ export default function UserManagement() {
       <Sidebar />
       <TopBar />
       <main className={`${collapsed ? "pl-20" : "pl-64"} pt-16 transition-[padding] duration-300 ease-out`}>
-        <div className="px-space-xl py-space-lg flex flex-col gap-space-lg max-w-7xl">
+        <div className="mx-auto w-full max-w-5xl px-space-xl py-space-lg flex flex-col gap-space-lg">
           {/* Encabezado + resumen */}
           <div className="flex flex-wrap items-end justify-between gap-space-md animate-enter">
             <div>

@@ -52,6 +52,30 @@ export async function createTeam(payload) {
   return result.data;
 }
 
+export async function updateTeamProject(teamId, updates) {
+  const callable = httpsCallable(functions, "update_team_project");
+  const result = await callable({ teamId, ...updates });
+  return result.data;
+}
+
+export async function deleteTeamProject(teamId) {
+  const callable = httpsCallable(functions, "delete_team_project");
+  const result = await callable({ teamId });
+  return result.data;
+}
+
+export async function removeTeamMember(teamId, userId) {
+  const callable = httpsCallable(functions, "remove_team_member");
+  const result = await callable({ teamId, userId });
+  return result.data;
+}
+
+export async function leaveTeamProject(teamId) {
+  const callable = httpsCallable(functions, "leave_team_project");
+  const result = await callable({ teamId });
+  return result.data;
+}
+
 export async function listUsers() {
   const snapshot = await getDocs(query(collection(db, "users"), orderBy("displayName")));
   return snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));

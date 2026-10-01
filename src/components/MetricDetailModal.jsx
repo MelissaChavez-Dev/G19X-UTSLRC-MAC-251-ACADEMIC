@@ -16,7 +16,13 @@ import {
 // Cada métrica tiene su propio tono pastel (familias hue-* de index-v2.css)
 const METRIC_CONFIG = {
   enps: { label: "Salud neta", suffix: " puntos", higherIsBetter: true, hue: "mint" },
-  attritionRisk: { label: "Riesgo de rotación", suffix: "%", higherIsBetter: false, hue: "peach" },
+  attritionRisk: {
+    label: "Índice de presión laboral",
+    suffix: " / 100 puntos",
+    higherIsBetter: false,
+    hue: "peach",
+    description: "En la encuesta actual se deriva de tu respuesta de balance vida-trabajo: una calificación de 1–5 asigna fatiga 3.6/5 y carga emocional 4/5; una de 6–10 asigna 1.8/5 y 2/5. Se transforma a un índice de 0–100 puntos. Es una regla orientativa: no calcula la probabilidad de que alguien renuncie.",
+  },
   activePulseRate: { label: "Participación", suffix: "%", higherIsBetter: true, hue: "sky" },
   psychSafety: { label: "Seguridad psicológica", suffix: " / 5", higherIsBetter: true, hue: "rose" },
 };
@@ -81,6 +87,7 @@ export default function MetricDetailModal({
   }, [onClose]);
 
   const departmentData = (departmentRows || [])
+    .filter((row) => Number.isFinite(row[dataKey]))
     .map((row) => ({
       name: row.name,
       fullName: row.name,
@@ -162,6 +169,12 @@ export default function MetricDetailModal({
               <span aria-hidden="true" className="material-symbols-outlined text-[20px]">close</span>
             </button>
           </div>
+
+          {config.description && (
+            <p className="mb-space-md rounded-2xl bg-surface-container-lowest/70 p-space-md text-body-sm">
+              {config.description}
+            </p>
+          )}
 
           {/* Comparación por departamento */}
           {departmentData.length > 0 && (

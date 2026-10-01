@@ -3,6 +3,7 @@ export const SURVEY_QUESTION_TYPES = ["scale", "choice", "text"];
 
 export const RESPONSE_FIELD_PATHS = [
   "enps",
+  "mood",
   "workLifeBalance",
   "cognitiveLoad",
   "openText",
@@ -13,6 +14,17 @@ export const RESPONSE_FIELD_PATHS = [
   "psychosocialFactors.autonomy",
   "psychosocialFactors.psychSafety",
 ];
+
+const NUMERIC_RESPONSE_FIELD_PATHS = new Set([
+  "enps",
+  "workLifeBalance",
+  "psychosocialFactors.cognitiveLoad",
+  "psychosocialFactors.roleAmbiguity",
+  "psychosocialFactors.emotionalLabor",
+  "psychosocialFactors.shiftFatigue",
+  "psychosocialFactors.autonomy",
+  "psychosocialFactors.psychSafety",
+]);
 
 export function createEmptySurveyTemplate() {
   return {
@@ -50,7 +62,19 @@ export function validateSurveyQuestion(question) {
       errors.push("Una pregunta choice debe tener al menos una opción.");
     } else if (question.options.some((option) => !option?.value || !option?.label)) {
       errors.push("Cada opción debe tener un texto.");
+    } else if (
+      NUMERIC_RESPONSE_FIELD_PATHS.has(question.mapsTo)
+      && question.options.some((option) => !Number.isFinite(Number(option.value)))
+    ) {
+      errors.push("Las opciones de un indicador numérico deben tener valores numéricos; usa Estado de ánimo para opciones como feliz o molesto.");
     }
+  }
+
+  if (question?.type === "text" && question.mapsTo !== "openText") {
+    errors.push("Una respuesta escrita debe vincularse al comentario libre.");
+  }
+  if (question?.mapsTo === "mood" && question.type === "text") {
+    errors.push("El estado de ánimo debe configurarse como escala u opción, no como texto abierto.");
   }
 
   return errors;

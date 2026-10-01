@@ -41,7 +41,7 @@ const EXPORT_ERROR_MESSAGE = "No se pudo generar el archivo. Inténtalo de nuevo
 const isRateLimit = (text) => /429|RESOURCE_EXHAUSTED/i.test(text);
 
 function change(current, previous) {
-  if (previous === undefined || previous === null) return null;
+  if (!Number.isFinite(current) || !Number.isFinite(previous)) return null;
   const diff = Math.round((current - previous) * 10) / 10;
   if (diff === 0) return null;
   return diff;
@@ -61,12 +61,12 @@ const KPI_DEFS = [
   {
     id: "kpi-attrition",
     icon: "trending_down",
-    label: "Riesgo de rotación a 90 días (modelado)",
+    label: "Índice de presión laboral",
     dataKey: "attritionRisk",
-    getValue: (m) => `${m.attritionRisk}%`,
-    getSuffix: () => null,
-    getFooterLabel: () => "Basado en",
-    getFooterValue: () => "Fatiga + carga emocional reportada",
+    getValue: (m) => Number.isFinite(m.attritionRisk) ? m.attritionRisk : "—",
+    getSuffix: () => "/ 100 puntos",
+    getFooterLabel: () => "Escala orientativa · no probabilidad",
+    getFooterValue: () => "Derivado del balance vida-trabajo",
   },
   {
     id: "kpi-pulse",
@@ -94,7 +94,7 @@ const KPI_DEFS = [
    sus datos, no cuando se abre o cierra el modal. */
 const KpiTile = memo(function KpiTile({ def, metrics, previousMetrics, headcount, onExpand }) {
   const diff = previousMetrics ? change(metrics[def.dataKey], previousMetrics[def.dataKey]) : null;
-  const deltaLabel = diff === null ? null : def.dataKey === "attritionRisk" ? `${diff}%` : diff;
+  const deltaLabel = diff === null ? null : def.dataKey === "attritionRisk" ? `${diff} pts` : diff;
 
   const suffix =
     def.dataKey === "activePulseRate"
@@ -193,6 +193,7 @@ function DonutGauge({ label, value, scale, progress, color, available }) {
 
 const KpiDonutOverview = memo(function KpiDonutOverview({ metrics, absence }) {
   const hasResponses = metrics.sampleSize > 0;
+  const hasRiskData = hasResponses && Number.isFinite(metrics.attritionRisk);
   const hasAbsenceData = absence?.workDays > 0;
   const clampPercent = (value) => Math.max(0, Math.min(100, value)) / 100;
   const indicators = [
@@ -205,12 +206,12 @@ const KpiDonutOverview = memo(function KpiDonutOverview({ metrics, absence }) {
       available: hasResponses,
     },
     {
-      label: "Riesgo de rotación",
-      value: hasResponses ? `${metrics.attritionRisk}%` : "—",
-      scale: "de 0 a 100%",
-      progress: hasResponses ? clampPercent(metrics.attritionRisk) : 0,
+      label: "Presión laboral",
+      value: hasRiskData ? `${metrics.attritionRisk}/100` : "—",
+      scale: "índice orientativo · no probabilidad",
+      progress: hasRiskData ? clampPercent(metrics.attritionRisk) : 0,
       color: "var(--error)",
-      available: hasResponses,
+      available: hasRiskData,
     },
     {
       label: "Participación",
@@ -329,6 +330,9 @@ export default function Dashboard() {
           valorActual: def.getValue(m),
           valorAnterior: prev ? def.getValue(prev) : null,
           muestra: m.sampleSize,
+          interpretacion: def.dataKey === "attritionRisk"
+            ? "Índice orientativo de 0 a 100 puntos. En la encuesta actual deriva fatiga y carga emocional de la respuesta de balance vida-trabajo usando un umbral; no es una probabilidad ni predice renuncias."
+            : undefined,
         },
       });
       const explanation = isRateLimit(text) ? RATE_LIMIT_MESSAGE : text;

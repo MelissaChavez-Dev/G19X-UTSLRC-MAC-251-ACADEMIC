@@ -74,6 +74,7 @@ export default function WellnessSurvey({ templateId = null, fixedDepartmentId = 
         questions: surveySteps,
         templateId: template?.id ?? null,
         cycleId: template ? getCurrentCycleId(template.cycle) : null,
+        surveyTitle: template?.title || "Encuesta de bienestar",
       });
       setStatus("done");
     } catch (err) {

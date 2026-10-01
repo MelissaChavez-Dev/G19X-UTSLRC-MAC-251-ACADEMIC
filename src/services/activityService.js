@@ -9,16 +9,32 @@ import { auth, db } from "./firebase";
  */
 
 const NAVIGATION_THROTTLE_MS = 5 * 60 * 1000;
+const DETAIL_FIELDS = [
+  "action",
+  "projectId",
+  "projectName",
+  "taskId",
+  "taskTitle",
+  "fromStatus",
+  "toStatus",
+  "surveyTitle",
+];
 let lastNavigationLog = 0;
 
-export async function logActivity(type) {
+export async function logActivity(type, details = {}) {
   const user = auth.currentUser;
   if (!user) return;
+  const safeDetails = Object.fromEntries(
+    DETAIL_FIELDS
+      .filter((field) => typeof details[field] === "string" && details[field].trim())
+      .map((field) => [field, details[field].trim().slice(0, 160)])
+  );
   try {
     await addDoc(collection(db, "activityLogs"), {
       userId: user.uid,
       type,
       timestamp: serverTimestamp(),
+      ...safeDetails,
     });
   } catch (err) {
     console.warn("No se pudo registrar la actividad:", err);

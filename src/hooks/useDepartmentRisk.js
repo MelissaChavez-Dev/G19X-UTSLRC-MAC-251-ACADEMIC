@@ -3,13 +3,13 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useHeadcount } from "./useHeadcount";
 import { useDepartments } from "./useDepartments";
+import { averageNumeric, toFiniteNumber, workPressureIndex } from "../utils/metricUtils";
 
 const FACTOR_KEYS = ["cognitiveLoad", "roleAmbiguity", "emotionalLabor", "shiftFatigue", "autonomy", "psychSafety"];
 const PROTECTIVE_FACTORS = ["autonomy", "psychSafety"];
 
 function average(nums) {
-  if (nums.length === 0) return 0;
-  return nums.reduce((a, b) => a + b, 0) / nums.length;
+  return averageNumeric(nums) ?? 0;
 }
 
 function riskTier(avgRisk) {
@@ -41,26 +41,24 @@ export function useDepartmentRisk(departmentId = null) {
           const factors = {};
           const riskEquivalents = [];
 
-          const promoters = deptResponses.filter((r) => r.enps >= 9).length;
-          const detractors = deptResponses.filter((r) => r.enps <= 6).length;
+          const promoters = deptResponses.filter((r) => (toFiniteNumber(r.enps) ?? -Infinity) >= 9).length;
+          const detractors = deptResponses.filter((r) => (toFiniteNumber(r.enps) ?? Infinity) <= 6).length;
           const enps = deptResponses.length > 0
             ? Math.round(((promoters - detractors) / deptResponses.length) * 100)
             : 0;
-          const averageWorkLifeBalance = deptResponses.length > 0
-            ? deptResponses.reduce((sum, response) => sum + (response.workLifeBalance || 0), 0) / deptResponses.length
-            : 0;
+          const averageWorkLifeBalance = averageNumeric(deptResponses.map((response) => response.workLifeBalance)) ?? 0;
 
           FACTOR_KEYS.forEach((key) => {
             const values = deptResponses
               .map((r) => r.psychosocialFactors?.[key])
-              .filter((v) => v !== undefined);
+              .filter((value) => toFiniteNumber(value) !== null);
             const avg = Math.round(average(values) * 10) / 10;
             factors[key] = avg;
             riskEquivalents.push(PROTECTIVE_FACTORS.includes(key) ? 6 - avg : avg);
           });
 
           const avgRisk = average(riskEquivalents);
-          const attritionRisk = Math.round((((factors.shiftFatigue + factors.emotionalLabor) / 2) / 5) * 100 * 0.6);
+          const attritionRisk = workPressureIndex(deptResponses);
           const pulseRate = deptHeadcount > 0
             ? Math.min(100, Math.round((deptResponses.length / deptHeadcount) * 100))
             : 0;

@@ -41,6 +41,7 @@ export const BLOCK_TYPES = [
 // Campos del esquema de "responses" a los que una pregunta puede mapear
 export const MAPPABLE_FIELDS = [
   { value: "enps", label: "eNPS (0-10)" },
+  { value: "mood", label: "Estado de ánimo (feliz, neutral, etc.)" },
   { value: "workLifeBalance", label: "Balance vida-trabajo (1-10)" },
   { value: "cognitiveLoad", label: "Fuente de fricción" },
   { value: "psychosocialFactors.psychSafety", label: "Seguridad psicológica (1-10)" },

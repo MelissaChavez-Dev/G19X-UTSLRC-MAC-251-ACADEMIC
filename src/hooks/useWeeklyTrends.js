@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useHeadcount } from "./useHeadcount";
+import { averageNumeric, toFiniteNumber, workPressureIndex } from "../utils/metricUtils";
 
 export function useWeeklyTrends(departmentId = null) {
   const [trends, setTrends] = useState(null);
@@ -30,18 +31,16 @@ export function useWeeklyTrends(departmentId = null) {
           const items = byWeek[weekId];
           const n = items.length || 1;
 
-          const promoters = items.filter((r) => r.enps >= 9).length;
-          const detractors = items.filter((r) => r.enps <= 6).length;
+          const promoters = items.filter((r) => (toFiniteNumber(r.enps) ?? -Infinity) >= 9).length;
+          const detractors = items.filter((r) => (toFiniteNumber(r.enps) ?? Infinity) <= 6).length;
           const enps = Math.round(((promoters - detractors) / n) * 100);
 
-          const avgFatigue = items.reduce((s, r) => s + (r.psychosocialFactors?.shiftFatigue || 0), 0) / n;
-          const avgEmotional = items.reduce((s, r) => s + (r.psychosocialFactors?.emotionalLabor || 0), 0) / n;
-          const attritionRisk = Math.round((((avgFatigue + avgEmotional) / 2) / 5) * 100 * 0.6);
+          const attritionRisk = workPressureIndex(items);
 
           const activePulseRate = Math.min(100, Math.round((items.length / headcount) * 100));
 
           const psychSafety = Math.round(
-            (items.reduce((s, r) => s + (r.psychosocialFactors?.psychSafety || 0), 0) / n) * 10
+            (averageNumeric(items.map((response) => response.psychosocialFactors?.psychSafety)) ?? 0) * 10
           ) / 10;
 
           return { weekId, enps, attritionRisk, activePulseRate, psychSafety };

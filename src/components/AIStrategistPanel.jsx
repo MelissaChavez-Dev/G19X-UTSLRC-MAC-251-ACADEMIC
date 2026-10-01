@@ -39,6 +39,7 @@ export default function AIStrategistPanel({ orgMetrics, departmentRisk, openComm
       await createTask(draft.teamId, {
         title: rec.title,
         description: rec.description,
+        projectName: teams.find((team) => team.id === draft.teamId)?.name || "",
         origin: "ai_recommendation",
         sourceMetric: "attritionRisk",
       });

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useHeadcount } from "./useHeadcount";
+import { averageNumeric, toFiniteNumber, workPressureIndex } from "../utils/metricUtils";
 
 function daysAgo(n) {
   const d = new Date();
@@ -10,8 +11,7 @@ function daysAgo(n) {
 }
 
 function average(arr, selector) {
-  if (arr.length === 0) return 0;
-  return arr.reduce((sum, item) => sum + (selector(item) || 0), 0) / arr.length;
+  return averageNumeric(arr.map(selector)) ?? 0;
 }
 
 // Participacion semanal promedio: cuantas respuestas llegan en una semana
@@ -34,16 +34,14 @@ function computeWeeklyParticipation(responses, headcount) {
 
 function computeMetrics(responses, headcount) {
   if (responses.length === 0) {
-    return { enps: 0, attritionRisk: 0, activePulseRate: 0, avgPerWeek: 0, psychSafety: 0, sampleSize: 0 };
+    return { enps: 0, attritionRisk: null, activePulseRate: 0, avgPerWeek: 0, psychSafety: 0, sampleSize: 0 };
   }
 
-  const promoters = responses.filter((r) => r.enps >= 9).length;
-  const detractors = responses.filter((r) => r.enps <= 6).length;
+  const promoters = responses.filter((r) => (toFiniteNumber(r.enps) ?? -Infinity) >= 9).length;
+  const detractors = responses.filter((r) => (toFiniteNumber(r.enps) ?? Infinity) <= 6).length;
   const enps = Math.round(((promoters - detractors) / responses.length) * 100);
 
-  const avgFatigue = average(responses, (r) => r.psychosocialFactors?.shiftFatigue);
-  const avgEmotionalLabor = average(responses, (r) => r.psychosocialFactors?.emotionalLabor);
-  const attritionRisk = Math.round((((avgFatigue + avgEmotionalLabor) / 2) / 5) * 100 * 0.6);
+  const attritionRisk = workPressureIndex(responses);
 
   const { rate: activePulseRate, avgPerWeek } = computeWeeklyParticipation(responses, headcount);
 

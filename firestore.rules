@@ -40,7 +40,9 @@ service cloud.firestore {
     }
 
     match /teams/{teamId} {
-      allow read: if isAdmin() || isTeamMember(teamId);
+      allow get: if isAdmin() || isTeamMember(teamId);
+      allow list: if isAdmin()
+        || (isSignedIn() && request.auth.uid in resource.data.memberIds);
       // La creación y la unión por código pasan por Cloud Functions
       // (para validar el joinCode sin exponer la lista de códigos).
       allow write: if false;
@@ -52,8 +54,13 @@ service cloud.firestore {
     }
 
     match /activityLogs/{logId} {
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow read, update, delete: if false;
+      allow create: if isSelf(request.resource.data.userId)
+        && request.resource.data.keys().hasOnly([
+          "userId", "type", "timestamp", "action", "projectId", "projectName",
+          "taskId", "taskTitle", "fromStatus", "toStatus", "surveyTitle"
+        ]);
+      allow read: if isSelf(resource.data.userId);
+      allow update, delete: if false;
     }
 
     match /presenceSummary/{docId} {

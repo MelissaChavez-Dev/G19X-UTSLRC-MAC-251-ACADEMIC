@@ -11,6 +11,7 @@ import TeamBoard from "./pages/TeamBoard";
 import ForcePasswordChange from "./pages/ForcePasswordChange";
 import UserManagement from "./pages/admin/UserManagement";
 import TeamDirectory from "./pages/admin/TeamDirectory";
+import MisProyectos from "./pages/MisProyectos";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleBasedRedirect from "./components/RoleBasedRedirect";
 import { AuthProvider } from "./hooks/useAuth";
@@ -75,6 +76,14 @@ function App() {
               element={
                 <ProtectedRoute roles={["employee", "team_lead"]}>
                   <MiEspacio />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/mis-proyectos/:teamId?"
+              element={
+                <ProtectedRoute roles={["employee", "team_lead"]}>
+                  <MisProyectos />
                 </ProtectedRoute>
               }
             />
