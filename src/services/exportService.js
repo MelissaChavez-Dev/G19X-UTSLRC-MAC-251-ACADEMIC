@@ -3,10 +3,9 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
-import { DEPARTMENTS } from "../data/surveyQuestion";
 
-function departmentName(id) {
-  return DEPARTMENTS.find((d) => d.id === id)?.name || id || "Todos los departamentos";
+function departmentName(id, departments = []) {
+  return departments.find((department) => department.id === id)?.name || id || "Todos los departamentos";
 }
 
 function todayLabel() {
@@ -21,7 +20,7 @@ function todayLabel() {
  * Reporte ejecutivo en PDF: encabezado, KPIs, heatmap de riesgo
  * y el último análisis de Gemini (si existe en pantalla).
  */
-export function exportDashboardPdf({ metrics, deptRows = [], aiMarkdown = "", departmentId = null }) {
+export function exportDashboardPdf({ metrics, deptRows = [], aiMarkdown = "", departmentId = null, departments = [] }) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -30,9 +29,9 @@ export function exportDashboardPdf({ metrics, deptRows = [], aiMarkdown = "", de
   doc.rect(0, 0, pageWidth, 26, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
-  doc.text("PluriOne Health — Reporte ejecutivo", 14, 11);
+  doc.text("Bienestar organizacional — Reporte ejecutivo", 14, 11);
   doc.setFontSize(9);
-  doc.text(`${departmentName(departmentId)} · Últimos 30 días · Generado el ${todayLabel()}`, 14, 19);
+  doc.text(`${departmentName(departmentId, departments)} · Últimos 30 días · Generado el ${todayLabel()}`, 14, 19);
 
   let cursorY = 34;
 
@@ -89,14 +88,14 @@ export function exportDashboardPdf({ metrics, deptRows = [], aiMarkdown = "", de
     doc.text(doc.splitTextToSize(plain, pageWidth - 28), 14, cursorY + 6);
   }
 
-  doc.save(`plurione-reporte-${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`bienestar-organizacional-reporte-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 /**
  * Libro de Excel con 3 hojas: respuestas crudas (anonimizadas),
  * resumen de KPIs y riesgo por departamento.
  */
-export async function exportResponsesExcel({ metrics, deptRows = [] }) {
+export async function exportResponsesExcel({ metrics, deptRows = [], departments = [] }) {
   const snapshot = await getDocs(collection(db, "responses"));
   const responses = snapshot.docs.map((d) => d.data());
 
@@ -106,7 +105,7 @@ export async function exportResponsesExcel({ metrics, deptRows = [] }) {
   const rawRows = responses.map((r) => ({
     semana: r.weekId || "",
     fecha: r.submittedAt?.toDate?.().toISOString?.() || "",
-    departamento: departmentName(r.departmentId),
+    departamento: departmentName(r.departmentId, departments),
     eNPS: r.enps ?? "",
     balanceVidaTrabajo: r.workLifeBalance ?? "",
     fatiga: r.psychosocialFactors?.shiftFatigue ?? "",
@@ -137,5 +136,5 @@ export async function exportResponsesExcel({ metrics, deptRows = [] }) {
   }));
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(riskRows), "Riesgo por depto");
 
-  XLSX.writeFile(workbook, `plurione-datos-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  XLSX.writeFile(workbook, `bienestar-organizacional-datos-${new Date().toISOString().slice(0, 10)}.xlsx`);
 }

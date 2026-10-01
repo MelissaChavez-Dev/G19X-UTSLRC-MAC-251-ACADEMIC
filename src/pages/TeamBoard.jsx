@@ -2,13 +2,13 @@ import { Link, useParams } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import TopBar from "../components/TopBar";
 import TeamKanban from "../components/TeamKanban";
-import { DEPARTMENTS } from "../data/surveyQuestion";
 import { useTeam } from "../hooks/useTeams";
 import { useAuth } from "../hooks/useAuth";
 import { useSidebarState } from "../hooks/useSidebarState";
+import { useDepartments } from "../hooks/useDepartments";
 
-function departmentName(id) {
-  return DEPARTMENTS.find((d) => d.id === id)?.name || id || "—";
+function departmentName(id, departments) {
+  return departments.find((department) => department.id === id)?.name || id || "—";
 }
 
 /** Tablero de un equipo: vista admin (/equipos/:teamId) y líder (/mi-equipo). */
@@ -17,6 +17,7 @@ export default function TeamBoard() {
   const { isAdmin } = useAuth();
   const { team, loading } = useTeam(teamId);
   const { collapsed } = useSidebarState();
+  const { departments } = useDepartments();
 
   const content = (
     <div className="flex flex-col gap-space-lg max-w-6xl">
@@ -28,7 +29,7 @@ export default function TeamBoard() {
         <>
           <div className="animate-enter">
             <span className="text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">
-              {departmentName(team.departmentId)}
+              {departmentName(team.departmentId, departments)}
             </span>
             <h1 className="text-headline-xl text-on-surface tracking-tight">{team.name}</h1>
             <div className="flex flex-wrap gap-space-xs mt-space-sm">
@@ -59,7 +60,7 @@ export default function TeamBoard() {
         <header className="h-16 px-space-xl flex items-center justify-between bg-surface/80 backdrop-blur-xl sticky top-0 z-40">
           <div className="flex items-center gap-space-sm">
             <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-on-primary font-bold">P</div>
-            <span className="text-headline-sm text-on-surface">PluriOne Health</span>
+            <span className="text-headline-sm text-on-surface">Bienestar organizacional</span>
           </div>
           <Link to="/mi-espacio" className="motion-press text-label-md text-primary hover:underline">
             Ir a mi espacio

@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 /* eslint-disable react-refresh/only-export-components */
 const SidebarStateContext = createContext(null);
 
-const STORAGE_KEY = "plurione-sidebar-collapsed";
+const STORAGE_KEY = "wellness-dashboard-sidebar-collapsed";
 
 function getInitialCollapsed() {
   return localStorage.getItem(STORAGE_KEY) === "1";

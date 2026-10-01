@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { SURVEY_STEPS as DEFAULT_STEPS, DEPARTMENTS } from "../data/surveyQuestion";
+import { SURVEY_STEPS as DEFAULT_STEPS } from "../data/surveyQuestion";
 import { submitSurveyResponse } from "../services/surveyService";
 import {
   getActivePublishedTemplate,
@@ -7,6 +7,7 @@ import {
   getTemplate,
 } from "../services/templateService";
 import { validateSurveyTemplate } from "../data/surveyTemplate";
+import { useDepartments } from "../hooks/useDepartments";
 import ScaleQuestion from "../components/ScaleQuestions";
 import ChoiceQuestion from "../components/ChoiceQuestion";
 import OpenTextQuestion from "../components/OpenTextQuestion";
@@ -18,7 +19,8 @@ import OpenTextQuestion from "../components/OpenTextQuestion";
  *   selector de departamento; con onCompleted muestra botón de regreso.
  */
 export default function WellnessSurvey({ templateId = null, fixedDepartmentId = null, onCompleted = null }) {
-  const [departmentId, setDepartmentId] = useState(fixedDepartmentId || DEPARTMENTS[0].id);
+  const [departmentId, setDepartmentId] = useState("");
+  const { departments, loading: departmentsLoading } = useDepartments();
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [status, setStatus] = useState("idle"); // idle | submitting | done | error
@@ -48,12 +50,13 @@ export default function WellnessSurvey({ templateId = null, fixedDepartmentId = 
     loadTemplate();
   }, [templateId]);
 
+  const activeDepartmentId = fixedDepartmentId || departmentId || departments[0]?.id || "";
   const step = surveySteps[stepIndex];
   const isLast = stepIndex === surveySteps.length - 1;
   const progress = Math.round(((stepIndex + 1) / surveySteps.length) * 100);
 
   const currentValue = answers[step?.id];
-  const canAdvance = step?.required === false || currentValue !== undefined;
+  const canAdvance = Boolean(activeDepartmentId) && (step?.required === false || currentValue !== undefined);
 
   const goNext = useCallback(async () => {
     if (!canAdvance || status === "submitting") return;
@@ -66,7 +69,7 @@ export default function WellnessSurvey({ templateId = null, fixedDepartmentId = 
     setStatus("submitting");
     try {
       await submitSurveyResponse({
-        departmentId,
+        departmentId: activeDepartmentId,
         answers,
         questions: surveySteps,
         templateId: template?.id ?? null,
@@ -77,7 +80,7 @@ export default function WellnessSurvey({ templateId = null, fixedDepartmentId = 
       console.error(err);
       setStatus("error");
     }
-  }, [canAdvance, isLast, departmentId, answers, status, surveySteps, template]);
+  }, [canAdvance, isLast, activeDepartmentId, answers, status, surveySteps, template]);
 
   const goBack = useCallback(() => {
     if (stepIndex > 0) setStepIndex((i) => i - 1);
@@ -106,7 +109,7 @@ export default function WellnessSurvey({ templateId = null, fixedDepartmentId = 
     return () => window.removeEventListener("keydown", handleKey);
   }, [step, goNext, goBack, setAnswer]);
 
-  if (loadingTemplate) {
+  if (loadingTemplate || departmentsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface">
         <p className="text-body-md text-on-surface-variant">Cargando encuesta...</p>
@@ -170,21 +173,31 @@ export default function WellnessSurvey({ templateId = null, fixedDepartmentId = 
           </div>
 
           {/* Selector de departamento solo en el primer paso del modo público */}
-          {stepIndex === 0 && !fixedDepartmentId && (
+          {stepIndex === 0 && !fixedDepartmentId && departments.length > 0 && (
             <div className="mb-6">
               <label className="text-label-sm text-on-surface-variant uppercase tracking-widest">
                 Departamento
               </label>
               <select
-                value={departmentId}
+                value={activeDepartmentId}
                 onChange={(e) => setDepartmentId(e.target.value)}
                 className="mt-1 w-full rounded-md border border-outline-variant bg-surface-container-lowest p-3 text-body-md text-on-surface"
               >
-                {DEPARTMENTS.map((d) => (
+                {departments.map((d) => (
                   <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </select>
             </div>
+          )}
+          {stepIndex === 0 && !fixedDepartmentId && departments.length === 0 && (
+            <p role="status" className="mb-6 rounded-xl bg-warning-container px-space-md py-space-sm text-body-sm text-on-warning-container">
+              Esta organización todavía no configura departamentos. No es posible enviar esta respuesta por ahora.
+            </p>
+          )}
+          {stepIndex === 0 && !fixedDepartmentId && departments.length === 0 && (
+            <p role="status" className="mb-6 rounded-xl bg-warning-container px-space-md py-space-sm text-body-sm text-on-warning-container">
+              Esta organización todavía no configura departamentos. No es posible enviar esta respuesta por ahora.
+            </p>
           )}
 
           {/* Pregunta */}

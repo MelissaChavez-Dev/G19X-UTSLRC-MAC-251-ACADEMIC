@@ -2,15 +2,18 @@ import { useEffect, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { classifySentiment } from "../services/aiService";
-import { DEPARTMENTS } from "../data/surveyQuestion";
+import { useDepartments } from "./useDepartments";
 
 export function useWeeklySentiment(departmentId = null) {
   const [trend, setTrend] = useState(null);
   const [hotspots, setHotspots] = useState(null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { departments, loading: departmentsLoading } = useDepartments();
 
   useEffect(() => {
+    if (departmentsLoading) return;
+
     async function load() {
       setLoading(true);
       try {
@@ -27,7 +30,7 @@ export function useWeeklySentiment(departmentId = null) {
         const comments = sample.map((r) => ({
           id: r.id,
           text: r.openText,
-          departmentName: DEPARTMENTS.find((dept) => dept.id === r.departmentId)?.name || r.departmentId,
+          departmentName: departments.find((dept) => dept.id === r.departmentId)?.name || r.departmentId,
         }));
         setComments(comments);
         const classified = await classifySentiment(comments);
@@ -44,8 +47,8 @@ export function useWeeklySentiment(departmentId = null) {
         });
 
         const visibleDepts = departmentId
-          ? DEPARTMENTS.filter((d) => d.id === departmentId)
-          : DEPARTMENTS;
+          ? departments.filter((d) => d.id === departmentId)
+          : departments;
 
         const trendRows = visibleDepts.map((dept) => {
           const stats = byDept[dept.id] || { positive: 0, negative: 0, total: 0 };
@@ -62,7 +65,7 @@ export function useWeeklySentiment(departmentId = null) {
           .slice(0, 3)
           .map((r) => ({
             id: r.id,
-            departmentName: DEPARTMENTS.find((d) => d.id === r.departmentId)?.name || r.departmentId,
+            departmentName: departments.find((d) => d.id === r.departmentId)?.name || r.departmentId,
             excerpt: r.openText,
           }));
 
@@ -75,7 +78,7 @@ export function useWeeklySentiment(departmentId = null) {
       }
     }
     load();
-  }, [departmentId]);
+  }, [departmentId, departments, departmentsLoading]);
 
   return { trend, hotspots, comments, loading };
 }

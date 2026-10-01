@@ -174,7 +174,7 @@ def create_employee_account(req: https_fn.CallableRequest) -> dict:
 
 @https_fn.on_call(region="us-central1")
 def update_user_account(req: https_fn.CallableRequest) -> dict:
-    """Actualiza rol, departamento, equipo, horario o estado de un usuario (solo admin)."""
+    """Actualiza datos de cuenta de un usuario (solo admin)."""
     _require_admin(req)
     data = req.data or {}
     uid = data.get("uid")
@@ -185,9 +185,36 @@ def update_user_account(req: https_fn.CallableRequest) -> dict:
         )
 
     updates = {}
-    for field in ("displayName", "departmentId", "teamId", "workSchedule"):
+    for field in ("displayName", "email", "departmentId", "teamId", "workSchedule"):
         if field in data:
             updates[field] = data[field]
+
+    auth_updates = {}
+    if "displayName" in updates:
+        auth_updates["display_name"] = updates["displayName"]
+    if "email" in updates:
+        normalized_email = (updates["email"] or "").strip().lower()
+        if not normalized_email:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+                message="El correo electrónico no puede quedar vacío.",
+            )
+        updates["email"] = normalized_email
+        auth_updates["email"] = normalized_email
+
+    if auth_updates:
+        try:
+            admin_auth.update_user(uid, **auth_updates)
+        except admin_auth.EmailAlreadyExistsError as e:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.ALREADY_EXISTS,
+                message="Ese correo ya está asociado a otra cuenta.",
+            ) from e
+        except admin_auth.UserNotFoundError as e:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.NOT_FOUND,
+                message="No se encontró la cuenta.",
+            ) from e
 
     if "active" in data:
         updates["active"] = bool(data["active"])
@@ -199,8 +226,20 @@ def update_user_account(req: https_fn.CallableRequest) -> dict:
         admin_auth.set_custom_user_claims(uid, {"role": role})
 
     db = _db()
+    user_ref = db.collection("users").document(uid)
+    current_data = user_ref.get().to_dict() or {}
+    old_team = current_data.get("teamId")
+    removed_from_team_for_department = False
+
+    if "departmentId" in updates and "teamId" not in data and old_team:
+        old_team_snapshot = db.collection("teams").document(old_team).get()
+        if old_team_snapshot.exists and old_team_snapshot.get("departmentId") != updates["departmentId"]:
+            _remove_from_team(db, old_team, uid)
+            updates["teamId"] = None
+            removed_from_team_for_department = True
+
     if updates:
-        db.collection("users").document(uid).set(updates, merge=True)
+        user_ref.set(updates, merge=True)
 
     # Reasignación de equipo: saca del anterior y agrega al nuevo
     if "teamId" in data:
@@ -213,7 +252,102 @@ def update_user_account(req: https_fn.CallableRequest) -> dict:
             _remove_from_team(db, old_team, uid)
         if new_team and old_team != new_team:
             _add_to_team(db, new_team, uid, name)
+    elif "displayName" in updates and not removed_from_team_for_department:
+        if old_team:
+            db.collection("teams").document(old_team).update({
+                f"memberNames.{uid}": updates["displayName"]
+            })
 
+    return {"ok": True}
+
+
+@https_fn.on_call(region="us-central1")
+def reset_user_password(req: https_fn.CallableRequest) -> dict:
+    """Genera una contraseña temporal que el usuario deberá cambiar al entrar."""
+    _require_admin(req)
+    uid = (req.data or {}).get("uid")
+    if not uid:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="Falta el uid del usuario.",
+        )
+
+    temporary_password = _generate_temp_password()
+    try:
+        admin_auth.update_user(uid, password=temporary_password)
+    except admin_auth.UserNotFoundError as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.NOT_FOUND,
+            message="No se encontró la cuenta.",
+        ) from e
+
+    _db().collection("users").document(uid).set({"mustChangePassword": True}, merge=True)
+    return {"temporaryPassword": temporary_password}
+
+
+@https_fn.on_call(region="us-central1")
+def delete_user_account(req: https_fn.CallableRequest) -> dict:
+    """Elimina una cuenta de Auth y su perfil, respetando el último admin."""
+    caller = _require_admin(req)
+    uid = (req.data or {}).get("uid")
+    if not uid:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="Falta el uid del usuario.",
+        )
+    if uid == caller.uid:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.FAILED_PRECONDITION,
+            message="No puedes eliminar tu propia cuenta.",
+        )
+
+    db = _db()
+    profile_ref = db.collection("users").document(uid)
+    profile_snapshot = profile_ref.get()
+    profile = profile_snapshot.to_dict() or {}
+
+    try:
+        auth_user = admin_auth.get_user(uid)
+    except admin_auth.UserNotFoundError as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.NOT_FOUND,
+            message="No se encontró la cuenta.",
+        ) from e
+
+    if (profile.get("role") or (auth_user.custom_claims or {}).get("role")) == "admin":
+        admins = db.collection("users").where("role", "==", "admin").limit(2).get()
+        if len(admins) <= 1:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.FAILED_PRECONDITION,
+                message="No puedes eliminar al último administrador.",
+            )
+
+    team_id = profile.get("teamId")
+    if team_id:
+        team_ref = db.collection("teams").document(team_id)
+        team_ref.update({
+            "memberIds": admin_firestore.ArrayRemove([uid]),
+            f"memberNames.{uid}": admin_firestore.DELETE_FIELD,
+        })
+        assigned_tasks = team_ref.collection("tasks").where("assignedTo", "==", uid).get()
+        for offset in range(0, len(assigned_tasks), 400):
+            batch = db.batch()
+            for task in assigned_tasks[offset:offset + 400]:
+                batch.update(task.reference, {
+                    "assignedTo": None,
+                    "updatedAt": admin_firestore.SERVER_TIMESTAMP,
+                })
+            batch.commit()
+
+    try:
+        admin_auth.delete_user(uid)
+    except admin_auth.UserNotFoundError as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.NOT_FOUND,
+            message="No se encontró la cuenta de autenticación.",
+        ) from e
+
+    profile_ref.delete()
     return {"ok": True}
 
 

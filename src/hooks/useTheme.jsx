@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 const ThemeContext = createContext(null);
 
 function getInitialTheme() {
-  const saved = localStorage.getItem("plurione-theme");
+  const saved = localStorage.getItem("wellness-dashboard-theme");
   if (saved === "dark" || saved === "light") return saved;
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
@@ -14,7 +14,7 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("plurione-theme", theme);
+    localStorage.setItem("wellness-dashboard-theme", theme);
   }, [theme]);
 
   const toggleTheme = useCallback(() => {

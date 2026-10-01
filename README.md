@@ -1,6 +1,6 @@
 # Dashboard Ejecutivo de Salud Organizacional
 
-Proyecto individual desarrollado como parte del periodo de estadía en **PluriOne S.A. de C.V. — Develop Talent & Technology**, dentro del programa de capacitación especializada **TODO Academy**.
+Proyecto individual desarrollado como parte de un periodo de estadía en una **organización participante (nombre provisional)** y un **programa de formación (nombre provisional)**.
 
 ## Descripción
 

@@ -2,20 +2,21 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import TopBar from "../../components/TopBar";
-import { DEPARTMENTS } from "../../data/surveyQuestion";
 import { useTeams } from "../../hooks/useTeams";
 import { useSidebarState } from "../../hooks/useSidebarState";
+import { useDepartments } from "../../hooks/useDepartments";
 import { createTeam } from "../../services/userService";
 
-function departmentName(id) {
-  return DEPARTMENTS.find((d) => d.id === id)?.name || id || "—";
+function departmentName(id, departments) {
+  return departments.find((department) => department.id === id)?.name || id || "—";
 }
 
 export default function TeamDirectory() {
   const { teams, loading } = useTeams();
+  const { departments } = useDepartments();
   const { collapsed } = useSidebarState();
   const [name, setName] = useState("");
-  const [departmentId, setDepartmentId] = useState(DEPARTMENTS[0].id);
+  const [departmentId, setDepartmentId] = useState("");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const [newCode, setNewCode] = useState(null); // { name, joinCode }
@@ -85,15 +86,18 @@ export default function TeamDirectory() {
                 className={inputClass}
                 value={departmentId}
                 onChange={(e) => setDepartmentId(e.target.value)}
+                required
+                disabled={departments.length === 0}
               >
-                {DEPARTMENTS.map((d) => (
+                <option value="" disabled>Selecciona un departamento</option>
+                {departments.map((d) => (
                   <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </select>
             </div>
             <button
               type="submit"
-              disabled={creating}
+              disabled={creating || !departmentId}
               className="motion-press rounded-full bg-primary text-on-primary px-space-lg py-2.5 text-label-md disabled:opacity-60"
             >
               {creating ? "Creando..." : "Crear equipo"}
@@ -145,7 +149,7 @@ export default function TeamDirectory() {
                     <div>
                       <h2 className="text-headline-sm text-on-surface">{team.name}</h2>
                       <p className="text-body-sm text-on-surface-variant">
-                        {departmentName(team.departmentId)}
+                        {departmentName(team.departmentId, departments)}
                       </p>
                     </div>
                     <button

@@ -4,167 +4,281 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ============================================================
-   PluriOne Health — Design System "Calma Expresiva"
-   Inspirado en Material 3 Expressive, con una paleta tipo spa
-   (salvia, arena, crema) para transmitir calma, orden y salud
-   mental. Minimalista, aireado, con formas orgánicas suaves y
-   movimiento casi imperceptible.
+  Plataforma de bienestar organizacional — Design System "Zonas de color"
+
+   Idea central: cada sección o rol vive en su propio color pastel.
+   El fondo de la pantalla NO es blanco: es la zona completa.
+   Sin bordes y sin sombras: todo se separa por contraste de color
+   y por figuras (blobs) planas que acompañan el contenido.
+
+   Cómo usarlo:
+  <div className="app-canvas zone-lavender"> ...página... </div>
+
+   Zonas: zone-lavender · zone-peach · zone-mint · zone-sky
+          zone-butter · zone-rose
+   Bloques de color sueltos: <div className="tile hue-peach">
+   Figuras decorativas:      <span className="blob hue-rose" />
+
+   Tipografías (agregar en index.html):
+   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
    ============================================================ */
 
+/* ------------------------------------------------------------
+   1. PALETA BASE — seis familias pastel
+      bg = fondo de zona · soft = bloques · deep = acento · ink = texto
+   ------------------------------------------------------------ */
 :root {
-  /* Superficie (claro) — crema cálido, acogedor y limpio */
-  --surface: #FBF8F2;
-  --surface-dim: #E7DFCD;
-  --surface-bright: #FBF8F2;
-  --surface-container-lowest: #FFFFFF;
-  --surface-container-low: #F6F1E6;
-  --surface-container: #F1EADB;
-  --surface-container-high: #EAE1CD;
-  --surface-container-highest: #E2D8C0;
-  --surface-variant: #E2D8C0;
-  --surface-tint: #6E8763;
+  --lav-bg: #CFE4F6;   --lav-soft: #A9CFEE;   --lav-deep: #285F94;   --lav-ink: #0F2C47;
+  --peach-bg: #FCDCCB; --peach-soft: #F7BFA2; --peach-deep: #A5461F; --peach-ink: #4A1D0C;
+  --mint-bg: #CDEBDC;  --mint-soft: #A9DBC1;  --mint-deep: #226A4C;  --mint-ink: #0E3324;
+  --sky-bg: #DDD5F5;   --sky-soft: #C6B9EE;   --sky-deep: #5B4BA8;   --sky-ink: #251C4D;
+  --butter-bg: #F9EAB5; --butter-soft: #F1D678; --butter-deep: #7A5C0B; --butter-ink: #3D2E03;
+  --rose-bg: #F8D2E0;  --rose-soft: #EFB0C8;  --rose-deep: #9E3459;  --rose-ink: #4A1228;
 
-  --on-surface: #2A2A22;
-  --on-surface-variant: #5B5A4C;
-  --inverse-surface: #33322A;
-  --inverse-on-surface: #F5F1E5;
+  --on-accent: #FFFFFF;
 
-  --outline: #8C8A78;
-  --outline-variant: #DAD2BA;
+  /* Error (no depende de la zona) */
+  --err: #B3263E;
+  --err-soft: #F9D4D9;
+  --err-ink: #5A0F1C;
 
-  /* Primario — salvia: calma, equilibrio, naturaleza */
-  --primary: #6E8763;
-  --on-primary: #FFFFFF;
-  --primary-container: #DBE7CF;
-  --on-primary-container: #33422C;
-  --inverse-primary: #B8CBAA;
-  --primary-fixed: #DBE7CF;
-  --primary-fixed-dim: #B8CBAA;
-  --on-primary-fixed: #1E2A18;
-  --on-primary-fixed-variant: #47573C;
-
-  /* Secundario — azul cielo suave: calma, confianza, claridad */
-  --secondary: #5C88B0;
-  --on-secondary: #FFFFFF;
-  --secondary-container: #D7E6F0;
-  --on-secondary-container: #1D3A4F;
-  --secondary-fixed: #D7E6F0;
-  --secondary-fixed-dim: #A8C6DA;
-  --on-secondary-fixed: #0F2A3B;
-  --on-secondary-fixed-variant: #2E5872;
-
-  /* Terciario — verde agua suave: un puente entre salvia y azul */
-  --tertiary: #6FA39A;
-  --on-tertiary: #FFFFFF;
-  --tertiary-container: #DCEEEA;
-  --on-tertiary-container: #1F3D38;
-  --tertiary-fixed: #DCEEEA;
-  --tertiary-fixed-dim: #AFD6CD;
-  --on-tertiary-fixed: #10231F;
-  --on-tertiary-fixed-variant: #3D615A;
-
-  --error: #A5453D;
-  --on-error: #FFFFFF;
-  --error-container: #F5DAD6;
-  --on-error-container: #5C1B15;
-
-  /* Éxito / advertencia (apoyo emocional para estados) */
-  --success: #557E52;
-  --success-container: #DCEEDA;
-  --on-success-container: #23401F;
-  --warning: #A5813A;
-  --warning-container: #F3E6C8;
-  --on-warning-container: #4A3A14;
-
-  --background: var(--surface);
-  --on-background: var(--on-surface);
-
-  /* Movimiento sutil — casi imperceptible, sin rebote */
-  --ease-emphasized: cubic-bezier(0.3, 0, 0.2, 1);
-  --ease-emphasized-decelerate: cubic-bezier(0.2, 0, 0, 1);
-  --ease-emphasized-accelerate: cubic-bezier(0.4, 0, 1, 1);
-  --ease-spring: cubic-bezier(0.3, 0, 0.2, 1);
-  --dur-short: 140ms;
-  --dur-med: 240ms;
-  --dur-long: 380ms;
-
-  /* Elevación muy suave, casi plana */
-  --shadow-1: 0 1px 2px rgb(42 42 34 / 0.05), 0 2px 10px rgb(110 135 99 / 0.05);
-  --shadow-2: 0 2px 6px rgb(42 42 34 / 0.06), 0 8px 20px rgb(110 135 99 / 0.07);
-  --shadow-3: 0 4px 12px rgb(42 42 34 / 0.08), 0 16px 36px rgb(110 135 99 / 0.09);
+  /* Niveles de riesgo psicosocial (heatmap): menta → mantequilla → durazno → baya */
+  --risk-low: #226A4C;       --risk-low-container: #CDEBDD;
+  --risk-moderate: #7A5C0B;  --risk-moderate-container: #F5E7B0;
+  --risk-high: #A5461F;      --risk-high-container: #F8CDB5;
+  --risk-critical: #9E2F59;  --risk-critical-container: #F2B3C8;
 }
 
 .dark {
-  /* Superficie (oscuro) — espresso cálido, no negro puro ni azul noche */
-  --surface: #1E1C16;
-  --surface-dim: #1E1C16;
-  --surface-bright: #46432F;
-  --surface-container-lowest: #17150F;
-  --surface-container-low: #26231B;
-  --surface-container: #2C2921;
-  --surface-container-high: #36322A;
-  --surface-container-highest: #413C31;
-  --surface-variant: #413C31;
-  --surface-tint: #B8CBAA;
+  /* Pasteles nocturnos: mismo matiz, fondo profundo y acento claro */
+  --lav-bg: #12202E;   --lav-soft: #234563;   --lav-deep: #9CCBF0;   --lav-ink: #DFEDF9;
+  --peach-bg: #2A1A14; --peach-soft: #5A3424; --peach-deep: #F5B896; --peach-ink: #FBE9DF;
+  --mint-bg: #12261D;  --mint-soft: #264F3C;  --mint-deep: #92D9B7;  --mint-ink: #DDF3E9;
+  --sky-bg: #1C1930;   --sky-soft: #382F66;   --sky-deep: #BDB1F0;   --sky-ink: #EAE6FA;
+  --butter-bg: #292210; --butter-soft: #5A4B1B; --butter-deep: #EBD27A; --butter-ink: #F9F0D0;
+  --rose-bg: #2B151F;  --rose-soft: #5C2D43;  --rose-deep: #F0A9C2;  --rose-ink: #FBE3EC;
 
-  --on-surface: #EBE6D8;
-  --on-surface-variant: #CBC5B2;
-  --inverse-surface: #EBE6D8;
-  --inverse-on-surface: #33322A;
+  --on-accent: #15121F;
 
-  --outline: #948E7A;
-  --outline-variant: #4A4636;
+  --err: #F2A0AB;
+  --err-soft: #5A1A28;
+  --err-ink: #FADADD;
 
-  --primary: #B8CBAA;
-  --on-primary: #263420;
-  --primary-container: #47573C;
-  --on-primary-container: #DBE7CF;
-  --inverse-primary: #6E8763;
-  --primary-fixed: #DBE7CF;
-  --primary-fixed-dim: #B8CBAA;
-  --on-primary-fixed: #1E2A18;
-  --on-primary-fixed-variant: #47573C;
+  --risk-low: #92D9B7;       --risk-low-container: #1F4132;
+  --risk-moderate: #EBD27A;  --risk-moderate-container: #4A3E17;
+  --risk-high: #F5B896;      --risk-high-container: #4A2B1E;
+  --risk-critical: #F0A9C2;  --risk-critical-container: #4B2536;
+}
 
-  --secondary: #A8C6DA;
-  --on-secondary: #123047;
-  --secondary-container: #2E5872;
-  --on-secondary-container: #D7E6F0;
-  --secondary-fixed: #D7E6F0;
-  --secondary-fixed-dim: #A8C6DA;
-  --on-secondary-fixed: #0F2A3B;
-  --on-secondary-fixed-variant: #2E5872;
+/* ------------------------------------------------------------
+   2. ZONAS — cada una elige 3 familias:
+      p = principal (fondo y acento) · s y t = compañeras de contraste
+   ------------------------------------------------------------ */
+:root,
+.zone-sky {
+  --p-bg: var(--sky-bg); --p-soft: var(--sky-soft); --p-deep: var(--sky-deep); --p-ink: var(--sky-ink);
+  --s-soft: var(--lav-soft); --s-deep: var(--lav-deep); --s-ink: var(--lav-ink);
+  --t-soft: var(--peach-soft); --t-deep: var(--peach-deep); --t-ink: var(--peach-ink);
+}
+.zone-lavender,
+.zone-dashboard {
+  --p-bg: var(--lav-bg); --p-soft: var(--lav-soft); --p-deep: var(--lav-deep); --p-ink: var(--lav-ink);
+  --s-soft: var(--sky-soft); --s-deep: var(--sky-deep); --s-ink: var(--sky-ink);
+  --t-soft: var(--peach-soft); --t-deep: var(--peach-deep); --t-ink: var(--peach-ink);
+}
+.zone-dashboard {
+  --p-bg: #DCE8F4;
+  --p-soft: #C3D9EA;
+  --p-deep: #365F83;
+  --p-ink: #19334B;
+  --s-soft: var(--mint-soft); --s-deep: var(--mint-deep); --s-ink: var(--mint-ink);
+  --t-soft: var(--peach-soft); --t-deep: var(--peach-deep); --t-ink: var(--peach-ink);
+  --canvas-orb-a: #C58FD1;
+  --canvas-orb-b: #F4B17F;
+  --chart-2: var(--mint-deep);
+}
 
-  --tertiary: #AFD6CD;
-  --on-tertiary: #17332D;
-  --tertiary-container: #3D615A;
-  --on-tertiary-container: #DCEEEA;
-  --tertiary-fixed: #DCEEEA;
-  --tertiary-fixed-dim: #AFD6CD;
-  --on-tertiary-fixed: #10231F;
-  --on-tertiary-fixed-variant: #3D615A;
+.zone-dashboard .motion-card {
+  --surface-container-lowest: #D5E9F6;
+  --surface-container-low: #C8E2F2;
+  --surface-container: #BBD9EB;
+  --on-surface: #183750;
+  --on-surface-variant: #36566E;
+  --primary-fixed: #B9D5E9;
+  --on-primary-fixed-variant: #183750;
+}
+.zone-peach {
+  --p-bg: var(--peach-bg); --p-soft: var(--peach-soft); --p-deep: var(--peach-deep); --p-ink: var(--peach-ink);
+  --s-soft: var(--mint-soft); --s-deep: var(--mint-deep); --s-ink: var(--mint-ink);
+  --t-soft: var(--lav-soft); --t-deep: var(--lav-deep); --t-ink: var(--lav-ink);
+}
+.zone-mint {
+  --p-bg: var(--mint-bg); --p-soft: var(--mint-soft); --p-deep: var(--mint-deep); --p-ink: var(--mint-ink);
+  --s-soft: var(--sky-soft); --s-deep: var(--sky-deep); --s-ink: var(--sky-ink);
+  --t-soft: var(--rose-soft); --t-deep: var(--rose-deep); --t-ink: var(--rose-ink);
+}
+.zone-butter {
+  --p-bg: var(--butter-bg); --p-soft: var(--butter-soft); --p-deep: var(--butter-deep); --p-ink: var(--butter-ink);
+  --s-soft: var(--mint-soft); --s-deep: var(--mint-deep); --s-ink: var(--mint-ink);
+  --t-soft: var(--rose-soft); --t-deep: var(--rose-deep); --t-ink: var(--rose-ink);
+}
+.zone-rose {
+  --p-bg: var(--rose-bg); --p-soft: var(--rose-soft); --p-deep: var(--rose-deep); --p-ink: var(--rose-ink);
+  --s-soft: var(--lav-soft); --s-deep: var(--lav-deep); --s-ink: var(--lav-ink);
+  --t-soft: var(--butter-soft); --t-deep: var(--butter-deep); --t-ink: var(--butter-ink);
+}
 
-  --error: #E2A29B;
-  --on-error: #5C1B15;
-  --error-container: #7A2E26;
-  --on-error-container: #F5DAD6;
+/* ------------------------------------------------------------
+   3. TOKENS SEMÁNTICOS — se recalculan dentro de cada zona.
+      Los nombres son los mismos de siempre, así que tus clases
+      (bg-surface-container, text-primary, etc.) siguen funcionando.
+   ------------------------------------------------------------ */
+:root,
+[class*="zone-"] {
+  /* Superficies: más claras que el fondo = "flotan" sin sombra */
+  --surface: var(--p-bg);
+  --surface-dim: color-mix(in oklab, var(--p-bg) 85%, var(--p-deep));
+  --surface-bright: var(--p-bg);
+  --surface-container-lowest: color-mix(in oklab, var(--p-bg) 12%, white);
+  --surface-container-low: color-mix(in oklab, var(--p-bg) 30%, white);
+  --surface-container: color-mix(in oklab, var(--p-bg) 50%, white);
+  --surface-container-high: var(--p-soft);
+  --surface-container-highest: color-mix(in oklab, var(--p-soft) 78%, var(--p-deep));
+  --surface-variant: var(--surface-container-highest);
+  --surface-tint: var(--p-deep);
 
-  --success: #A0C89B;
-  --success-container: #3A5836;
-  --on-success-container: #DCEEDA;
-  --warning: #D8B96E;
-  --warning-container: #5A4620;
-  --on-warning-container: #F3E6C8;
+  --on-surface: var(--p-ink);
+  --on-surface-variant: color-mix(in oklab, var(--p-ink) 75%, var(--p-bg));
+  --inverse-surface: var(--p-ink);
+  --inverse-on-surface: var(--p-bg);
+
+  /* Sin líneas: los bordes existentes se vuelven invisibles */
+  --outline: color-mix(in oklab, var(--p-ink) 50%, var(--p-bg));
+  --outline-variant: transparent;
+
+  --primary: var(--p-deep);
+  --on-primary: var(--on-accent);
+  --primary-container: color-mix(in oklab, var(--p-soft) 85%, var(--p-deep));
+  --on-primary-container: var(--p-ink);
+  --inverse-primary: color-mix(in oklab, var(--p-deep) 45%, white);
+  --primary-fixed: var(--p-soft);
+  --primary-fixed-dim: color-mix(in oklab, var(--p-soft) 80%, var(--p-deep));
+  --on-primary-fixed: var(--p-ink);
+  --on-primary-fixed-variant: var(--p-deep);
+
+  --secondary: var(--s-deep);
+  --on-secondary: var(--on-accent);
+  --secondary-container: var(--s-soft);
+  --on-secondary-container: var(--s-ink);
+  --secondary-fixed: var(--s-soft);
+  --secondary-fixed-dim: color-mix(in oklab, var(--s-soft) 80%, var(--s-deep));
+  --on-secondary-fixed: var(--s-ink);
+  --on-secondary-fixed-variant: var(--s-deep);
+
+  --tertiary: var(--t-deep);
+  --on-tertiary: var(--on-accent);
+  --tertiary-container: var(--t-soft);
+  --on-tertiary-container: var(--t-ink);
+  --tertiary-fixed: var(--t-soft);
+  --tertiary-fixed-dim: color-mix(in oklab, var(--t-soft) 80%, var(--t-deep));
+  --on-tertiary-fixed: var(--t-ink);
+  --on-tertiary-fixed-variant: var(--t-deep);
+
+  --error: var(--err);
+  --on-error: var(--on-accent);
+  --error-container: var(--err-soft);
+  --on-error-container: var(--err-ink);
+
+  --success: var(--mint-deep);
+  --success-container: var(--mint-soft);
+  --on-success-container: var(--mint-ink);
+  --warning: var(--butter-deep);
+  --warning-container: var(--butter-soft);
+  --on-warning-container: var(--butter-ink);
 
   --background: var(--surface);
   --on-background: var(--on-surface);
+}
 
-  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.35), 0 2px 10px rgb(0 0 0 / 0.25);
-  --shadow-2: 0 2px 6px rgb(0 0 0 / 0.4), 0 8px 20px rgb(0 0 0 / 0.3);
-  --shadow-3: 0 4px 14px rgb(0 0 0 / 0.45), 0 16px 36px rgb(0 0 0 / 0.35);
+/* Modo oscuro: las superficies se elevan aclarando, no con sombra */
+.dark,
+.dark [class*="zone-"] {
+  --surface-dim: var(--p-bg);
+  --surface-bright: var(--p-bg);
+  --surface-container-lowest: color-mix(in oklab, var(--p-bg) 55%, black);
+  --surface-container-low: color-mix(in oklab, var(--p-bg) 50%, var(--p-soft));
+  --surface-container: var(--p-soft);
+  --surface-container-high: color-mix(in oklab, var(--p-soft) 80%, var(--p-deep));
+  --surface-container-highest: color-mix(in oklab, var(--p-soft) 68%, var(--p-deep));
+
+  --primary-container: color-mix(in oklab, var(--p-soft) 80%, var(--p-deep));
+  --inverse-primary: color-mix(in oklab, var(--p-deep) 45%, black);
+}
+
+.dark .zone-dashboard {
+  --p-bg: #202B3E;
+  --p-soft: #354B64;
+  --p-deep: #B9D0E5;
+  --p-ink: #F0F6FB;
+  --s-soft: #264F3C; --s-deep: #92D9B7; --s-ink: #DDF3E9;
+  --t-soft: #5A3424; --t-deep: #F5B896; --t-ink: #FBE9DF;
+  --canvas-orb-a: #70558F;
+  --canvas-orb-b: #9A603D;
+  --chart-2: var(--mint-deep);
+}
+
+.dark .zone-dashboard .motion-card {
+  --surface-container-lowest: #2A5273;
+  --surface-container-low: #315E82;
+  --surface-container: #38698E;
+  --surface-container-high: #44799F;
+  --on-surface: #F2F7FC;
+  --on-surface-variant: #D5E5F0;
+  --outline-variant: #527895;
+  --primary-fixed: #426B8A;
+  --on-primary-fixed-variant: #F2F7FC;
+}
+
+/* Paleta para gráficas y heatmap (usa los pasteles base) */
+:root {
+  --chart-1: var(--lav-deep);
+  --chart-2: var(--sky-deep);
+  --chart-3: var(--mint-deep);
+  --chart-4: var(--peach-deep);
+  --chart-5: var(--rose-deep);
+
+  /* Movimiento: resorte suave, sin rebote exagerado */
+  --ease-spring: linear(
+    0, 0.18 4%, 0.52 9%, 0.8 15%, 0.96 22%, 1.03 30%,
+    1.04 36%, 1.02 45%, 1 58%, 0.995 70%, 1
+  );
+  --ease-emphasized: cubic-bezier(0.3, 0, 0.2, 1);
+  --ease-emphasized-decelerate: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --dur-short: 160ms;
+  --dur-med: 320ms;
+  --dur-long: 600ms;
+
+  /* Sin sombras: se mantienen los nombres para no romper componentes */
+  --shadow-1: none;
+  --shadow-2: none;
+  --shadow-3: none;
+
+  /* Figuras orgánicas */
+  --blob-a: 63% 37% 54% 46% / 55% 48% 52% 45%;
+  --blob-b: 42% 58% 38% 62% / 52% 40% 60% 48%;
+  --blob-c: 54% 46% 62% 38% / 40% 58% 42% 60%;
+  --blob-d: 38% 62% 47% 53% / 60% 38% 62% 40%;
+}
+
+/* Se eliminan las sombras predefinidas de Tailwind (shadow-md, etc.) */
+@theme {
+  --shadow-*: initial;
 }
 
 @theme inline {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", "Figtree", ui-sans-serif, system-ui, sans-serif;
 
   --color-surface: var(--surface);
   --color-surface-dim: var(--surface-dim);
@@ -225,48 +339,65 @@
   --color-warning-container: var(--warning-container);
   --color-on-warning-container: var(--on-warning-container);
 
+  --color-risk-low: var(--risk-low);
+  --color-risk-low-container: var(--risk-low-container);
+  --color-risk-moderate: var(--risk-moderate);
+  --color-risk-moderate-container: var(--risk-moderate-container);
+  --color-risk-high: var(--risk-high);
+  --color-risk-high-container: var(--risk-high-container);
+  --color-risk-critical: var(--risk-critical);
+  --color-risk-critical-container: var(--risk-critical-container);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
   --color-background: var(--background);
   --color-on-background: var(--on-background);
 
-  /* Radios orgánicos — esquinas generosas, formas suaves */
-  --radius-sm: 0.5rem;
-  --radius: 0.875rem;
-  --radius-md: 1.25rem;
-  --radius-lg: 1.75rem;
-  --radius-xl: 2.5rem;
+  /* Radios muy suaves */
+  --radius-sm: 0.875rem;
+  --radius: 1.25rem;
+  --radius-md: 1.75rem;
+  --radius-lg: 2.25rem;
+  --radius-xl: 3.5rem;
   --radius-full: 9999px;
 
-  /* Espaciados aireados */
-  --spacing-space-xs: 0.375rem;
-  --spacing-space-sm: 0.625rem;
-  --spacing-space-md: 1.25rem;
-  --spacing-gutter: 1.75rem;
-  --spacing-space-lg: 2rem;
-  --spacing-margin: 2.5rem;
-  --spacing-space-xl: 2.75rem;
+  /* Espaciado generoso: el aire es parte del diseño */
+  --spacing-space-xs: 0.5rem;
+  --spacing-space-sm: 0.875rem;
+  --spacing-space-md: 1.5rem;
+  --spacing-gutter: 2rem;
+  --spacing-space-lg: 2.25rem;
+  --spacing-margin: 3rem;
+  --spacing-space-xl: 3.5rem;
 }
 
-/* Escala tipográfica "Executive Pulse" (de DESIGN.md) */
-.text-display-lg        { font: 600 40px/48px var(--font-sans); letter-spacing: -0.03em; }
-.text-display-lg-mobile { font: 600 32px/40px var(--font-sans); letter-spacing: -0.025em; }
-.text-headline-xl       { font: 600 30px/38px var(--font-sans); letter-spacing: -0.025em; }
-.text-headline-xl-mobile{ font: 600 24px/32px var(--font-sans); letter-spacing: -0.02em; }
-.text-headline-lg       { font: 600 24px/32px var(--font-sans); letter-spacing: -0.02em; }
-.text-headline-md       { font: 600 20px/28px var(--font-sans); letter-spacing: -0.015em; }
-.text-headline-sm       { font: 600 16px/24px var(--font-sans); letter-spacing: -0.01em; }
-.text-body-lg           { font: 400 16px/26px var(--font-sans); letter-spacing: -0.005em; }
-.text-body-md           { font: 400 14px/22px var(--font-sans); }
-.text-body-sm           { font: 400 13px/18px var(--font-sans); letter-spacing: 0.005em; }
-.text-label-md          { font: 600 12px/16px var(--font-sans); letter-spacing: 0.02em; }
-.text-label-sm          { font: 600 11px/14px var(--font-sans); letter-spacing: 0.04em; }
-.text-metric-val        { font: 600 28px/34px var(--font-sans); letter-spacing: -0.03em; }
+/* ------------------------------------------------------------
+   4. TIPOGRAFÍA — títulos con carácter, texto muy legible
+   ------------------------------------------------------------ */
+.text-display-lg         { font: 700 48px/54px var(--font-display); letter-spacing: -0.04em; text-wrap: balance; }
+.text-display-lg-mobile  { font: 700 36px/42px var(--font-display); letter-spacing: -0.035em; text-wrap: balance; }
+.text-headline-xl        { font: 700 34px/40px var(--font-display); letter-spacing: -0.035em; text-wrap: balance; }
+.text-headline-xl-mobile { font: 700 28px/34px var(--font-display); letter-spacing: -0.03em; text-wrap: balance; }
+.text-headline-lg        { font: 650 27px/34px var(--font-display); letter-spacing: -0.03em; text-wrap: balance; }
+.text-headline-md        { font: 650 21px/28px var(--font-display); letter-spacing: -0.02em; }
+.text-headline-sm        { font: 650 17px/24px var(--font-display); letter-spacing: -0.01em; }
+.text-body-lg            { font: 400 17px/28px var(--font-sans); text-wrap: pretty; }
+.text-body-md            { font: 400 15px/24px var(--font-sans); text-wrap: pretty; }
+.text-body-sm            { font: 400 13.5px/20px var(--font-sans); }
+.text-label-md           { font: 600 13px/18px var(--font-sans); letter-spacing: 0.01em; }
+.text-label-sm           { font: 600 12px/16px var(--font-sans); letter-spacing: 0.015em; }
+.text-metric-val         { font: 700 40px/44px var(--font-display); letter-spacing: -0.04em; }
 
 body {
   background-color: var(--color-surface);
   color: var(--color-on-surface);
+  font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
-  transition: background-color var(--dur-med) var(--ease-emphasized),
-              color var(--dur-med) var(--ease-emphasized);
+  -webkit-font-smoothing: antialiased;
 }
 
 html {
@@ -277,43 +408,26 @@ html {
   color-scheme: dark;
 }
 
-/* Fondo ambiental: manchas orgánicas muy suaves (salvia/arena) que dan
-   profundidad sin distraer. Se aplica a los contenedores de página. */
-.app-canvas {
-  position: relative;
-  min-height: 100vh;
-  background-color: var(--color-surface);
-  overflow-x: hidden;
+.theme-select {
+  color-scheme: light;
 }
-.app-canvas::before,
-.app-canvas::after {
-  content: "";
-  position: fixed;
-  filter: blur(110px);
-  pointer-events: none;
-  z-index: 0;
+.dark .theme-select {
+  color-scheme: dark;
 }
-.app-canvas::before {
-  width: 40vw;
-  height: 40vw;
-  top: -16vw;
-  right: -10vw;
-  border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%;
-  background: rgb(110 135 99 / 0.10);
+.theme-select option {
+  background-color: var(--surface-container-lowest);
+  color: var(--on-surface);
 }
-.app-canvas::after {
-  width: 34vw;
-  height: 34vw;
-  bottom: -12vw;
-  left: 6vw;
-  border-radius: 63% 37% 42% 58% / 58% 42% 58% 42%;
-  background: rgb(169 130 94 / 0.08);
+
+::selection {
+  background: var(--p-soft);
+  color: var(--p-ink);
 }
-.dark .app-canvas::before {
-  background: rgb(184 203 170 / 0.06);
-}
-.dark .app-canvas::after {
-  background: rgb(217 185 142 / 0.05);
+
+/* Foco visible: único contorno permitido, por accesibilidad con teclado */
+:focus-visible {
+  outline: 3px solid var(--p-deep);
+  outline-offset: 3px;
 }
 
 /* Íconos Material Symbols */
@@ -330,63 +444,282 @@ html {
   direction: ltr;
 }
 
-/* ============================================================
-   Utilidades de movimiento — sutiles, sin rebote, casi quietas
-   ============================================================ */
+/* ------------------------------------------------------------
+   5. LIENZO — la zona completa + dos blobs planos de contraste
+   ------------------------------------------------------------ */
+.app-canvas {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  background-color: var(--surface);
+  overflow-x: hidden;
+  transition: background-color var(--dur-long) var(--ease-emphasized);
+}
+.app-canvas::before,
+.app-canvas::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  will-change: transform;
+}
+.app-canvas::before {
+  width: min(52vw, 760px);
+  aspect-ratio: 1;
+  top: -14vw;
+  right: -14vw;
+  background: var(--canvas-orb-a, var(--s-soft));
+  border-radius: var(--blob-a);
+  animation: blob-drift-a 46s ease-in-out infinite alternate;
+}
+.zone-dashboard.app-canvas::before {
+  width: clamp(22rem, 41vw, 560px);
+  aspect-ratio: 1.18;
+  top: -10rem;
+  right: -7rem;
+  opacity: 0.72;
+  border-radius: 63% 37% 54% 46% / 48% 42% 58% 52%;
+  animation:
+    dashboard-orb-drift 34s ease-in-out infinite alternate,
+    dashboard-orb-morph 27s ease-in-out infinite alternate;
+}
+.dark .zone-dashboard.app-canvas::before {
+  opacity: 0.62;
+}
+.app-canvas::after {
+  width: min(40vw, 600px);
+  aspect-ratio: 1;
+  bottom: -16vw;
+  left: -10vw;
+  background: var(--canvas-orb-b, var(--t-soft));
+  border-radius: var(--blob-c);
+  animation: blob-drift-b 56s ease-in-out infinite alternate;
+}
+@keyframes blob-drift-a {
+  from { transform: translate(0, 0) rotate(0deg); }
+  to   { transform: translate(-5vw, 4vw) rotate(22deg); }
+}
+@keyframes blob-drift-b {
+  from { transform: translate(0, 0) rotate(0deg); }
+  to   { transform: translate(6vw, -3vw) rotate(-16deg); }
+}
+@keyframes dashboard-orb-drift {
+  from { transform: translate(0, 0) rotate(-7deg); }
+  to   { transform: translate(-2vw, 2.5rem) rotate(9deg); }
+}
+@keyframes dashboard-orb-morph {
+  from { border-radius: 67% 33% 56% 44% / 44% 57% 43% 56%; }
+  to   { border-radius: 42% 58% 37% 63% / 56% 38% 62% 44%; }
+}
 
-/* Tarjeta interactiva: solo cambia borde/sombra, sin desplazamiento */
-.motion-card {
+/* Red de seguridad: si el contenedor principal de una página pinta su propio
+   fondo (blanco/azul), lo hacemos transparente para que se vea la zona y
+   las figuras. Lo ideal es quitar esa clase bg-* del JSX de cada página. */
+.app-canvas > :where(
+  .bg-surface, .bg-background, .bg-surface-bright, .bg-surface-dim,
+  .bg-surface-container-lowest, .bg-surface-container-low, .bg-surface-container
+),
+.app-canvas main {
+  background-color: transparent;
+}
+
+/* ------------------------------------------------------------
+   6. FAMILIAS DE COLOR SUELTAS — para bloques y figuras
+      <div class="tile hue-peach"> · <span class="blob hue-rose">
+   ------------------------------------------------------------ */
+.hue-lav    { --h-bg: var(--lav-bg);    --h-soft: var(--lav-soft);    --h-deep: var(--lav-deep);    --h-ink: var(--lav-ink); }
+.hue-peach  { --h-bg: var(--peach-bg);  --h-soft: var(--peach-soft);  --h-deep: var(--peach-deep);  --h-ink: var(--peach-ink); }
+.hue-mint   { --h-bg: var(--mint-bg);   --h-soft: var(--mint-soft);   --h-deep: var(--mint-deep);   --h-ink: var(--mint-ink); }
+.hue-sky    { --h-bg: var(--sky-bg);    --h-soft: var(--sky-soft);    --h-deep: var(--sky-deep);    --h-ink: var(--sky-ink); }
+.hue-butter { --h-bg: var(--butter-bg); --h-soft: var(--butter-soft); --h-deep: var(--butter-deep); --h-ink: var(--butter-ink); }
+.hue-rose   { --h-bg: var(--rose-bg);   --h-soft: var(--rose-soft);   --h-deep: var(--rose-deep);   --h-ink: var(--rose-ink); }
+
+/* Bloque de color plano: sin borde, sin sombra */
+.tile {
+  background: var(--h-soft, var(--surface-container));
+  color: var(--h-ink, var(--on-surface));
   border-radius: var(--radius-lg);
-  border: 1px solid var(--outline-variant);
-  box-shadow: var(--shadow-1);
-  transition:
-    box-shadow var(--dur-med) var(--ease-emphasized),
-    border-color var(--dur-med) var(--ease-emphasized),
-    background-color var(--dur-med) var(--ease-emphasized);
+}
+.tile-deep {
+  background: var(--h-deep, var(--primary));
+  color: var(--on-accent);
+  border-radius: var(--radius-lg);
+}
+
+/* Figuras decorativas (colócalas dentro de un contenedor relative) */
+.blob {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  width: var(--blob-size, 14rem);
+  aspect-ratio: 1;
+  background: var(--h-soft, var(--s-soft));
+  border-radius: var(--blob-a);
+}
+.blob-b { border-radius: var(--blob-b); }
+.blob-c { border-radius: var(--blob-c); }
+.blob-d { border-radius: var(--blob-d); }
+.blob-leaf { border-radius: 50% 0 50% 50%; }
+.blob-pill { aspect-ratio: 2.2; border-radius: 9999px; }
+
+/* Forma que cambia lentamente: úsala en UN solo elemento protagonista */
+@keyframes blob-morph {
+  0%   { border-radius: var(--blob-a); }
+  50%  { border-radius: var(--blob-b); }
+  100% { border-radius: var(--blob-c); }
+}
+.animate-blob { animation: blob-morph 16s ease-in-out infinite alternate; }
+
+/* ------------------------------------------------------------
+   7. COMPONENTES BASE — todo plano
+   ------------------------------------------------------------ */
+
+/* Tarjeta: relleno más claro que el fondo; al pasar el cursor, se aclara */
+.motion-card {
+  background: var(--surface-container);
+  border-radius: var(--radius-lg);
+  transition: background-color var(--dur-med) var(--ease-emphasized);
 }
 .motion-card:hover {
-  border-color: var(--outline);
-  box-shadow: var(--shadow-2);
+  background: var(--surface-container-lowest);
+}
+.motion-card.keep-card-color:hover {
+  background: var(--surface-container);
 }
 
-/* Botones: transición de color/opacidad, sin salto */
+/* Botones: respuesta con resorte; al presionar se comprimen y se redondean */
 .motion-press {
   transition:
-    box-shadow var(--dur-med) var(--ease-emphasized),
+    transform var(--dur-med) var(--ease-spring),
+    border-radius var(--dur-med) var(--ease-spring),
     background-color var(--dur-med) var(--ease-emphasized),
     color var(--dur-med) var(--ease-emphasized),
     opacity var(--dur-short) var(--ease-emphasized);
 }
-.motion-press:active { opacity: 0.75; transition-duration: 90ms; }
+.motion-press:active {
+  transform: scale(0.95);
+  transition-duration: 90ms;
+}
 
-/* Entradas suaves (para listas, tarjetas, secciones) */
+/* Campo de texto: relleno suave en vez de borde */
+.field {
+  background: var(--surface-container-low);
+  color: var(--on-surface);
+  border: 0;
+  border-radius: var(--radius-md);
+  padding: 0.95rem 1.25rem;
+  transition: background-color var(--dur-med) var(--ease-emphasized);
+}
+.field::placeholder {
+  color: var(--on-surface-variant);
+  opacity: 0.7;
+}
+.field:hover { background: var(--surface-container); }
+.field:focus { background: var(--surface-container-lowest); }
+
+.survey-field {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid color-mix(in oklab, var(--p-ink) 24%, var(--p-bg));
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--p-bg) 35%, white);
+  color: var(--p-ink);
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  transition: border-color var(--dur-short) var(--ease-emphasized),
+    background-color var(--dur-short) var(--ease-emphasized),
+    box-shadow var(--dur-short) var(--ease-emphasized);
+}
+.survey-field::placeholder {
+  color: color-mix(in oklab, var(--p-ink) 68%, var(--p-bg));
+  opacity: 1;
+}
+.survey-field:focus-visible {
+  outline: 3px solid color-mix(in oklab, var(--p-deep) 35%, transparent);
+  outline-offset: 1px;
+  border-color: var(--p-deep);
+  background: color-mix(in oklab, var(--p-bg) 18%, white);
+}
+.dark .survey-field {
+  border-color: color-mix(in oklab, var(--p-deep) 42%, var(--p-bg));
+  background: color-mix(in oklab, var(--p-soft) 30%, var(--p-bg));
+  color: var(--p-ink);
+}
+.dark .survey-field::placeholder {
+  color: color-mix(in oklab, var(--p-ink) 72%, var(--p-bg));
+}
+.dark .survey-field:focus-visible {
+  background: color-mix(in oklab, var(--p-soft) 48%, var(--p-bg));
+}
+
+.survey-chip {
+  border: 1px solid color-mix(in oklab, var(--p-ink) 32%, var(--p-bg));
+  background: color-mix(in oklab, var(--p-bg) 48%, white);
+  color: var(--p-ink);
+}
+.survey-chip:hover {
+  background: color-mix(in oklab, var(--p-soft) 62%, white);
+}
+.survey-chip[aria-pressed="true"] {
+  border-color: var(--p-deep);
+  background: var(--p-deep);
+  color: var(--on-accent);
+}
+.dark .survey-chip {
+  border-color: color-mix(in oklab, var(--p-deep) 50%, var(--p-bg));
+  background: color-mix(in oklab, var(--p-soft) 30%, var(--p-bg));
+  color: var(--p-ink);
+}
+.dark .survey-chip:hover {
+  background: color-mix(in oklab, var(--p-soft) 48%, var(--p-bg));
+}
+.dark .survey-chip[aria-pressed="true"] {
+  border-color: var(--p-deep);
+  background: var(--p-deep);
+  color: var(--on-accent);
+}
+
+/* ------------------------------------------------------------
+   8. MOVIMIENTO — tranquilo y con propósito
+   ------------------------------------------------------------ */
 @keyframes expressive-enter {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .animate-enter {
   animation: expressive-enter var(--dur-long) var(--ease-emphasized-decelerate) both;
 }
 
-/* Aparición suave (chips, badges, notificaciones) */
 @keyframes expressive-pop {
-  from { opacity: 0; transform: scale(0.96); }
+  from { opacity: 0; transform: scale(0.9); }
   to   { opacity: 1; transform: scale(1); }
 }
 .animate-pop {
-  animation: expressive-pop var(--dur-med) var(--ease-emphasized) both;
+  animation: expressive-pop var(--dur-long) var(--ease-spring) both;
 }
 
-/* Pulso ambiental (indicadores vivos, puntos de estado) — lento y tenue */
+/* Punto "en vivo": late sin sombra, solo escala y opacidad */
 @keyframes ambient-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgb(110 135 99 / 0.25); }
-  50%      { box-shadow: 0 0 0 6px rgb(110 135 99 / 0); }
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.3); opacity: 0.65; }
 }
 .animate-ambient {
   animation: ambient-pulse 3.2s var(--ease-emphasized) infinite;
 }
 
-/* Estado de carga: shimmer suave */
+/* Respiración lenta para el indicador principal de bienestar */
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
+.animate-breathe {
+  animation: breathe 6s ease-in-out infinite;
+}
+
+/* Carga: shimmer suave */
 @keyframes shimmer {
   from { background-position: 200% 0; }
   to   { background-position: -200% 0; }
@@ -395,7 +728,7 @@ html {
   background: linear-gradient(
     100deg,
     var(--surface-container) 40%,
-    var(--surface-container-high) 50%,
+    var(--surface-container-low) 50%,
     var(--surface-container) 60%
   );
   background-size: 200% 100%;
@@ -410,4 +743,3 @@ html {
     transition-duration: 0.01ms !important;
   }
 }
-

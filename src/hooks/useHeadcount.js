@@ -1,33 +1,22 @@
-import { useEffect, useState } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { useCallback, useEffect, useState } from "react";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../services/firebase";
-import { DEPARTMENTS } from "../data/surveyQuestion";
-
-/** Headcount teórico del seed, como último fallback para la demo. */
-const SEED_HEADCOUNT = 78;
 
 /**
- * Headcount REAL: cuenta usuarios activos con role employee/team_lead
- * agrupados por departamento. Si no hay usuarios registrados aún,
- * cae al headcount del seed para no romper la demo con datos simulados.
+ * Headcount real: usuarios activos employee/team_lead agrupados por departamento.
  */
 export function useHeadcount() {
   const [state, setState] = useState({
-    total: SEED_HEADCOUNT,
+    total: 0,
     byDepartment: {},
-    fromUsers: false,
   });
 
   useEffect(() => {
-    async function load() {
-      try {
-        const q = query(collection(db, "users"), where("active", "==", true));
-        const snapshot = await getDocs(q);
+    const usersQuery = query(collection(db, "users"), where("active", "==", true));
+    return onSnapshot(usersQuery, (snapshot) => {
         const respondents = snapshot.docs
           .map((d) => d.data())
           .filter((u) => u.role === "employee" || u.role === "team_lead");
-
-        if (respondents.length === 0) return; // mantener fallback del seed
 
         const byDepartment = {};
         respondents.forEach((u) => {
@@ -35,19 +24,16 @@ export function useHeadcount() {
             byDepartment[u.departmentId] = (byDepartment[u.departmentId] || 0) + 1;
           }
         });
-        setState({ total: respondents.length, byDepartment, fromUsers: true });
-      } catch (err) {
+        setState({ total: respondents.length, byDepartment });
+      }, (err) => {
         console.error("No se pudo calcular el headcount real:", err);
-      }
-    }
-    load();
+      });
   }, []);
 
-  return {
-    ...state,
-    forDepartment: (departmentId) =>
-      state.fromUsers
-        ? state.byDepartment[departmentId] ?? 0
-        : DEPARTMENTS.find((d) => d.id === departmentId)?.headcount ?? state.total,
-  };
+  const forDepartment = useCallback(
+    (departmentId) => state.byDepartment[departmentId] ?? 0,
+    [state.byDepartment]
+  );
+
+  return { ...state, forDepartment };
 }

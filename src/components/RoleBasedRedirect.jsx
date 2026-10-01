@@ -47,7 +47,7 @@ export default function RoleBasedRedirect() {
         <span className="material-symbols-outlined text-[40px] text-tertiary">lock_person</span>
         <h1 className="text-headline-md text-on-surface">Cuenta sin acceso asignado</h1>
         <p className="text-body-md text-on-surface-variant">
-          Tu cuenta aún no ha sido aprovisionada. Pide a la administradora de PluriOne Health
+          Tu cuenta aún no ha sido aprovisionada. Pide a la administración de tu organización
           que la dé de alta desde <strong>Gestión de Usuarios</strong>.
         </p>
       </div>

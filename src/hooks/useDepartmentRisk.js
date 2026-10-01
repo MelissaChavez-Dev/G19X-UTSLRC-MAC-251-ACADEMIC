@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
-import { DEPARTMENTS } from "../data/surveyQuestion";
 import { useHeadcount } from "./useHeadcount";
+import { useDepartments } from "./useDepartments";
 
 const FACTOR_KEYS = ["cognitiveLoad", "roleAmbiguity", "emotionalLabor", "shiftFatigue", "autonomy", "psychSafety"];
 const PROTECTIVE_FACTORS = ["autonomy", "psychSafety"];
@@ -24,15 +24,18 @@ export function useDepartmentRisk(departmentId = null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { forDepartment } = useHeadcount();
+  const { departments, loading: departmentsLoading } = useDepartments();
 
   useEffect(() => {
+    if (departmentsLoading) return;
+
     async function load() {
       setLoading(true);
       try {
         const snapshot = await getDocs(collection(db, "responses"));
         const all = snapshot.docs.map((d) => d.data());
 
-        const result = DEPARTMENTS.map((dept) => {
+        const result = departments.map((dept) => {
           const deptHeadcount = forDepartment(dept.id);
           const deptResponses = all.filter((r) => r.departmentId === dept.id);
           const factors = {};
@@ -87,7 +90,7 @@ export function useDepartmentRisk(departmentId = null) {
       }
     }
     load();
-  }, [departmentId, forDepartment]);
+  }, [departmentId, departments, departmentsLoading, forDepartment]);
 
   return { rows, loading, error };
 }

@@ -1,9 +1,9 @@
 # PRD — Dashboard Ejecutivo de Salud Organizacional
 
 **Proyecto:** Dashboard Ejecutivo de Salud Organizacional
-**Empresa:** PluriOne S.A. de C.V. — Develop Talent & Technology
+**Empresa:** Organización participante (nombre provisional)
 **Autora:** Melissa Alejandra Chávez
-**Programa:** TODO Academy — Universidad Tecnológica de San Luis Río Colorado
+**Programa:** Programa de formación (nombre provisional)
 **Repositorio:** github.com/yamyam1805/dashboard-ejecutivo-salud-organizacional
 **Fecha:** Septiembre 2026
 **Estado del documento:** v2.0 — reemplaza la v1.0 (stack Azure/PostgreSQL descartado)
@@ -12,11 +12,11 @@
 
 ## 1. Resumen ejecutivo
 
-Develop Talent & Technology carece de un mecanismo centralizado para monitorear la salud organizacional de su capital humano. Los indicadores de bienestar, ausentismo, rotación, clima laboral, desempeño y factores psicosociales se encuentran dispersos en distintas fuentes y formatos, lo que obliga a generar reportes de forma manual y retrasa la toma de decisiones estratégicas.
+La organización participante carece de un mecanismo centralizado para monitorear la salud organizacional de su capital humano. Los indicadores de bienestar, ausentismo, rotación, clima laboral, desempeño y factores psicosociales se encuentran dispersos en distintas fuentes y formatos, lo que obliga a generar reportes de forma manual y retrasa la toma de decisiones estratégicas.
 
-Este PRD define los requerimientos para desarrollar **PluriOne Health**, un dashboard ejecutivo que consolide dichos indicadores en tableros interactivos, con apoyo de inteligencia artificial (Gemini) para la generación de alertas e interpretación de tendencias, dirigido a la alta dirección de la empresa.
+Este PRD define los requerimientos para desarrollar una **Plataforma de Bienestar Organizacional (nombre provisional)**, un dashboard ejecutivo que consolide dichos indicadores en tableros interactivos, con apoyo de inteligencia artificial (Gemini) para la generación de alertas e interpretación de tendencias, dirigido a la alta dirección de la empresa.
 
-El proyecto es de autoría individual de Melissa Alejandra Chávez, desarrollado dentro del periodo de capacitación de TODO Academy, y forma parte de la memoria de estadía conjunta que evalúa la efectividad de dicha capacitación (junto con el motor de segmentación de clientes, proyecto independiente de su compañero de memoria).
+El proyecto es de autoría individual de Melissa Alejandra Chávez, desarrollado dentro de un programa de formación (nombre provisional), y forma parte de una memoria de estadía que evalúa la solución propuesta.
 
 ---
 
@@ -148,7 +148,7 @@ Encuesta de bienestar (React) ──► Firestore (responses)
 - El desarrollo se realiza de forma individual, en un periodo comprimido de 10 días (22 de septiembre al 2 de octubre de 2026), no en las ~12 semanas típicas de una estadía completa.
 - Se trabaja con datos simulados, generados mediante script, no con datos reales de empleados de la empresa.
 - El acceso a la API de Gemini y a los servicios de Firebase está disponible sin restricciones durante el desarrollo.
-- El proyecto se desarrolla bajo modalidad remota, dentro del programa TODO Academy.
+- El proyecto se desarrolla bajo modalidad remota, dentro de un programa de formación (nombre provisional).
 - El compañero de memoria desarrolla su propio proyecto (motor de segmentación de clientes) con un stack distinto (Azure), de forma completamente independiente a nivel técnico.
 
 ## 12. Riesgos
@@ -162,6 +162,6 @@ Encuesta de bienestar (React) ──► Firestore (responses)
 
 ## 13. Referencias
 
-- Ficha técnica del proyecto: *Proyecto de Desarrollo de un Dashboard Ejecutivo de Salud Organizacional* — PluriOne S.A. de C.V. / Develop Talent & Technology.
+- Ficha técnica del proyecto: *Proyecto de Desarrollo de un Dashboard Ejecutivo de Salud Organizacional* — Organización participante (nombre provisional).
 - Manual Metodológico para la Elaboración de Memoria de Estadía de TSU — UTSLRC (2023).
 - Sistema de diseño "Executive Pulse" — exportación Stitch (DESIGN.md), mockups: dashboard ejecutivo, encuesta de bienestar, form builder.

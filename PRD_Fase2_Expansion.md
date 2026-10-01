@@ -1,4 +1,4 @@
-# PRD — Fase 2: Expansión Funcional de PluriOne Health
+# PRD — Fase 2: Expansión Funcional de la Plataforma de Bienestar Organizacional
 
 **Basado en:** PRD_Dashboard_Salud_Organizacional.md (v2.0) y MVP_Dashboard_Salud_Organizacional.md (v2.0)
 **Autora:** Melissa Alejandra Chávez
@@ -42,7 +42,7 @@ Esto es un cambio de flujo importante: hoy cualquiera con correo/contraseña pue
 ```
 users/{uid}
   displayName: "Ana Torres"
-  email: "ana.torres@develop.com.mx"
+  email: "ana.torres@empresa.example"
   role: "admin" | "employee"
   departmentId: "desarrollo-software"
   teamId: "team_xyz123" | null

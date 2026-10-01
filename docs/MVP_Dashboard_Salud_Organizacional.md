@@ -1,7 +1,7 @@
 # MVP — Dashboard Ejecutivo de Salud Organizacional
 
 **Proyecto:** Dashboard Ejecutivo de Salud Organizacional
-**Empresa:** PluriOne S.A. de C.V. — Develop Talent & Technology
+**Empresa:** Organización participante (nombre provisional)
 **Autora:** Melissa Alejandra Chávez
 **Basado en:** PRD_Dashboard_Salud_Organizacional.md (v2.0)
 **Ventana de desarrollo:** 22 de septiembre – 2 de octubre de 2026 (10 días, trabajo individual)

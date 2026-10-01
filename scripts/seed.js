@@ -10,13 +10,7 @@ initializeApp({
 
 const db = getFirestore();
 
-const departments = [
-  { id: "desarrollo-software", name: "Desarrollo de Software", headcount: 25, riskBias: 0.7 },
-  { id: "comercial", name: "Comercial", headcount: 12, riskBias: 0.5 },
-  { id: "operaciones", name: "Operaciones", headcount: 15, riskBias: 0.4 },
-  { id: "capacitacion", name: "Capacitación (TODO Academy)", headcount: 18, riskBias: 0.3 },
-  { id: "recursos-humanos", name: "Recursos Humanos", headcount: 8, riskBias: 0.2 },
-];
+const SYNTHETIC_RESPONSES_PER_DEPARTMENT_PER_WEEK = 8;
 
 const openTextSamples = {
   positive: [
@@ -53,15 +47,16 @@ function getISOWeek(date) {
 }
 
 async function seed() {
-  console.log("Creando departamentos...");
-  for (const dept of departments) {
-    await db.collection("departments").doc(dept.id).set({
-      name: dept.name,
-      headcount: dept.headcount,
-    });
+  const departmentSnapshot = await db.collection("departments").get();
+  const departments = departmentSnapshot.docs
+    .filter((department) => department.data().active !== false)
+    .map((department) => ({ id: department.id, ...department.data() }));
+
+  if (departments.length === 0) {
+    throw new Error("No hay departamentos activos. Agrégalos desde Gestión de Usuarios antes de generar datos sintéticos.");
   }
 
-  console.log("Generando respuestas historicas (8 semanas)...");
+  console.log(`Generando respuestas sintéticas para ${departments.length} departamentos activos (8 semanas)...`);
   let batch = db.batch();
   let count = 0;
 
@@ -71,33 +66,33 @@ async function seed() {
     const weekId = getISOWeek(date);
 
     for (const dept of departments) {
-      const responsesThisWeek = Math.floor(dept.headcount * randomBetween(0.6, 0.95));
+      const responsesThisWeek = SYNTHETIC_RESPONSES_PER_DEPARTMENT_PER_WEEK;
 
       for (let i = 0; i < responsesThisWeek; i++) {
-        const bias = dept.riskBias;
         const ref = db.collection("responses").doc();
 
         const sentiment =
-          Math.random() < 0.3 + bias * 0.3 ? "negative" :
+          Math.random() < 0.25 ? "negative" :
           Math.random() < 0.6 ? "neutral" : "positive";
 
         batch.set(ref, {
           departmentId: dept.id,
+          source: "synthetic_seed",
           weekId,
           submittedAt: Timestamp.fromDate(date),
-          workLifeBalance: Math.max(1, Math.min(10, Math.round(randomBetween(8 - bias * 5, 10 - bias * 3)))),
+          workLifeBalance: Math.round(randomBetween(3, 10)),
           cognitiveLoad: ["shift-handoff", "emr-integration", "unclear-protocols", "balanced"][
             Math.floor(Math.random() * 4)
           ],
           psychosocialFactors: {
-            cognitiveLoad: randomBetween(1.5 + bias * 2, 3 + bias * 2),
+            cognitiveLoad: randomBetween(1.5, 4.5),
             roleAmbiguity: randomBetween(1.5, 3.5),
-            emotionalLabor: randomBetween(1.5 + bias * 2, 3 + bias * 2.5),
-            shiftFatigue: randomBetween(1.5 + bias * 1.5, 3 + bias * 2),
-            autonomy: randomBetween(2, 4 - bias),
-            psychSafety: randomBetween(2, 4 - bias),
+            emotionalLabor: randomBetween(1.5, 4.5),
+            shiftFatigue: randomBetween(1.5, 4.5),
+            autonomy: randomBetween(1.5, 4.5),
+            psychSafety: randomBetween(1.5, 4.5),
           },
-          enps: Math.max(0, Math.min(10, Math.round(randomBetween(9 - bias * 5, 10)))),
+          enps: Math.round(randomBetween(0, 10)),
           openText: openTextSamples[sentiment][
             Math.floor(Math.random() * openTextSamples[sentiment].length)
           ],

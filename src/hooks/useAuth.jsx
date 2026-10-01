@@ -33,7 +33,7 @@ export function AuthProvider({ children }) {
       }
 
       // Presencia digital: un inicio de sesión por sesión del navegador
-      const loginKey = `plurione-login-${firebaseUser.uid}`;
+      const loginKey = `wellness-dashboard-login-${firebaseUser.uid}`;
       if (!sessionStorage.getItem(loginKey)) {
         sessionStorage.setItem(loginKey, "1");
         logLogin();

@@ -257,4 +257,3 @@ export default function TeamKanban({ teamId, team = null, readOnly = false }) {
     </div>
   );
 }
-}

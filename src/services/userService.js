@@ -16,6 +16,18 @@ export async function updateUserAccount(uid, payload) {
   return result.data;
 }
 
+export async function resetUserPassword(uid) {
+  const callable = httpsCallable(functions, "reset_user_password");
+  const result = await callable({ uid });
+  return result.data;
+}
+
+export async function deleteUserAccount(uid) {
+  const callable = httpsCallable(functions, "delete_user_account");
+  const result = await callable({ uid });
+  return result.data;
+}
+
 /**
  * Bootstrap de la primera cuenta admin: solo funciona si todavía no existe
  * ningún usuario con rol admin en Firestore (migración desde el MVP).

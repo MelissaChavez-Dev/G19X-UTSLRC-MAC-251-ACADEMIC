@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { useAuth } from "./useAuth";
-import {
-  getCurrentCycleId,
-  listMyCompletions,
-  listPublishedTemplates,
-} from "../services/templateService";
+import { db } from "../services/firebase";
+import { getCurrentCycleId } from "../services/templateService";
 import { getISOWeek } from "../utils/dateUtils";
 
 /**
@@ -56,28 +54,58 @@ export function usePendingSurveys() {
   useEffect(() => {
     if (!user) return;
 
-    async function load() {
-      try {
-        const [templates, completions] = await Promise.all([
-          listPublishedTemplates(),
-          listMyCompletions(user.uid),
-        ]);
+    let templates = null;
+    let completions = null;
 
-        const targeted = templates.filter(
-          (t) => !t.targetDepartments?.length || t.targetDepartments.includes(departmentId)
-        );
-        const doneKeys = new Set(completions.map((c) => `${c.templateId}_${c.cycleId}`));
-        setPending(
-          targeted.filter((t) => !doneKeys.has(`${t.id}_${getCurrentCycleId(t.cycle)}`))
-        );
-        setStreak(computeStreak(completions));
-      } catch (err) {
-        console.error("No se pudieron cargar las encuestas pendientes:", err);
-      } finally {
+    function updatePending() {
+      if (!templates || !completions) return;
+
+      const targeted = templates.filter(
+        (template) =>
+          !template.targetDepartments?.length ||
+          template.targetDepartments.includes(departmentId)
+      );
+      const doneKeys = new Set(
+        completions.map((completion) => `${completion.templateId}_${completion.cycleId}`)
+      );
+
+      setPending(
+        targeted.filter(
+          (template) => !doneKeys.has(`${template.id}_${getCurrentCycleId(template.cycle)}`)
+        )
+      );
+      setStreak(computeStreak(completions));
+      setLoading(false);
+    }
+
+    const unsubscribeTemplates = onSnapshot(
+      query(collection(db, "surveyTemplates"), where("status", "==", "published")),
+      (snapshot) => {
+        templates = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+        updatePending();
+      },
+      (error) => {
+        console.error("No se pudieron cargar las encuestas publicadas:", error);
         setLoading(false);
       }
-    }
-    load();
+    );
+
+    const unsubscribeCompletions = onSnapshot(
+      query(collection(db, "surveyCompletions"), where("userId", "==", user.uid)),
+      (snapshot) => {
+        completions = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+        updatePending();
+      },
+      (error) => {
+        console.error("No se pudieron cargar las encuestas respondidas:", error);
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      unsubscribeTemplates();
+      unsubscribeCompletions();
+    };
   }, [user, departmentId]);
 
   return { pending, streak, loading };

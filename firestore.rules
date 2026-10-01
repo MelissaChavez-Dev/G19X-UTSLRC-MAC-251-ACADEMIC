@@ -64,13 +64,15 @@ service cloud.firestore {
 
     match /surveyCompletions/{docId} {
       allow read: if isAdmin()
-        || (isSignedIn() && docId.matches("^" + request.auth.uid + "_.*"));
-      allow create: if isSignedIn() && docId.matches("^" + request.auth.uid + "_.*");
+        || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && docId.matches("^" + request.auth.uid + "_.*");
       allow update, delete: if false;
     }
 
     match /departments/{deptId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if isAdmin();
     }
   }

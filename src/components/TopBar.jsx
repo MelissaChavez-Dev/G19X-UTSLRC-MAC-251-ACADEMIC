@@ -1,10 +1,11 @@
 import ThemeToggle from "./ThemeToggle";
 import { AdminNotificationBell } from "./NotificationBell";
-import { DEPARTMENTS } from "../data/surveyQuestion";
 import { useSidebarState } from "../hooks/useSidebarState";
+import { useDepartments } from "../hooks/useDepartments";
 
 export default function TopBar({ departmentId, onDepartmentChange }) {
   const { collapsed } = useSidebarState();
+  const { departments } = useDepartments();
 
   return (
     <header className={`fixed top-0 ${collapsed ? "left-20" : "left-64"} right-0 h-16 bg-surface/80 backdrop-blur-xl shadow-sm z-40 flex items-center justify-between px-space-xl transition-[left] duration-300 ease-out`}>
@@ -23,11 +24,11 @@ export default function TopBar({ departmentId, onDepartmentChange }) {
             <select
               value={departmentId || ""}
               onChange={(e) => onDepartmentChange(e.target.value || null)}
-              className="bg-transparent border-none outline-none text-label-md text-on-surface cursor-pointer"
+              className="theme-select bg-transparent border-none outline-none text-label-md text-on-surface cursor-pointer"
               aria-label="Filtrar por departamento"
             >
               <option value="">Todos los departamentos</option>
-              {DEPARTMENTS.map((d) => (
+              {departments.map((d) => (
                 <option key={d.id} value={d.id}>{d.name}</option>
               ))}
             </select>

@@ -1,5 +1,5 @@
 import {
-  collection, doc, addDoc, updateDoc, getDocs, getDoc, setDoc, query, where, orderBy, Timestamp,
+  collection, doc, addDoc, deleteDoc, updateDoc, getDocs, getDoc, setDoc, query, where, orderBy, Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { validateSurveyTemplate } from "../data/surveyTemplate";
@@ -66,6 +66,10 @@ export async function archiveTemplate(templateId) {
     status: "archived",
     updatedAt: Timestamp.now(),
   });
+}
+
+export async function deleteTemplate(templateId) {
+  await deleteDoc(doc(db, "surveyTemplates", templateId));
 }
 
 export async function getTemplate(templateId) {

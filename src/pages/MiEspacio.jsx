@@ -36,7 +36,7 @@ export default function MiEspacio() {
           <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-on-primary font-bold">
             P
           </div>
-          <span className="text-headline-sm text-on-surface">PluriOne Health</span>
+          <span className="text-headline-sm text-on-surface">Bienestar organizacional</span>
         </div>
         <div className="flex items-center gap-space-sm">
           <EmployeeNotificationBell />
@@ -152,7 +152,7 @@ export default function MiEspacio() {
             <div className="flex items-center gap-space-sm">
               <span className="material-symbols-outlined text-secondary text-[28px]">pace</span>
               <p className="text-body-sm text-on-surface-variant flex-1">
-                PluriOne registra tus <strong>movimientos dentro de esta app</strong> (inicios de
+                El sistema registra tus <strong>movimientos dentro de esta app</strong> (inicios de
                 sesión, encuestas respondidas, uso del kanban) para calcular un indicador de
                 presencia digital. No es un control de asistencia ni mide tu trabajo fuera de la
                 plataforma. Aquí puedes ver exactamente lo que el sistema registra sobre ti.

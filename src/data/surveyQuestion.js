@@ -1,10 +1,3 @@
-export const DEPARTMENTS = [
-  { id: "desarrollo-software", name: "Desarrollo de Software", headcount: 25 },
-  { id: "comercial", name: "Comercial", headcount: 12 },
-  { id: "operaciones", name: "Operaciones", headcount: 15 },
-  { id: "capacitacion", name: "Capacitación (TODO Academy)", headcount: 18 },
-  { id: "recursos-humanos", name: "Recursos Humanos", headcount: 8 },
-];
 export const COGNITIVE_LOAD_OPTIONS = [
   { value: "shift-handoff", label: "Cambios de contexto y entregas entre tareas" },
   { value: "emr-integration", label: "Demoras de herramientas o sistemas" },

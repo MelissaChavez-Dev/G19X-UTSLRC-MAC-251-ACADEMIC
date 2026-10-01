@@ -8,7 +8,7 @@ import TeamKanban from "../components/TeamKanban";
 import JoinTeamCard from "../components/JoinTeamCard";
 import ThemeToggle from "../components/ThemeToggle";
 import { EmployeeNotificationBell } from "../components/NotificationBell";
-import { DEPARTMENTS } from "../data/surveyQuestion";
+import { useDepartments } from "../hooks/useDepartments";
 
 /**
  * Vista del líder de equipo (rol team_lead): kanban y métricas agregadas
@@ -16,6 +16,7 @@ import { DEPARTMENTS } from "../data/surveyQuestion";
  */
 export default function MiEquipo() {
   const { profile } = useAuth();
+  const { departments } = useDepartments();
   const { team, loading: teamLoading } = useMyTeam();
   const { rows: deptRows } = useDepartmentRisk();
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ export default function MiEquipo() {
     navigate("/login");
   }
 
-  const deptName = DEPARTMENTS.find((d) => d.id === profile?.departmentId)?.name;
+  const deptName = departments.find((d) => d.id === profile?.departmentId)?.name;
   const myDeptRisk = deptRows?.find((row) => row.id === profile?.departmentId);
 
   return (
@@ -33,7 +34,7 @@ export default function MiEquipo() {
       <header className="h-16 px-space-xl flex items-center justify-between bg-surface/80 backdrop-blur-xl sticky top-0 z-40 border-b border-outline-variant/40">
         <div className="flex items-center gap-space-sm">
           <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-on-primary font-bold">P</div>
-          <span className="text-headline-sm text-on-surface">PluriOne Health</span>
+          <span className="text-headline-sm text-on-surface">Bienestar organizacional</span>
           <span className="text-label-md px-space-sm py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant">
             Líder de equipo
           </span>

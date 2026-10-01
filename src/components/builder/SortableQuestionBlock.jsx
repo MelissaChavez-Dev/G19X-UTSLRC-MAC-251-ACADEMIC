@@ -8,6 +8,9 @@ const TYPE_LABELS = {
   text: "Respuesta escrita",
 };
 
+const FIELD_LABEL = "block text-label-md font-semibold text-on-surface";
+const FIELD_HINT = "mt-1 block text-body-sm text-on-surface-variant";
+
 export default function SortableQuestionBlock({ question, index, onChange, onRemove }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: question.id,
@@ -61,10 +64,10 @@ export default function SortableQuestionBlock({ question, index, onChange, onRem
           <span className="material-symbols-outlined text-[20px]">drag_indicator</span>
         </button>
         <div className="flex-1">
-          <span className="text-label-md font-semibold text-on-surface block">
+          <span className="text-body-md font-semibold text-on-surface block">
             Pregunta {index + 1}
           </span>
-          <span className="text-label-sm text-on-surface-variant">
+          <span className="text-body-sm text-on-surface-variant">
             {TYPE_LABELS[question.type] || "Pregunta"}
           </span>
         </div>
@@ -79,91 +82,121 @@ export default function SortableQuestionBlock({ question, index, onChange, onRem
         </button>
       </div>
 
-      <input
-        id={`question-title-${question.id}`}
-        value={question.title || ""}
-        onChange={(e) => updateField("title", e.target.value)}
-        placeholder="Ej. ¿Cómo te sentiste esta semana?"
-        className="w-full text-body-lg font-semibold text-on-surface bg-transparent border-b border-outline-variant pb-1 mb-2 focus:outline-none focus:border-primary"
-      />
-      <label htmlFor={`question-title-${question.id}`} className="text-label-sm text-on-surface-variant block mb-3">
-        Pregunta que verá la persona
-      </label>
-      <input
-        aria-label="Ayuda para la pregunta"
-        value={question.helper || ""}
-        onChange={(e) => updateField("helper", e.target.value)}
-        placeholder="Ayuda opcional. Ej. Piensa en los últimos 7 días."
-        className="w-full text-body-sm text-on-surface-variant bg-transparent mb-3 focus:outline-none"
-      />
+      <div className="flex flex-col gap-space-md">
+        <label htmlFor={`question-title-${question.id}`} className={FIELD_LABEL}>
+          Pregunta que verá la persona
+          <span className={FIELD_HINT}>Escribe la pregunta completa.</span>
+        </label>
+        <textarea
+          id={`question-title-${question.id}`}
+          value={question.title || ""}
+          onChange={(e) => updateField("title", e.target.value)}
+          placeholder="Ej. ¿Cómo te sentiste esta semana?"
+          rows={2}
+          className="survey-field resize-y text-body-md font-medium"
+        />
 
-      <div className="grid grid-cols-2 gap-space-sm mb-3">
-        <label className="text-label-sm text-on-surface-variant">
-          Tema o sección
-          <input
-            value={question.category || ""}
-            onChange={(e) => updateField("category", e.target.value)}
-            placeholder="Ej. Bienestar semanal"
-            className="mt-1 w-full text-body-sm rounded-md border border-outline-variant p-2 text-on-surface"
-          />
+        <label htmlFor={`question-helper-${question.id}`} className={FIELD_LABEL}>
+          Ayuda para responder <span className="font-normal text-on-surface-variant">(opcional)</span>
+          <span className={FIELD_HINT}>Añade contexto o un periodo de referencia.</span>
         </label>
-        <label className="text-label-sm text-on-surface-variant">
-          Nombre corto
-          <input
-            value={question.label || ""}
-            onChange={(e) => updateField("label", e.target.value)}
-            placeholder="Ej. Estado de ánimo"
-            className="mt-1 w-full text-body-sm rounded-md border border-outline-variant p-2 text-on-surface"
-          />
-        </label>
+        <input
+          id={`question-helper-${question.id}`}
+          value={question.helper || ""}
+          onChange={(e) => updateField("helper", e.target.value)}
+          placeholder="Ej. Piensa en los últimos 7 días."
+          className="survey-field text-body-sm"
+        />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+          <label className={FIELD_LABEL}>
+            Tema o sección
+            <span className={FIELD_HINT}>Agrupa preguntas relacionadas.</span>
+            <input
+              value={question.category || ""}
+              onChange={(e) => updateField("category", e.target.value)}
+              placeholder="Ej. Bienestar semanal"
+              className="survey-field mt-2 text-body-sm"
+            />
+          </label>
+          <label className={FIELD_LABEL}>
+            Nombre corto
+            <span className={FIELD_HINT}>Etiqueta para identificar el indicador.</span>
+            <input
+              value={question.label || ""}
+              onChange={(e) => updateField("label", e.target.value)}
+              placeholder="Ej. Estado de ánimo"
+              className="survey-field mt-2 text-body-sm"
+            />
+          </label>
+        </div>
       </div>
-      <p className="text-label-sm text-on-surface-variant -mt-2 mb-3">
-        Tema y nombre corto para ordenar la encuesta.
-      </p>
 
       {question.type === "scale" && (
-        <div className="grid grid-cols-2 gap-space-sm mb-2">
-          <input
-            type="number"
-            min="0"
-            value={question.min ?? ""}
-            onChange={(e) => updateField("min", Number(e.target.value))}
-            placeholder="Número inicial. Ej. 1"
-            className="text-body-sm rounded-md border border-outline-variant p-2"
-          />
-          <input
-            type="number"
-            min="1"
-            value={question.max ?? ""}
-            onChange={(e) => updateField("max", Number(e.target.value))}
-            placeholder="Número final. Ej. 10"
-            className="text-body-sm rounded-md border border-outline-variant p-2"
-          />
-          <input
-            value={question.lowLabel || ""}
-            onChange={(e) => updateField("lowLabel", e.target.value)}
-            placeholder="Qué significa el mínimo"
-            className="text-body-sm rounded-md border border-outline-variant p-2"
-          />
-          <input
-            value={question.highLabel || ""}
-            onChange={(e) => updateField("highLabel", e.target.value)}
-            placeholder="Qué significa el máximo"
-            className="text-body-sm rounded-md border border-outline-variant p-2"
-          />
-        </div>
+        <fieldset className="mt-space-md rounded-2xl bg-surface-container-low p-space-md">
+          <legend className="text-label-md font-semibold text-on-surface px-1">Rango de la escala</legend>
+          <p className="text-body-sm text-on-surface-variant mb-space-sm">
+            Define los valores mínimo y máximo y qué representa cada extremo.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+            <label className={FIELD_LABEL}>
+              Valor mínimo
+              <input
+                type="number"
+                min="0"
+                value={question.min ?? ""}
+                onChange={(e) => updateField("min", Number(e.target.value))}
+                className="survey-field mt-1 text-body-sm"
+              />
+            </label>
+            <label className={FIELD_LABEL}>
+              Valor máximo
+              <input
+                type="number"
+                min="1"
+                value={question.max ?? ""}
+                onChange={(e) => updateField("max", Number(e.target.value))}
+                className="survey-field mt-1 text-body-sm"
+              />
+            </label>
+            <label className={FIELD_LABEL}>
+              Texto del mínimo
+              <input
+                value={question.lowLabel || ""}
+                onChange={(e) => updateField("lowLabel", e.target.value)}
+                placeholder="Ej. Bajo"
+                className="survey-field mt-1 text-body-sm"
+              />
+            </label>
+            <label className={FIELD_LABEL}>
+              Texto del máximo
+              <input
+                value={question.highLabel || ""}
+                onChange={(e) => updateField("highLabel", e.target.value)}
+                placeholder="Ej. Alto"
+                className="survey-field mt-1 text-body-sm"
+              />
+            </label>
+          </div>
+        </fieldset>
       )}
 
       {question.type === "choice" && (
-        <div className="flex flex-col gap-1.5 mb-2">
+        <fieldset className="mt-space-md rounded-2xl bg-surface-container-low p-space-md">
+          <legend className="text-label-md font-semibold text-on-surface px-1">Opciones de respuesta</legend>
+          <p className="text-body-sm text-on-surface-variant mb-space-sm">
+            La persona podrá seleccionar una de estas opciones.
+          </p>
+          <div className="flex flex-col gap-space-xs">
           {(question.options || []).map((opt, i) => (
-            <div key={i} className="flex items-center gap-1.5">
+            <div key={i} className="flex items-center gap-space-sm">
+              <span className="w-7 shrink-0 text-center text-label-md text-on-surface-variant">{i + 1}</span>
               <input
                 value={opt.label || ""}
                 onChange={(e) => updateOptionLabel(i, e.target.value)}
-                placeholder={`Opción ${i + 1}`}
+                placeholder={`Escribe la opción ${i + 1}`}
                 aria-label={`Texto de la opción ${i + 1}`}
-                className="flex-1 text-body-sm rounded-md border border-outline-variant p-2"
+                className="survey-field flex-1 text-body-sm"
               />
               <button
                 type="button"
@@ -175,23 +208,26 @@ export default function SortableQuestionBlock({ question, index, onChange, onRem
               </button>
             </div>
           ))}
-          <button type="button" onClick={addOption} className="text-label-sm text-primary self-start">
+          <button type="button" onClick={addOption} className="mt-1 text-body-sm font-semibold text-primary self-start">
             + Agregar opción
           </button>
-        </div>
+          </div>
+        </fieldset>
       )}
 
-      <div className="mt-2">
-          <label className="text-label-md font-semibold text-on-surface block">
+      <div className="mt-space-md rounded-2xl bg-surface-container-low p-space-md">
+        <label htmlFor={`question-metric-${question.id}`} className="text-label-md font-semibold text-on-surface block">
           ¿Qué indicador ayuda a medir?
         </label>
-        <p className="text-label-sm text-on-surface-variant mt-1">
+        <p id={`question-metric-help-${question.id}`} className="text-body-sm text-on-surface-variant mt-1">
           Esta elección permite que las respuestas alimenten los indicadores del dashboard.
         </p>
         <select
+          id={`question-metric-${question.id}`}
           value={hasKnownMapping ? question.mapsTo : ""}
           onChange={(e) => updateField("mapsTo", e.target.value)}
-          className="w-full mt-1 text-body-sm rounded-md border border-outline-variant p-2"
+          aria-describedby={`question-metric-help-${question.id}`}
+          className="survey-field mt-2 text-body-sm"
         >
           <option value="" disabled>Selecciona un indicador</option>
           {MAPPABLE_FIELDS.map((f) => (
@@ -200,7 +236,7 @@ export default function SortableQuestionBlock({ question, index, onChange, onRem
         </select>
       </div>
 
-      <label className="mt-3 flex items-center gap-2 text-body-sm text-on-surface-variant">
+      <label className="mt-space-md flex items-center gap-3 rounded-xl px-1 py-1 text-body-md font-medium text-on-surface">
         <input
           type="checkbox"
           checked={question.required !== false}
