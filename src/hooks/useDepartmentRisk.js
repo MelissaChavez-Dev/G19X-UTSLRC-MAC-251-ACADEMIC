@@ -8,11 +8,8 @@ import { averageNumeric, toFiniteNumber, workPressureIndex } from "../utils/metr
 const FACTOR_KEYS = ["cognitiveLoad", "roleAmbiguity", "emotionalLabor", "shiftFatigue", "autonomy", "psychSafety"];
 const PROTECTIVE_FACTORS = ["autonomy", "psychSafety"];
 
-function average(nums) {
-  return averageNumeric(nums) ?? 0;
-}
-
 function riskTier(avgRisk) {
+  if (avgRisk === null) return { label: "SIN DATOS", tone: "no-data" };
   if (avgRisk >= 4) return { label: "CRÍTICO", tone: "critical" };
   if (avgRisk >= 3) return { label: "ELEVADO", tone: "elevated" };
   if (avgRisk >= 2) return { label: "CONTROLADO", tone: "controlled" };
@@ -52,12 +49,16 @@ export function useDepartmentRisk(departmentId = null) {
             const values = deptResponses
               .map((r) => r.psychosocialFactors?.[key])
               .filter((value) => toFiniteNumber(value) !== null);
-            const avg = Math.round(average(values) * 10) / 10;
-            factors[key] = avg;
-            riskEquivalents.push(PROTECTIVE_FACTORS.includes(key) ? 6 - avg : avg);
+            const avg = averageNumeric(values);
+            factors[key] = avg === null ? null : Math.round(avg * 10) / 10;
+            if (avg !== null) {
+              riskEquivalents.push(PROTECTIVE_FACTORS.includes(key) ? 6 - avg : avg);
+            }
           });
 
-          const avgRisk = average(riskEquivalents);
+          // Sin respuestas con factores psicosociales no hay forma de estimar riesgo;
+          // mostrarlo como 0 lo confundiría con "bajo riesgo" real.
+          const avgRisk = riskEquivalents.length > 0 ? averageNumeric(riskEquivalents) : null;
           const attritionRisk = workPressureIndex(deptResponses);
           const pulseRate = deptHeadcount > 0
             ? Math.min(100, Math.round((deptResponses.length / deptHeadcount) * 100))
@@ -78,7 +79,7 @@ export function useDepartmentRisk(departmentId = null) {
           };
         });
 
-        result.sort((a, b) => b.avgRisk - a.avgRisk);
+        result.sort((a, b) => (b.avgRisk ?? -1) - (a.avgRisk ?? -1));
         setRows(departmentId ? result.filter((row) => row.id === departmentId) : result);
       } catch (err) {
         console.error(err);

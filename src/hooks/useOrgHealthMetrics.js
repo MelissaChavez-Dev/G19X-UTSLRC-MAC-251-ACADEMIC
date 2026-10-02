@@ -10,10 +10,6 @@ function daysAgo(n) {
   return d;
 }
 
-function average(arr, selector) {
-  return averageNumeric(arr.map(selector)) ?? 0;
-}
-
 // Participacion semanal promedio: cuantas respuestas llegan en una semana
 // tipica, contra el headcount total. Mas representativo que dividir el
 // total acumulado del mes (que cuenta varias semanas de pulso recurrente).
@@ -34,7 +30,7 @@ function computeWeeklyParticipation(responses, headcount) {
 
 function computeMetrics(responses, headcount) {
   if (responses.length === 0) {
-    return { enps: 0, attritionRisk: null, activePulseRate: 0, avgPerWeek: 0, psychSafety: 0, sampleSize: 0 };
+    return { enps: 0, attritionRisk: null, activePulseRate: 0, avgPerWeek: 0, psychSafety: null, sampleSize: 0 };
   }
 
   const promoters = responses.filter((r) => (toFiniteNumber(r.enps) ?? -Infinity) >= 9).length;
@@ -45,7 +41,8 @@ function computeMetrics(responses, headcount) {
 
   const { rate: activePulseRate, avgPerWeek } = computeWeeklyParticipation(responses, headcount);
 
-  const psychSafety = Math.round(average(responses, (r) => r.psychosocialFactors?.psychSafety) * 10) / 10;
+  const psychSafetyAvg = averageNumeric(responses.map((r) => r.psychosocialFactors?.psychSafety));
+  const psychSafety = psychSafetyAvg === null ? null : Math.round(psychSafetyAvg * 10) / 10;
 
   return { enps, attritionRisk, activePulseRate, avgPerWeek, psychSafety, sampleSize: responses.length };
 }

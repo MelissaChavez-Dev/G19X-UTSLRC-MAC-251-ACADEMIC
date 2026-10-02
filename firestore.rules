@@ -82,5 +82,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    match /departureLog/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // exclusivo de las Cloud Functions (Admin SDK)
+    }
   }
 }

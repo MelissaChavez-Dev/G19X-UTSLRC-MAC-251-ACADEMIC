@@ -20,7 +20,7 @@ function todayLabel() {
  * Reporte ejecutivo en PDF: encabezado, KPIs, heatmap de riesgo
  * y el último análisis de Gemini (si existe en pantalla).
  */
-export function exportDashboardPdf({ metrics, deptRows = [], aiMarkdown = "", departmentId = null, departments = [] }) {
+export function exportDashboardPdf({ metrics, deptRows = [], aiMarkdown = "", departmentId = null, departments = [], turnover = null, performance = null }) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -46,7 +46,9 @@ export function exportDashboardPdf({ metrics, deptRows = [], aiMarkdown = "", de
       ["Salud neta del equipo (eNPS)", `${metrics?.enps ?? "—"}`],
       ["Índice de presión laboral (0-100 puntos; no es probabilidad)", Number.isFinite(metrics?.attritionRisk) ? `${metrics.attritionRisk}/100` : "—"],
       ["Participación en pulsos", `${metrics?.activePulseRate ?? "—"}%`],
-      ["Índice de seguridad psicológica", `${metrics?.psychSafety ?? "—"} / 5.0`],
+      ["Índice de seguridad psicológica", Number.isFinite(metrics?.psychSafety) ? `${metrics.psychSafety} / 5.0` : "—"],
+      ["Rotación real (bajas últimos 90 días)", Number.isFinite(turnover?.rate) ? `${turnover.rate}%` : "—"],
+      ["Cumplimiento de tareas a tiempo (Kanban)", Number.isFinite(performance?.onTimeRate) ? `${performance.onTimeRate}%` : "—"],
       ["Respuestas del periodo", `${metrics?.sampleSize ?? 0}`],
     ],
     styles: { fontSize: 9 },
@@ -95,7 +97,7 @@ export function exportDashboardPdf({ metrics, deptRows = [], aiMarkdown = "", de
  * Libro de Excel con 3 hojas: respuestas crudas (anonimizadas),
  * resumen de KPIs y riesgo por departamento.
  */
-export async function exportResponsesExcel({ metrics, deptRows = [], departments = [] }) {
+export async function exportResponsesExcel({ metrics, deptRows = [], departments = [], turnover = null, performance = null }) {
   const snapshot = await getDocs(collection(db, "responses"));
   const responses = snapshot.docs.map((d) => d.data());
 
@@ -122,6 +124,8 @@ export async function exportResponsesExcel({ metrics, deptRows = [], departments
     { métrica: "Índice de presión laboral (0-100, no probabilidad)", valor: metrics?.attritionRisk ?? "" },
     { métrica: "Participación en pulsos (%)", valor: metrics?.activePulseRate ?? "" },
     { métrica: "Seguridad psicológica (1-5)", valor: metrics?.psychSafety ?? "" },
+    { métrica: "Rotación real (%, 90 días)", valor: turnover?.rate ?? "" },
+    { métrica: "Cumplimiento de tareas a tiempo (%)", valor: performance?.onTimeRate ?? "" },
     { métrica: "Respuestas (30 días)", valor: metrics?.sampleSize ?? 0 },
   ];
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(kpiRows), "Resumen KPIs");

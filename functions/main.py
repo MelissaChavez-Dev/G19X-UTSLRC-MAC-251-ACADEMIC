@@ -64,6 +64,17 @@ def _generate_join_code() -> str:
     )
 
 
+def _record_departure(db, uid: str, profile: dict, reason: str) -> None:
+    """Registra una baja real (desactivación o eliminación) para medir rotación."""
+    db.collection("departureLog").add({
+        "userId": uid,
+        "departmentId": profile.get("departmentId"),
+        "role": profile.get("role"),
+        "reason": reason,
+        "recordedAt": admin_firestore.SERVER_TIMESTAMP,
+    })
+
+
 def _add_to_team(db, team_id: str, uid: str, display_name: str) -> None:
     """Agrega al miembro al equipo, manteniendo memberIds (reglas) y
     memberNames (directorio legible sin leer toda la colección users)."""
@@ -298,6 +309,9 @@ def update_user_account(req: https_fn.CallableRequest) -> dict:
     old_team = current_data.get("teamId")
     removed_from_team_for_department = False
 
+    if "active" in data and current_data.get("active", True) and not data["active"]:
+        _record_departure(db, uid, current_data, "deactivated")
+
     if "departmentId" in updates and "teamId" not in data and old_team:
         old_team_snapshot = db.collection("teams").document(old_team).get()
         if old_team_snapshot.exists and old_team_snapshot.get("departmentId") != updates["departmentId"]:
@@ -414,6 +428,7 @@ def delete_user_account(req: https_fn.CallableRequest) -> dict:
             message="No se encontró la cuenta de autenticación.",
         ) from e
 
+    _record_departure(db, uid, profile, "deleted")
     profile_ref.delete()
     return {"ok": True}
 

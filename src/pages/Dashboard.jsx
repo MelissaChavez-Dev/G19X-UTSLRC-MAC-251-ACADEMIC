@@ -1,8 +1,8 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "../components/Sidebar";
 import TopBar from "../components/TopBar";
-import KpiCard from "../components/KpiCard";
 import RiskHeatmap from "../components/RiskHeatmap";
 import RiskAlertBanner from "../components/RiskAlertBanner";
 import AIStrategistPanel from "../components/AIStrategistPanel";
@@ -14,6 +14,8 @@ import { useDepartmentRisk } from "../hooks/useDepartmentRisk";
 import { useWeeklySentiment } from "../hooks/useWeeklySentiment";
 import { useWeeklyTrends } from "../hooks/useWeeklyTrends";
 import { useAbsenceMetrics } from "../hooks/usePresence";
+import { useTurnoverMetrics } from "../hooks/useTurnoverMetrics";
+import { useTeamPerformance } from "../hooks/useTeamPerformance";
 import { useSidebarState } from "../hooks/useSidebarState";
 import { useDepartments } from "../hooks/useDepartments";
 import { explainMetric } from "../services/aiService";
@@ -23,7 +25,7 @@ import { exportDashboardPdf, exportResponsesExcel } from "../services/exportServ
    Versiones memoizadas de los componentes pesados.
    Al abrir/cerrar el modal cambia el estado de Dashboard; con memo,
    React no vuelve a dibujar el heatmap, el panel de IA, etc. mientras
-   corre la animación (esa era una causa probable del trabado al cerrar).
+   corre la animación.
 ------------------------------------------------------------------- */
 const MemoSidebar = memo(Sidebar);
 const MemoTopBar = memo(TopBar);
@@ -39,6 +41,7 @@ const GENERIC_ERROR_MESSAGE = "No se pudo generar la explicación en este moment
 const EXPORT_ERROR_MESSAGE = "No se pudo generar el archivo. Inténtalo de nuevo.";
 
 const isRateLimit = (text) => /429|RESOURCE_EXHAUSTED/i.test(text);
+const clamp01 = (value) => (Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0);
 
 function change(current, previous) {
   if (!Number.isFinite(current) || !Number.isFinite(previous)) return null;
@@ -47,6 +50,13 @@ function change(current, previous) {
   return diff;
 }
 
+function formatDelta(diff, unit = "") {
+  if (diff === null) return null;
+  return `${diff > 0 ? "+" : ""}${diff}${unit}`;
+}
+
+/* Definiciones de los KPIs que abren el modal con análisis de IA.
+   (El modal usa getValue, getSuffix, label y dataKey.) */
 const KPI_DEFS = [
   {
     id: "kpi-enps",
@@ -55,18 +65,14 @@ const KPI_DEFS = [
     dataKey: "enps",
     getValue: (m) => m.enps,
     getSuffix: () => null,
-    getFooterLabel: () => "Muestra del periodo",
-    getFooterValue: (m) => `${m.sampleSize} respuestas`,
   },
   {
     id: "kpi-attrition",
     icon: "trending_down",
     label: "Índice de presión laboral",
     dataKey: "attritionRisk",
-    getValue: (m) => Number.isFinite(m.attritionRisk) ? m.attritionRisk : "—",
+    getValue: (m) => (Number.isFinite(m.attritionRisk) ? m.attritionRisk : "—"),
     getSuffix: () => "/ 100 puntos",
-    getFooterLabel: () => "Escala orientativa · no probabilidad",
-    getFooterValue: () => "Derivado del balance vida-trabajo",
   },
   {
     id: "kpi-pulse",
@@ -75,196 +81,405 @@ const KPI_DEFS = [
     dataKey: "activePulseRate",
     getValue: (m) => `${m.activePulseRate}%`,
     getSuffix: (m) => `~${m.avgPerWeek}`,
-    getFooterLabel: () => "Participación semanal promedio",
-    getFooterValue: (m) => `${m.sampleSize} respuestas totales (30 días)`,
   },
   {
     id: "kpi-safety",
     icon: "verified_user",
     label: "Índice de seguridad psicológica",
     dataKey: "psychSafety",
-    getValue: (m) => m.psychSafety,
-    getSuffix: () => "/ 5,0",
-    getFooterLabel: () => "Promedio del periodo",
-    getFooterValue: (m) => (m.psychSafety >= 3.5 ? "Estable" : "Requiere atención"),
+    getValue: (m) => (Number.isFinite(m.psychSafety) ? m.psychSafety : "—"),
+    getSuffix: (m) => (Number.isFinite(m.psychSafety) ? "/ 5,0" : null),
   },
 ];
 
-/* Una tarjeta KPI con sus props ya calculadas. Solo se redibuja si cambian
-   sus datos, no cuando se abre o cierra el modal. */
-const KpiTile = memo(function KpiTile({ def, metrics, previousMetrics, headcount, onExpand }) {
-  const diff = previousMetrics ? change(metrics[def.dataKey], previousMetrics[def.dataKey]) : null;
-  const deltaLabel = diff === null ? null : def.dataKey === "attritionRisk" ? `${diff} pts` : diff;
+const DEF_BY_ID = Object.fromEntries(KPI_DEFS.map((def) => [def.id, def]));
 
-  const suffix =
-    def.dataKey === "activePulseRate"
-      ? headcount > 0
-        ? `~${metrics.avgPerWeek} / ${headcount} por semana`
-        : `~${metrics.avgPerWeek} por semana`
-      : def.getSuffix(metrics);
+/* Las tres filas secundarias del pulso: cada una explica su escala en una línea. */
+const PULSE_ROWS = [
+  {
+    id: "kpi-attrition",
+    progress: (m) => clamp01(m.attritionRisk / 100),
+    color: "var(--error)",
+    unit: "/ 100",
+    deltaUnit: " pts",
+    hint: () => "Escala orientativa, no es una probabilidad",
+  },
+  {
+    id: "kpi-pulse",
+    progress: (m) => clamp01(m.activePulseRate / 100),
+    color: "var(--success)",
+    unit: null,
+    deltaUnit: "",
+    hint: (m, headcount) =>
+      headcount > 0 ? `~${m.avgPerWeek} de ${headcount} por semana` : `~${m.avgPerWeek} por semana`,
+  },
+  {
+    id: "kpi-safety",
+    progress: (m) => clamp01(m.psychSafety / 5),
+    color: "var(--secondary)",
+    unit: "/ 5,0",
+    deltaUnit: "",
+    hint: (m) =>
+      !Number.isFinite(m.psychSafety) ? "Sin datos aún" : m.psychSafety >= 3.5 ? "Estable" : "Requiere atención",
+  },
+];
 
+/* ---------- Piezas pequeñas ---------- */
+
+const RING_RADIUS = 42;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+function Ring({ progress, color, children }) {
   return (
-    <KpiCard
-      id={def.id}
-      icon={def.icon}
-      label={def.label}
-      value={def.getValue(metrics)}
-      suffix={suffix}
-      delta={deltaLabel}
-      deltaDirection={diff !== null && diff < 0 ? "down" : "up"}
-      footerLabel={def.getFooterLabel(metrics)}
-      footerValue={def.getFooterValue(metrics)}
-      onExpand={() => onExpand(def)}
-    />
-  );
-});
-
-/* Ausentismo digital (Fase E): mismo aspecto que KpiCard para que el grupo sea coherente */
-const AbsenceCard = memo(function AbsenceCard({ absence, loading }) {
-  const hasWorkdayRecords = Boolean(absence && absence.workDays > 0);
-
-  return (
-    <KpiCard
-      id="kpi-digital-absence"
-      icon="person_off"
-      label="Ausentismo digital (30 días)"
-      value={loading ? "…" : `${absence?.rate ?? 0}%`}
-      footerLabel="Días sin actividad en horario laboral"
-      footerValue={loading
-        ? "Calculando..."
-        : hasWorkdayRecords
-          ? `${absence.absentDays} de ${absence.workDays} días esperados`
-          : "Sin registros aún (se calcula cada noche)"}
-      showAction={false}
-    />
-  );
-});
-
-const DONUT_RADIUS = 42;
-const DONUT_CIRCUMFERENCE = 2 * Math.PI * DONUT_RADIUS;
-
-function DonutGauge({ label, value, scale, progress, color, available }) {
-  const normalizedProgress = Math.max(0, Math.min(1, progress));
-  const valueText = available ? value : "—";
-
-  return (
-    <div
-      role="img"
-      aria-label={`${label}: ${available ? `${value} ${scale}` : "sin datos"}`}
-      className="flex min-w-0 flex-col items-center gap-2 py-2"
-    >
-      <div className="relative h-24 w-24 shrink-0">
-        <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden="true">
-          <circle
-            cx="50"
-            cy="50"
-            r={DONUT_RADIUS}
-            fill="none"
-            stroke="var(--surface-container-high)"
-            strokeWidth="9"
-          />
-          <circle
-            cx="50"
-            cy="50"
-            r={DONUT_RADIUS}
-            fill="none"
-            stroke={color}
-            strokeWidth="9"
-            strokeLinecap="round"
-            strokeDasharray={DONUT_CIRCUMFERENCE}
-            strokeDashoffset={DONUT_CIRCUMFERENCE * (1 - normalizedProgress)}
-            transform="rotate(-90 50 50)"
-            className="transition-[stroke-dashoffset] duration-700 ease-out"
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-lg font-bold leading-none text-on-surface">{valueText}</span>
-        </div>
-      </div>
-      <div className="text-center">
-        <p className="text-label-md font-semibold text-on-surface">{label}</p>
-        <p className="text-label-sm text-on-surface-variant">
-          {available ? scale : "Sin datos"}
-        </p>
-      </div>
+    <div className="relative h-44 w-44 shrink-0">
+      <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden="true">
+        <circle cx="50" cy="50" r={RING_RADIUS} fill="none" stroke="var(--surface-container-low)" strokeWidth="9" />
+        <circle
+          cx="50"
+          cy="50"
+          r={RING_RADIUS}
+          fill="none"
+          stroke={color}
+          strokeWidth="9"
+          strokeLinecap="round"
+          strokeDasharray={RING_CIRCUMFERENCE}
+          strokeDashoffset={RING_CIRCUMFERENCE * (1 - clamp01(progress))}
+          transform="rotate(-90 50 50)"
+          className="transition-[stroke-dashoffset] duration-700 ease-out motion-reduce:transition-none"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">{children}</div>
     </div>
   );
 }
 
-const KpiDonutOverview = memo(function KpiDonutOverview({ metrics, absence }) {
-  const hasResponses = metrics.sampleSize > 0;
-  const hasRiskData = hasResponses && Number.isFinite(metrics.attritionRisk);
-  const hasAbsenceData = absence?.workDays > 0;
-  const clampPercent = (value) => Math.max(0, Math.min(100, value)) / 100;
-  const indicators = [
-    {
-      label: "Salud neta (eNPS)",
-      value: hasResponses ? String(metrics.enps) : "—",
-      scale: "escala −100 a +100",
-      progress: hasResponses ? (metrics.enps + 100) / 200 : 0,
-      color: "var(--primary)",
-      available: hasResponses,
-    },
-    {
-      label: "Presión laboral",
-      value: hasRiskData ? `${metrics.attritionRisk}/100` : "—",
-      scale: "índice orientativo · no probabilidad",
-      progress: hasRiskData ? clampPercent(metrics.attritionRisk) : 0,
-      color: "var(--error)",
-      available: hasRiskData,
-    },
-    {
-      label: "Participación",
-      value: hasResponses ? `${metrics.activePulseRate}%` : "—",
-      scale: "de 0 a 100%",
-      progress: hasResponses ? clampPercent(metrics.activePulseRate) : 0,
-      color: "var(--success)",
-      available: hasResponses,
-    },
-    {
-      label: "Seguridad psicológica",
-      value: hasResponses ? metrics.psychSafety.toFixed(1) : "—",
-      scale: "de 0 a 5",
-      progress: hasResponses ? Math.max(0, Math.min(5, metrics.psychSafety)) / 5 : 0,
-      color: "var(--secondary)",
-      available: hasResponses,
-    },
-    {
-      label: "Ausentismo digital",
-      value: hasAbsenceData ? `${absence.rate}%` : "—",
-      scale: "últimos 30 días",
-      progress: hasAbsenceData ? clampPercent(absence.rate) : 0,
-      color: "var(--warning)",
-      available: hasAbsenceData,
-    },
-  ];
+function SectionHeading({ id, title, subtitle }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <h2 id={id} className="text-headline-sm text-on-surface">
+        {title}
+      </h2>
+      {subtitle && <p className="text-body-sm text-on-surface-variant">{subtitle}</p>}
+    </div>
+  );
+}
+
+function DeltaNote({ diff, unit }) {
+  if (diff === null) return null;
+  return (
+    <span className="inline-flex items-center gap-1 text-label-sm text-on-surface-variant">
+      <span aria-hidden="true" className="material-symbols-outlined text-[14px]">
+        {diff > 0 ? "arrow_upward" : "arrow_downward"}
+      </span>
+      {formatDelta(diff, unit)} frente al periodo anterior
+    </span>
+  );
+}
+
+/* Protagonista del bloque: un solo anillo grande con el eNPS. */
+const HeroTile = memo(function HeroTile({ def, metrics, previousMetrics, onExpand }) {
+  const diff = previousMetrics ? change(metrics.enps, previousMetrics.enps) : null;
 
   return (
-    <section aria-labelledby="kpi-donut-heading" className="flex flex-col gap-space-sm">
-      <div className="flex flex-col gap-0.5">
-        <h2 id="kpi-donut-heading" className="text-headline-sm text-on-surface">
-          Indicadores en perspectiva
+    <motion.button
+      type="button"
+      layoutId={def.id}
+      onClick={() => onExpand(def)}
+      aria-label={`${def.label}: ${metrics.enps}. Ver análisis`}
+      style={{ borderRadius: 40, background: "var(--surface-container-high)" }}
+      className="motion-press relative flex flex-col items-center gap-space-lg overflow-hidden p-space-lg text-left sm:flex-row"
+    >
+      {/* mancha orgánica de fondo, mismo lenguaje que el canvas */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-12 -top-12 h-52 w-52"
+        style={{ background: "var(--primary)", opacity: 0.08, borderRadius: "60% 40% 55% 45% / 50% 60% 40% 50%" }}
+      />
+
+      <Ring progress={(metrics.enps + 100) / 200} color="var(--primary)">
+        <span className="text-4xl font-bold leading-none text-on-surface">{metrics.enps}</span>
+      </Ring>
+
+      <span className="relative flex min-w-0 flex-1 flex-col items-center gap-space-xs text-center sm:items-start sm:text-left">
+        <span className="block text-headline-sm text-on-surface">{def.label}</span>
+        <span className="block text-body-sm text-on-surface-variant">
+          Escala de −100 a +100, sobre {metrics.sampleSize} respuestas
+        </span>
+        <DeltaNote diff={diff} unit="" />
+        <span className="mt-space-sm inline-flex items-center gap-2 rounded-full bg-surface-container-low px-space-md py-2 text-label-md text-on-surface">
+          <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
+            auto_awesome
+          </span>
+          Ver análisis
+        </span>
+      </span>
+    </motion.button>
+  );
+});
+
+/* Fila secundaria: icono, valor, barra fina y una línea de contexto. */
+const PulseRow = memo(function PulseRow({ config, metrics, previousMetrics, headcount, onExpand }) {
+  const def = DEF_BY_ID[config.id];
+  const diff = previousMetrics ? change(metrics[def.dataKey], previousMetrics[def.dataKey]) : null;
+  const value = def.getValue(metrics);
+
+  return (
+    <motion.button
+      type="button"
+      layoutId={def.id}
+      onClick={() => onExpand(def)}
+      aria-label={`${def.label}: ${value}. Ver análisis`}
+      style={{ 
+        borderRadius: 32,
+        background: `color-mix(in srgb, ${config.color} 14%, var(--surface-container-low))`
+      }}
+      className="motion-press group flex flex-1 items-center gap-space-md px-space-lg py-space-md text-left hover:brightness-95 transition-all"
+    >
+      <span
+        aria-hidden="true"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full shadow-sm"
+        style={{ background: config.color, color: "#fff" }}
+      >
+        <span className="material-symbols-outlined text-[22px]">{def.icon}</span>
+      </span>
+
+      <span className="flex min-w-0 flex-1 flex-col gap-space-xs">
+        <span className="flex items-baseline justify-between gap-space-sm">
+          <span className="truncate text-label-md font-semibold text-on-surface">{def.label}</span>
+          <span className="shrink-0 text-headline-sm text-on-surface">
+            {value}
+            {config.unit && value !== "—" && (
+              <span className="ml-1 text-label-sm text-on-surface-variant">{config.unit}</span>
+            )}
+          </span>
+        </span>
+
+        <span
+          aria-hidden="true"
+          className="block h-1.5 w-full overflow-hidden rounded-full bg-surface-container-high/50"
+        >
+          <span
+            className="block h-full rounded-full transition-[width] duration-700 ease-out motion-reduce:transition-none"
+            style={{ width: `${config.progress(metrics) * 100}%`, background: config.color }}
+          />
+        </span>
+
+        <span className="flex items-center justify-between gap-space-sm">
+          <span className="truncate text-label-sm text-on-surface-variant">{config.hint(metrics, headcount)}</span>
+          {diff !== null && (
+            <span className="shrink-0 text-label-sm text-on-surface-variant">{formatDelta(diff, config.deltaUnit)}</span>
+          )}
+        </span>
+      </span>
+
+      {/* Nuevo indicador visual para clic */}
+      <span 
+        aria-hidden="true" 
+        className="material-symbols-outlined text-on-surface-variant opacity-40 transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100"
+      >
+        chevron_right
+      </span>
+    </motion.button>
+  );
+});
+
+const PulseSection = memo(function PulseSection({ metrics, previousMetrics, headcount, onExpand }) {
+  return (
+    <section aria-labelledby="pulse-heading" className="flex flex-col gap-space-sm">
+      <SectionHeading
+        id="pulse-heading"
+        title="Pulso del equipo"
+        subtitle="Toca un indicador para ver su análisis."
+      />
+      <div className="grid grid-cols-1 items-stretch gap-space-md xl:grid-cols-[5fr_7fr]">
+        <HeroTile def={DEF_BY_ID["kpi-enps"]} metrics={metrics} previousMetrics={previousMetrics} onExpand={onExpand} />
+        <div className="flex flex-col gap-space-sm">
+          {PULSE_ROWS.map((config) => (
+            <PulseRow
+              key={config.id}
+              config={config}
+              metrics={metrics}
+              previousMetrics={previousMetrics}
+              headcount={headcount}
+              onExpand={onExpand}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+});
+
+/* Una sola invitación en lugar de cuatro tarjetas vacías. */
+function EmptyPulse() {
+  return (
+    <section
+      aria-labelledby="pulse-heading"
+      className="flex flex-col gap-space-md rounded-[40px] bg-surface-container-low p-space-lg md:flex-row md:items-center md:justify-between"
+    >
+      <div className="flex flex-col gap-space-xs">
+        <h2 id="pulse-heading" className="text-headline-sm text-on-surface">
+          Aún no hay respuestas en este periodo
         </h2>
-        <p className="text-body-sm text-on-surface-variant">
-          Cada escala se normaliza para mostrar su avance de forma visual.
+        <p className="max-w-xl text-body-md text-on-surface-variant">
+          Los indicadores del pulso aparecen en cuanto el equipo contesta la encuesta de bienestar.
         </p>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-space-sm">
-        {indicators.map((indicator) => (
-          <DonutGauge key={indicator.label} {...indicator} />
-        ))}
+      {/* Ajusta la ruta si tu encuesta vive en otra */}
+      <Link
+        to="/encuesta"
+        className="motion-press inline-flex items-center justify-center gap-space-xs self-start rounded-full bg-primary px-space-lg py-3 text-label-md text-on-primary md:self-auto"
+      >
+        Abrir encuesta
+      </Link>
+    </section>
+  );
+}
+
+/* Tarjeta sencilla para lo operativo (no abre modal). */
+function OpsTile({ icon, label, period, value, hint, diff }) {
+  return (
+    <div style={{ borderRadius: 32 }} className="flex flex-col gap-space-sm bg-surface-container-low p-space-lg">
+      <div className="flex items-center justify-between gap-space-sm text-on-surface-variant">
+        <span className="flex min-w-0 items-center gap-space-xs">
+          <span aria-hidden="true" className="material-symbols-outlined text-[20px]">
+            {icon}
+          </span>
+          <span className="truncate text-label-md font-semibold text-on-surface">{label}</span>
+        </span>
+        {period && <span className="shrink-0 text-label-sm">{period}</span>}
+      </div>
+      <div className="flex items-baseline gap-space-sm">
+        <span className="text-3xl font-bold leading-none text-on-surface">{value}</span>
+        <DeltaNoteInline diff={diff} />
+      </div>
+      <p className="text-label-sm text-on-surface-variant">{hint}</p>
+    </div>
+  );
+}
+
+function DeltaNoteInline({ diff }) {
+  if (diff === null || diff === undefined || diff === 0) return null;
+  return <span className="text-label-sm text-on-surface-variant">{formatDelta(diff, " pts")}</span>;
+}
+
+const OperationStrip = memo(function OperationStrip({
+  absence,
+  absenceLoading,
+  turnover,
+  turnoverLoading,
+  performance,
+  performanceLoading,
+}) {
+  const showAbsence = Boolean(absence) || absenceLoading;
+  const showTurnover = Boolean(turnover) || turnoverLoading;
+  const showPerformance = Boolean(performance) || performanceLoading;
+  if (!showAbsence && !showTurnover && !showPerformance) return null;
+
+  const hasWorkdayRecords = Boolean(absence && absence.workDays > 0);
+  const turnoverDiff =
+    turnover && Number.isFinite(turnover.rate) && Number.isFinite(turnover.previousRate)
+      ? Math.round((turnover.rate - turnover.previousRate) * 10) / 10
+      : null;
+
+  return (
+    <section aria-labelledby="ops-heading" className="flex flex-col gap-space-sm">
+      <SectionHeading id="ops-heading" title="Operación del equipo" />
+      <div className="grid grid-cols-1 gap-space-md md:grid-cols-3">
+        {showAbsence && (
+          <OpsTile
+            icon="person_off"
+            label="Ausentismo digital"
+            period="30 días"
+            value={absenceLoading ? "…" : `${absence?.rate ?? 0}%`}
+            hint={
+              absenceLoading
+                ? "Calculando..."
+                : hasWorkdayRecords
+                  ? `${absence.absentDays} de ${absence.workDays} días esperados sin actividad`
+                  : "Sin registros aún, se calcula cada noche"
+            }
+          />
+        )}
+        {showTurnover && (
+          <OpsTile
+            icon="logout"
+            label="Rotación real"
+            period="90 días"
+            value={turnoverLoading ? "…" : Number.isFinite(turnover?.rate) ? `${turnover.rate}%` : "—"}
+            diff={turnoverDiff}
+            hint={
+              turnoverLoading
+                ? "Calculando..."
+                : `${turnover?.departures ?? 0} bajas sobre ${turnover?.headcount ?? 0} activos`
+            }
+          />
+        )}
+        {showPerformance && (
+          <OpsTile
+            icon="task_alt"
+            label="Cumplimiento de tareas"
+            value={performanceLoading ? "…" : Number.isFinite(performance?.onTimeRate) ? `${performance.onTimeRate}%` : "—"}
+            hint={
+              performanceLoading
+                ? "Calculando..."
+                : performance?.totalTasks
+                  ? `${performance.doneTasks}/${performance.totalTasks} hechas, ${performance.overdueTasks} vencidas`
+                  : "Sin tareas registradas aún"
+            }
+          />
+        )}
       </div>
     </section>
   );
 });
 
 /* Marcadores de posición mientras cargan los KPIs (evita saltos de diseño) */
-function KpiSkeletons() {
+function PulseSkeleton() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-space-md" role="status" aria-label="Calculando indicadores">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="animate-shimmer min-h-[16rem]" style={{ borderRadius: 36 }} />
-      ))}
+    <div
+      className="grid grid-cols-1 items-stretch gap-space-md xl:grid-cols-[5fr_7fr]"
+      role="status"
+      aria-label="Calculando indicadores"
+    >
+      <div className="animate-shimmer min-h-[16rem]" style={{ borderRadius: 40 }} />
+      <div className="flex flex-col gap-space-sm">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="animate-shimmer min-h-[5rem] flex-1" style={{ borderRadius: 32 }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* Reemplaza tu componente ExportActions actual con este */
+function ExportActions({ onExport, exporting, disabled }) {
+  const base =
+    "motion-press inline-flex items-center gap-space-xs rounded-full px-space-md py-2 text-label-md font-medium transition-colors disabled:opacity-50";
+  return (
+    <div className="flex flex-wrap gap-space-xs">
+      <button 
+        type="button" 
+        onClick={() => onExport("pdf")} 
+        disabled={disabled || exporting !== null} 
+        className={`${base} bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60`}
+      >
+        <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
+          picture_as_pdf
+        </span>
+        {exporting === "pdf" ? "Generando..." : "Reporte PDF"}
+      </button>
+      <button 
+        type="button" 
+        onClick={() => onExport("excel")} 
+        disabled={disabled || exporting !== null} 
+        className={`${base} bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60`}
+      >
+        <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
+          table
+        </span>
+        {exporting === "excel" ? "Generando..." : "Excel"}
+      </button>
     </div>
   );
 }
@@ -278,6 +493,8 @@ export default function Dashboard() {
   const { trend, hotspots, comments, loading: sentimentLoading } = useWeeklySentiment(departmentId);
   const { trends: weeklyTrends } = useWeeklyTrends(departmentId);
   const { absence, loading: absenceLoading } = useAbsenceMetrics(departmentId);
+  const { metrics: turnover, loading: turnoverLoading } = useTurnoverMetrics(departmentId);
+  const { metrics: performance, loading: performanceLoading } = useTeamPerformance();
 
   const [expanded, setExpanded] = useState(null); // definición del KPI abierto
   const [explanations, setExplanations] = useState({}); // explicaciones guardadas (incluye límite 429)
@@ -298,9 +515,9 @@ export default function Dashboard() {
     setExportError(null);
     try {
       if (kind === "pdf") {
-        exportDashboardPdf({ metrics, deptRows: deptRows || [], aiMarkdown, departmentId, departments });
+        exportDashboardPdf({ metrics, deptRows: deptRows || [], aiMarkdown, departmentId, departments, turnover, performance });
       } else {
-        await exportResponsesExcel({ metrics, deptRows: deptRows || [], departments });
+        await exportResponsesExcel({ metrics, deptRows: deptRows || [], departments, turnover, performance });
       }
     } catch {
       setExportError(EXPORT_ERROR_MESSAGE);
@@ -358,67 +575,61 @@ export default function Dashboard() {
       <MemoSidebar />
       <MemoTopBar departmentId={departmentId} onDepartmentChange={setDepartmentId} />
       <main className={`${collapsed ? "pl-20" : "pl-64"} pt-16 relative z-10 transition-[padding] duration-300 ease-out`}>
-        <div className="px-space-xl py-space-lg flex flex-col gap-space-md">
-          <div className="flex flex-col gap-space-sm">
-            <span className="self-start inline-flex items-center gap-2 rounded-full bg-surface-container-low px-3 py-1 text-label-md text-on-surface-variant">
-              <span aria-hidden="true" className="w-2 h-2 rounded-full bg-secondary" />
-              {metrics ? metrics.sampleSize : "…"} respuestas en los últimos 30 días
-            </span>
-            <h1 className="text-headline-xl text-on-surface">Diagnóstico Psicosocial y Salud Estratégica</h1>
-            <div className="flex flex-wrap gap-space-sm">
-              <button
-                type="button"
-                onClick={() => handleExport("pdf")}
-                disabled={!metrics || exporting !== null}
-                className="motion-press inline-flex items-center gap-space-xs rounded-full bg-error text-on-error px-space-md py-2 text-label-md disabled:opacity-50"
-              >
-                <span aria-hidden="true" className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
-                {exporting === "pdf" ? "Generando..." : "Exportar reporte PDF"}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleExport("excel")}
-                disabled={!metrics || exporting !== null}
-                className="motion-press inline-flex items-center gap-space-xs rounded-full bg-success text-[var(--on-accent)] px-space-md py-2 text-label-md disabled:opacity-50"
-              >
-                <span aria-hidden="true" className="material-symbols-outlined text-[18px]">table</span>
-                {exporting === "excel" ? "Generando..." : "Exportar a Excel"}
-              </button>
+        <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-space-lg px-space-xl py-space-lg">
+          {/* 1. Encabezado: título a la izquierda, exportar discreto a la derecha */}
+          <header className="flex flex-wrap items-end justify-between gap-space-md">
+            <div className="flex flex-col gap-space-sm">
+              <span className="inline-flex items-center gap-2 self-start rounded-full bg-surface-container-low px-3 py-1 text-label-md text-on-surface-variant">
+                <span aria-hidden="true" className="h-2 w-2 rounded-full bg-secondary" />
+                {metrics ? metrics.sampleSize : "…"} respuestas en los últimos 30 días
+              </span>
+              <h1 className="text-headline-xl text-on-surface">Diagnóstico Psicosocial y Salud Estratégica</h1>
             </div>
-            {exportError && (
-              <p role="alert" className="self-start rounded-full bg-error-container text-on-error-container px-3 py-1 text-label-md">
-                {exportError}
-              </p>
-            )}
-          </div>
-
-          {loading && !metrics && <KpiSkeletons />}
-
-          {metrics && (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-space-md">
-              {KPI_DEFS.map((def) => (
-                <KpiTile
-                  key={def.id}
-                  def={def}
-                  metrics={metrics}
-                  previousMetrics={previousMetrics}
-                  headcount={headcount}
-                  onExpand={handleExpand}
-                />
-              ))}
-
-              {(absence || absenceLoading) && <AbsenceCard absence={absence} loading={absenceLoading} />}
+            <div className="flex flex-col items-end gap-space-xs">
+              <ExportActions onExport={handleExport} exporting={exporting} disabled={!metrics} />
+              {exportError && (
+                <p role="alert" className="rounded-full bg-error-container px-3 py-1 text-label-md text-on-error-container">
+                  {exportError}
+                </p>
+              )}
             </div>
-          )}
+          </header>
 
+          {/* 2. Pulso: un protagonista + tres filas tranquilas */}
+          {loading && !metrics && <PulseSkeleton />}
+          {metrics &&
+            (metrics.sampleSize > 0 ? (
+              <PulseSection
+                metrics={metrics}
+                previousMetrics={previousMetrics}
+                headcount={headcount}
+                onExpand={handleExpand}
+              />
+            ) : (
+              <EmptyPulse />
+            ))}
           {!loading && !metrics && (
             <p role="status" className="text-body-md text-on-surface-variant">
               No se pudieron cargar los indicadores. Revisa tu conexión o los permisos de tu cuenta.
             </p>
           )}
 
+          {/* 3. Operación: una sola franja de tres tarjetas simples */}
+          {metrics && (
+            <OperationStrip
+              absence={absence}
+              absenceLoading={absenceLoading}
+              turnover={turnover}
+              turnoverLoading={turnoverLoading}
+              performance={performance}
+              performanceLoading={performanceLoading}
+            />
+          )}
+
+          {/* 4. Dónde está el riesgo */}
+          {deptRows && <MemoRiskAlertBanner rows={deptRows} />}
           {deptRows && (
-            <div className="grid grid-cols-1 xl:grid-cols-[65%_35%] gap-space-md items-stretch">
+            <div className="grid grid-cols-1 items-stretch gap-space-md xl:grid-cols-[65%_35%]">
               <MemoRiskHeatmap rows={deptRows} />
               <MemoAIStrategistPanel
                 orgMetrics={metrics}
@@ -433,14 +644,10 @@ export default function Dashboard() {
               Calculando matriz de riesgo...
             </p>
           )}
-          {deptRows && <MemoRiskAlertBanner rows={deptRows} />}
 
-          {metrics && (
-            <KpiDonutOverview metrics={metrics} absence={absence} />
-          )}
-
+          {/* 5. Qué dicen los comentarios */}
           {trend && hotspots && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-space-md">
+            <div className="grid grid-cols-1 gap-space-md lg:grid-cols-2">
               <MemoWeeklySentimentTrend rows={trend} />
               <MemoFrictionHotspots items={hotspots} />
             </div>

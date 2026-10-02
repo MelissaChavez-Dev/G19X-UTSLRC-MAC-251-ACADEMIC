@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDepartmentRisk } from "../hooks/useDepartmentRisk";
+import { useTurnoverMetrics } from "../hooks/useTurnoverMetrics";
 import { usePendingSurveys } from "../hooks/usePendingSurveys";
 import { useMyTeam } from "../hooks/useTeams";
 import { useTeamTasks } from "../hooks/useTeamTasks";
@@ -51,26 +52,41 @@ function EmptyState({ text }) {
   );
 }
 
-/** Campana del admin: departamentos que entran en nivel de riesgo alto. */
+/** Campana del admin: departamentos que entran en nivel de riesgo alto y rotación real elevada. */
 export function AdminNotificationBell() {
   const [open, setOpen] = useState(false);
   const { rows } = useDepartmentRisk();
+  const { metrics: turnover } = useTurnoverMetrics();
   useDismissOnOutsideClick(open, () => setOpen(false));
 
   const alerts = (rows || []).filter(
     (row) => row.tier?.tone === "critical" || row.tier?.tone === "elevated"
   );
+  const hasTurnoverAlert = Number.isFinite(turnover?.rate) && turnover.rate >= 10;
+  const totalCount = alerts.length + (hasTurnoverAlert ? 1 : 0);
 
   return (
     <div onClick={(e) => e.stopPropagation()}>
-      <Bell count={alerts.length} open={open} onToggle={() => setOpen((v) => !v)}>
+      <Bell count={totalCount} open={open} onToggle={() => setOpen((v) => !v)}>
         <span className="text-label-md uppercase tracking-widest text-on-surface-variant font-semibold block px-space-xs pb-space-xs">
           Alertas de riesgo
         </span>
-        {alerts.length === 0 ? (
+        {totalCount === 0 ? (
           <EmptyState text="Ningún departamento en riesgo alto por ahora." />
         ) : (
-          alerts.map((row) => (
+          <>
+            {hasTurnoverAlert && (
+              <div className="flex items-start gap-space-sm p-space-sm rounded-lg hover:bg-surface-container-low transition-colors">
+                <span className="material-symbols-outlined text-[20px] text-error">logout</span>
+                <div>
+                  <p className="text-body-sm text-on-surface font-semibold">Rotación real elevada</p>
+                  <p className="text-body-sm text-on-surface-variant">
+                    {turnover.rate}% de bajas en los últimos 90 días ({turnover.departures} de {turnover.headcount} activos).
+                  </p>
+                </div>
+              </div>
+            )}
+            {alerts.map((row) => (
             <div
               key={row.id}
               className="flex items-start gap-space-sm p-space-sm rounded-lg hover:bg-surface-container-low transition-colors"
@@ -91,7 +107,8 @@ export function AdminNotificationBell() {
                 </p>
               </div>
             </div>
-          ))
+            ))}
+          </>
         )}
       </Bell>
     </div>

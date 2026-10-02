@@ -14,6 +14,7 @@ const TIER_STYLES = {
   elevated: "bg-warning-container text-on-warning-container",
   controlled: "bg-tertiary-container text-on-tertiary-container",
   low: "bg-success-container text-on-success-container",
+  "no-data": "bg-surface-container text-on-surface-variant",
 };
 
 const TIER_DOT = {
@@ -21,6 +22,7 @@ const TIER_DOT = {
   elevated: "bg-warning",
   controlled: "bg-tertiary",
   low: "bg-success",
+  "no-data": "bg-outline-variant",
 };
 
 function LegendDot({ colorClass, label, bold }) {
@@ -80,7 +82,7 @@ export default function RiskHeatmap({ rows }) {
                         col.invert
                       )}`}
                     >
-                      {row.factors[col.key]?.toFixed(1) ?? "–"}
+                      {Number.isFinite(row.factors[col.key]) ? row.factors[col.key].toFixed(1) : "–"}
                     </span>
                   </td>
                 ))}
