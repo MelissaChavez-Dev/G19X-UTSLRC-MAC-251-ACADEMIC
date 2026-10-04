@@ -85,7 +85,7 @@ function SectionHeader({ title, description, aside }) {
   );
 }
 
-function IconButton({ icon, label, onClick, disabled, tone = "neutral" }) {
+function IconButton({ icon, label, onClick, disabled, tone = "neutral", compact = false }) {
   const tones = {
     neutral: "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface",
     primary: "text-primary hover:bg-primary-container",
@@ -98,9 +98,9 @@ function IconButton({ icon, label, onClick, disabled, tone = "neutral" }) {
       disabled={disabled}
       title={label}
       aria-label={label}
-      className={`motion-press inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors disabled:opacity-35 disabled:pointer-events-none ${tones[tone]}`}
+      className={`motion-press inline-flex items-center justify-center rounded-full transition-colors disabled:opacity-35 disabled:pointer-events-none ${compact ? "h-8 w-8" : "h-9 w-9"} ${tones[tone]}`}
     >
-      <Icon name={icon} size={19} />
+      <Icon name={icon} size={compact ? 17 : 19} />
     </button>
   );
 }
@@ -282,14 +282,17 @@ export default function UserManagement() {
     }
   }
 
-  async function handleResetPassword() {
-    if (!editingUser) return;
+  async function handleResetPassword(user = editingUser) {
+    if (!user) return;
     setResettingPassword(true);
     setDirectoryError("");
     setTemporaryCredential(null);
     try {
-      const result = await resetUserPassword(editingUser.id);
-      setTemporaryCredential({ email: editForm.email, password: result.temporaryPassword });
+      const result = await resetUserPassword(user.id);
+      setTemporaryCredential({
+        email: user.id === editingUser?.id ? editForm.email : user.email || "",
+        password: result.temporaryPassword,
+      });
     } catch (err) {
       setDirectoryError(err?.message || "No se pudo generar una contraseña temporal.");
     } finally {
@@ -347,7 +350,7 @@ export default function UserManagement() {
       <Sidebar />
       <TopBar />
       <main className={`${collapsed ? "pl-20" : "pl-64"} pt-16 transition-[padding] duration-300 ease-out`}>
-        <div className="mx-auto w-full max-w-5xl px-space-xl py-space-lg flex flex-col gap-space-lg">
+        <div className="mx-auto flex w-full max-w-none flex-col gap-space-lg px-space-md py-space-lg sm:px-space-lg xl:px-space-xl">
           {/* Encabezado + resumen */}
           <div className="flex flex-wrap items-end justify-between gap-space-md animate-enter">
             <div>
@@ -589,15 +592,16 @@ export default function UserManagement() {
               )}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[1.5fr_1fr_1fr_1fr] gap-space-sm my-space-md">
-              <label className="relative">
+            {/* Filtros ajustados para que no se recorten */}
+            <div className="grid grid-cols-1 gap-space-sm my-space-md sm:grid-cols-2 lg:grid-cols-4">
+              <label className="relative block">
                 <span className="sr-only">Buscar por nombre o correo</span>
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant"><Icon name="search" /></span>
-                <input type="search" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar nombre o correo" className={`${inputClass} pl-10`} />
+                <input type="search" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar nombre o correo" className={`${inputClass} pl-10 w-full`} />
               </label>
-              <label>
+              <label className="block">
                 <span className="sr-only">Filtrar por departamento</span>
-                <select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)} className={inputClass}>
+                <select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)} className={`${inputClass} w-full truncate`}>
                   <option value="all">Todos los departamentos</option>
                   {allDepartments.map((department) => (
                     <option key={department.id} value={department.id}>
@@ -606,16 +610,16 @@ export default function UserManagement() {
                   ))}
                 </select>
               </label>
-              <label>
+              <label className="block">
                 <span className="sr-only">Filtrar por rol</span>
-                <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className={inputClass}>
+                <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className={`${inputClass} w-full`}>
                   <option value="all">Todos los roles</option>
                   {ROLE_OPTIONS.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}
                 </select>
               </label>
-              <label>
+              <label className="block">
                 <span className="sr-only">Filtrar por estado</span>
-                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={inputClass}>
+                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={`${inputClass} w-full`}>
                   <option value="all">Todos los estados</option>
                   <option value="active">Activos</option>
                   <option value="inactive">Inactivos</option>
@@ -634,15 +638,22 @@ export default function UserManagement() {
             ) : filteredUsers.length === 0 ? (
               <p className="py-space-lg text-center text-body-md text-on-surface-variant">No hay cuentas que coincidan con esos filtros.</p>
             ) : (
-              <div className="overflow-x-auto rounded-xl bg-surface-container-lowest">
-                <table className="w-full min-w-[820px] border-collapse text-left">
+              <div className="w-full overflow-hidden rounded-xl bg-surface-container-lowest">
+                <table className="w-full table-fixed border-collapse text-left">
+                  <colgroup>
+                    <col style={{ width: "32%" }} />
+                    <col style={{ width: "21%" }} />
+                    <col style={{ width: "15%" }} />
+                    <col style={{ width: "15%" }} />
+                    <col style={{ width: "17%" }} />
+                  </colgroup>
                   <thead>
                     <tr className="border-b border-outline-variant text-label-md text-on-surface-variant">
-                      <th className="px-space-md py-space-sm font-semibold">Usuario</th>
-                      <th className="px-space-md py-space-sm font-semibold">Departamento</th>
-                      <th className="px-space-md py-space-sm font-semibold">Rol</th>
-                      <th className="px-space-md py-space-sm font-semibold">Estado</th>
-                      <th className="px-space-md py-space-sm font-semibold text-right">Acciones</th>
+                      <th className="px-space-xs py-space-sm font-semibold">Usuario</th>
+                      <th className="px-space-xs py-space-sm font-semibold">Departamento</th>
+                      <th className="px-space-xs py-space-sm font-semibold">Rol</th>
+                      <th className="px-space-xs py-space-sm font-semibold">Estado</th>
+                      <th className="px-space-xs py-space-sm font-semibold text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-outline-variant">
@@ -651,40 +662,50 @@ export default function UserManagement() {
                       const inactive = u.active === false;
                       return (
                         <tr key={u.id} className="transition-colors hover:bg-surface-container-low">
-                          <td className="px-space-md py-space-sm">
+                          <td className="px-space-xs py-space-sm">
                             <div className="flex items-center gap-space-sm min-w-0">
                               <span aria-hidden="true" className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-container text-label-md font-semibold text-on-primary-container ${inactive ? "opacity-50" : ""}`}>
                                 {initials(u)}
                               </span>
                               <div className="min-w-0">
-                                <p className={`truncate text-body-md font-medium ${inactive ? "text-on-surface-variant" : "text-on-surface"}`}>
+                                <p className={`break-words text-body-md font-medium ${inactive ? "text-on-surface-variant" : "text-on-surface"}`}>
                                   {u.displayName || "—"}{isSelf && <span className="ml-2 text-label-sm text-primary">Tú</span>}
                                 </p>
-                                <p className="truncate text-body-sm text-on-surface-variant">{u.email}</p>
+                                <p className="break-all text-body-sm text-on-surface-variant">{u.email}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-space-md py-space-sm text-body-sm text-on-surface-variant">
+                          <td className="break-words px-space-xs py-space-sm text-body-sm text-on-surface-variant">
                             {departmentName(u.departmentId, allDepartments)}
                           </td>
-                          <td className="px-space-md py-space-sm">
-                            <span className="whitespace-nowrap rounded-full bg-primary-fixed px-space-sm py-1 text-label-md text-on-primary-fixed-variant">
+                          <td className="px-space-xs py-space-sm">
+                            <span className="break-words rounded-full bg-primary-fixed px-2 py-1 text-label-md text-on-primary-fixed-variant">
                               {ROLE_LABELS[u.role] || u.role || "—"}
                             </span>
                           </td>
-                          <td className="px-space-md py-space-sm">
-                            <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-space-sm py-1 text-label-md ${inactive ? "bg-error-container text-on-error-container" : "bg-success-container text-on-success-container"}`}>
+                          <td className="px-space-xs py-space-sm">
+                            <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-1 text-label-md ${inactive ? "bg-error-container text-on-error-container" : "bg-success-container text-on-success-container"}`}>
                               <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
                               {inactive ? "Inactivo" : "Activo"}
                             </span>
                           </td>
-                          <td className="px-space-md py-space-xs">
-                            <div className="flex justify-end gap-1">
-                              <IconButton icon="edit" label={`Editar a ${u.displayName || u.email}`} tone="primary" onClick={() => openEditUser(u)} />
+                          <td className="px-1 py-space-xs">
+                            <div className="flex flex-wrap justify-end gap-0">
+                              <IconButton icon="edit" label={`Editar a ${u.displayName || u.email}`} tone="primary" onClick={() => openEditUser(u)} compact />
                               <IconButton
                                 icon={inactive ? "toggle_off" : "toggle_on"}
                                 label={`${inactive ? "Reactivar" : "Desactivar"} a ${u.displayName || u.email}`}
                                 onClick={() => handleToggleActive(u)}
+                                compact
+                              />
+                              <IconButton
+                                icon="lock_reset"
+                                label={`Restablecer contraseña de ${u.displayName || u.email}`}
+                                onClick={() => {
+                                  openEditUser(u);
+                                  handleResetPassword(u);
+                                }}
+                                compact
                               />
                               <IconButton
                                 icon="delete"
@@ -692,6 +713,7 @@ export default function UserManagement() {
                                 tone="danger"
                                 onClick={() => handleDeleteUser(u)}
                                 disabled={deletingUserId === u.id || isSelf}
+                                compact
                               />
                             </div>
                           </td>
@@ -746,7 +768,7 @@ export default function UserManagement() {
                     </div>
                     <button
                       type="button"
-                      onClick={handleResetPassword}
+                      onClick={() => handleResetPassword()}
                       disabled={resettingPassword}
                       className="motion-press self-start inline-flex items-center gap-space-xs rounded-full bg-secondary-container px-space-md py-2 text-label-md font-semibold text-on-secondary-container disabled:opacity-50"
                     >

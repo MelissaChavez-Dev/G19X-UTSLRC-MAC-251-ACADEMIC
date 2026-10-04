@@ -1,34 +1,30 @@
-import { useEffect, useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import { motion, useIsPresent } from "framer-motion";
 import {
   Bar,
   BarChart,
   Cell,
   LabelList,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
-// Cada métrica tiene su propio tono pastel (familias hue-* de index-v2.css)
 const METRIC_CONFIG = {
   enps: { label: "Salud neta", suffix: " puntos", higherIsBetter: true, hue: "mint" },
   attritionRisk: {
     label: "Índice de presión laboral",
-    suffix: " / 100 puntos",
+    suffix: " / 100",
     higherIsBetter: false,
     hue: "peach",
-    description: "En la encuesta actual se deriva de tu respuesta de balance vida-trabajo: una calificación de 1–5 asigna fatiga 3.6/5 y carga emocional 4/5; una de 6–10 asigna 1.8/5 y 2/5. Se transforma a un índice de 0–100 puntos. Es una regla orientativa: no calcula la probabilidad de que alguien renuncie.",
+    description: "Derivado de la respuesta sobre balance vida-trabajo. Escala 0-100 puntos basados en niveles de fatiga y carga emocional. Es una regla orientativa, no probabilística.",
   },
   activePulseRate: { label: "Participación", suffix: "%", higherIsBetter: true, hue: "sky" },
-  psychSafety: { label: "Seguridad psicológica", suffix: " / 5", higherIsBetter: true, hue: "rose" },
+  psychSafety: { label: "Seguridad psicológica", suffix: " / 5.0", higherIsBetter: true, hue: "rose" },
 };
 
-// "Papel": un panel más claro que el bloque, que se adapta a claro y oscuro
-const PAPER = "color-mix(in oklab, var(--h-bg) 45%, var(--surface-container-lowest))";
+const PAPER = "color-mix(in oklab, var(--h-bg) 45%, var(--surface-container-lowest, white))";
 
 function DepartmentAxisTick({ x, y, payload }) {
   const words = String(payload?.value || "").split(/\s+/);
@@ -57,11 +53,10 @@ function DepartmentAxisTick({ x, y, payload }) {
         y={y}
         textAnchor="end"
         fill="var(--h-ink)"
-        fontSize={10}
-        fontFamily="inherit"
+        className="text-[10px] font-medium font-sans"
       >
         {visibleLines.map((line, index) => (
-          <tspan key={`${line}-${index}`} x={x} dy={index === 0 ? (visibleLines.length > 1 ? -5 : 4) : 12}>
+          <tspan key={`${line}-${index}`} x={x} dy={index === 0 ? (visibleLines.length > 1 ? -6 : 4) : 12}>
             {line}
           </tspan>
         ))}
@@ -70,19 +65,34 @@ function DepartmentAxisTick({ x, y, payload }) {
   );
 }
 
+const AiSkeletonLoader = () => (
+  <div className="flex flex-col gap-2.5 opacity-80" role="status">
+    <div className="h-3 w-full rounded-full animate-pulse bg-[var(--h-bg)]" />
+    <div className="h-3 w-11/12 rounded-full animate-pulse bg-[var(--h-bg)]/80" />
+    <div className="h-3 w-4/5 rounded-full animate-pulse bg-[var(--h-bg)]/60" />
+  </div>
+);
+
 export default function MetricDetailModal({
-  layoutId, title, value, suffix, explanation, loadingExplanation, trendData, departmentRows, dataKey, onClose,
+  layoutId,
+  title,
+  value,
+  suffix,
+  explanation,
+  loadingExplanation,
+  departmentRows,
+  dataKey,
+  onClose,
 }) {
   const titleId = useId();
-  // false en cuanto empieza la animación de cierre: se quitan las gráficas (SVG pesado)
-  // pero se conserva la altura de cada sección para que el tamaño no salte
+  const closeBtnRef = useRef(null);
   const isPresent = useIsPresent();
   const config = METRIC_CONFIG[dataKey] || { label: title, suffix: "", higherIsBetter: true, hue: "sky" };
 
-  // Cerrar con Escape
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose?.();
     window.addEventListener("keydown", onKey);
+    closeBtnRef.current?.focus();
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
@@ -94,210 +104,190 @@ export default function MetricDetailModal({
       value: Number(row[dataKey] || 0),
     }))
     .sort((a, b) => b.value - a.value);
+
   const bestIndex = config.higherIsBetter ? 0 : departmentData.length - 1;
   const attentionIndex = config.higherIsBetter ? departmentData.length - 1 : 0;
-  const bestDepartment = departmentData[bestIndex];
-  const attentionDepartment = departmentData[attentionIndex];
-  const formatValue = (item) => `${item.value}${config.suffix}`;
+  const bestDepartment = departmentData[bestIndex] || { fullName: "N/A", value: 0 };
+  const attentionDepartment = departmentData[attentionIndex] || { fullName: "N/A", value: 0 };
+  const formatValue = (val) => `${val}${config.suffix}`;
 
   const tooltipStyle = {
     fontSize: 12,
+    fontWeight: 600,
     borderRadius: 16,
     border: "none",
-    boxShadow: "none",
+    boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
     background: PAPER,
     color: "var(--h-ink)",
+    padding: "8px 12px",
   };
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
       onClick={onClose}
     >
-      {/* Fondo oscuro: solo cambia opacity (se anima en la GPU, sin repintar la página) */}
       <motion.div
         aria-hidden="true"
-        className="absolute inset-0"
-        style={{ background: "rgba(37,28,77,0.5)" }}
+        className="absolute inset-0 bg-black/20 backdrop-blur-sm"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: 0.3 }}
       />
+      
       <motion.div
         layoutId={layoutId}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        // Sin borderRadius en línea a propósito: la tarjeta KPI redondea con CSS (clase),
-        // y si el modal lo definiera en línea Framer animaría la tarjeta hacia 0 al cerrar.
-        style={{ background: "var(--h-bg)", color: "var(--h-ink)" }}
-        className={`hue-${config.hue} relative isolate overflow-hidden w-full max-w-lg rounded-[36px]`}
+        style={{ 
+          background: "var(--h-bg)", 
+          color: "var(--h-ink)",
+          borderRadius: "48px", 
+          overflow: "hidden",
+          border: "none"
+        }}
+        className={`hue-${config.hue} relative flex flex-col w-full max-w-[600px] max-h-[90vh] shadow-2xl`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Figura suave de fondo */}
+        {/* Figura decorativa superior derecha plana */}
         <span
           aria-hidden="true"
-          className="blob blob-c"
-          style={{ "--blob-size": "12rem", top: "-4rem", right: "-4rem", background: "var(--h-soft)" }}
+          className="pointer-events-none absolute -right-16 -top-16 z-0 h-64 w-64 rounded-full"
+          style={{ background: "var(--h-soft)" }}
         />
 
+        {/* Contenedor scrolleable interno con barra de desplazamiento estilizada */}
         <motion.div
-          className="max-h-[90vh] overflow-y-auto p-space-lg"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1, transition: { duration: 0.2, delay: 0.12 } }}
-          exit={{ opacity: 0, transition: { duration: 0.08 } }}
+          className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden p-6 sm:p-8 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-black/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-black/20 transition-colors"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0, transition: { duration: 0.3, delay: 0.1 } }}
+          exit={{ opacity: 0, y: -10, transition: { duration: 0.15 } }}
         >
           {/* Encabezado */}
-          <div className="flex items-start justify-between gap-space-sm mb-space-md">
-            <div className="min-w-0">
-              <h2 id={titleId} className="text-headline-sm opacity-80">
+          <div className="flex items-start justify-between gap-4 mb-6">
+            <div className="min-w-0 flex-1">
+              <h2 id={titleId} className="text-sm font-bold opacity-80 mb-1">
                 {title}
               </h2>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-display-lg leading-none">{value}</span>
-                {suffix && <span className="text-body-sm opacity-75">{suffix}</span>}
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-5xl sm:text-6xl font-black tracking-tighter leading-none">
+                  {value}
+                </span>
+                {suffix && <span className="text-sm font-bold opacity-60">{suffix}</span>}
               </div>
             </div>
             <button
+              ref={closeBtnRef}
               type="button"
               onClick={onClose}
-              aria-label="Cerrar"
-              className="motion-press w-10 h-10 shrink-0 flex items-center justify-center hover:opacity-80"
-              style={{ borderRadius: "var(--blob-b)", background: "var(--h-soft)", color: "var(--h-ink)" }}
+              className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform hover:scale-105 active:scale-95"
+              style={{ color: "var(--h-ink)" }}
             >
-              <span aria-hidden="true" className="material-symbols-outlined text-[20px]">close</span>
+              <span aria-hidden="true" className="material-symbols-outlined text-[20px] transition-transform group-hover:rotate-90">
+                close
+              </span>
             </button>
           </div>
 
           {config.description && (
-            <p className="mb-space-md rounded-2xl bg-surface-container-lowest/70 p-space-md text-body-sm">
+            <p className="mb-6 rounded-[24px] p-5 text-sm font-medium leading-relaxed opacity-90" style={{ background: PAPER }}>
               {config.description}
             </p>
           )}
 
           {/* Comparación por departamento */}
           {departmentData.length > 0 && (
-            <section className="mb-space-md p-space-md" style={{ background: PAPER, borderRadius: 28 }}>
-              <h3 className="text-headline-sm">Comparación por departamento</h3>
-              <p className="text-body-sm opacity-75 mb-3">
-                {config.higherIsBetter
-                  ? "Un valor mayor indica una mejor situación."
-                  : "Un valor mayor requiere más atención."}
+            <section className="mb-6 rounded-[32px] p-6 sm:p-7" style={{ background: PAPER }}>
+              <h3 className="text-base font-bold mb-1">Comparación por departamento</h3>
+              <p className="text-xs font-medium opacity-60 mb-6">
+                {config.higherIsBetter ? "Un valor mayor indica una mejor situación." : "Un valor menor indica una mejor situación."}
               </p>
 
-              <div style={{ height: Math.max(165, departmentData.length * 42) }}>
+              <div style={{ height: Math.max(160, departmentData.length * 48) }} className="w-full">
                 {isPresent && (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    layout="vertical"
-                    data={departmentData}
-                    margin={{ top: 0, right: 32, left: 4, bottom: 0 }}
-                  >
-                    <XAxis type="number" hide />
-                    <YAxis
-                      type="category"
-                      dataKey="name"
-                      width={142}
-                      axisLine={false}
-                      tickLine={false}
-                      tick={<DepartmentAxisTick />}
-                    />
-                    <Tooltip
-                      cursor={{ fill: "var(--h-soft)", opacity: 0.45 }}
-                      formatter={(chartValue) => [`${chartValue}${config.suffix}`, config.label]}
-                      labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName || "Departamento"}
-                      contentStyle={tooltipStyle}
-                    />
-                    <Bar dataKey="value" radius={[12, 12, 12, 12]} maxBarSize={22} isAnimationActive={false}>
-                      {departmentData.map((item, index) => {
-                        const highlight = index === bestIndex || index === attentionIndex;
-                        return (
-                          <Cell
-                            key={item.fullName}
-                            fill={
-                              index === bestIndex
-                                ? "var(--risk-low)"
-                                : index === attentionIndex
-                                ? "var(--risk-high)"
-                                : "var(--h-deep)"
-                            }
-                            fillOpacity={highlight ? 1 : 0.35}
-                          />
-                        );
-                      })}
-                      <LabelList dataKey="value" position="right" style={{ fontSize: 11, fill: "var(--h-ink)" }} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      layout="vertical"
+                      data={departmentData}
+                      margin={{ top: 0, right: 32, left: 0, bottom: 0 }}
+                    >
+                      <XAxis type="number" hide />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        width={110}
+                        axisLine={false}
+                        tickLine={false}
+                        tick={<DepartmentAxisTick />}
+                      />
+                      <Tooltip
+                        cursor={{ fill: "var(--h-soft)", opacity: 0.3, rx: 12 }}
+                        formatter={(val) => [formatValue(val), config.label]}
+                        labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName || "Área"}
+                        contentStyle={tooltipStyle}
+                      />
+                      {/* Animación activada aquí */}
+                      <Bar dataKey="value" radius={[12, 12, 12, 12]} maxBarSize={22} isAnimationActive={true} animationDuration={1000} animationEasing="ease-out">
+                        {departmentData.map((item, index) => {
+                          const isBest = index === bestIndex;
+                          const isAttention = index === attentionIndex;
+                          return (
+                            <Cell
+                              key={item.fullName}
+                              fill={isBest ? "var(--risk-low)" : isAttention ? "var(--risk-high)" : "var(--h-deep)"}
+                              fillOpacity={isBest || isAttention ? 1 : 0.35}
+                            />
+                          );
+                        })}
+                        <LabelList 
+                          dataKey="value" 
+                          position="right" 
+                          style={{ fontSize: 11, fontWeight: 800, fill: "var(--h-ink)" }} 
+                        />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 text-label-sm">
-                <p className="rounded-2xl bg-risk-low-container text-on-surface p-3">
-                  Mejor resultado: <strong>{bestDepartment.fullName}</strong> ({formatValue(bestDepartment)})
-                </p>
-                <p className="rounded-2xl bg-risk-high-container text-on-surface p-3">
-                  {config.higherIsBetter ? "Más oportunidad" : "Mayor atención"}:{" "}
-                  <strong>{attentionDepartment.fullName}</strong> ({formatValue(attentionDepartment)})
-                </p>
-              </div>
-            </section>
-          )}
-
-          {/* Evolución semanal */}
-          {trendData && trendData.length > 1 && (
-            <section className="mb-space-md p-space-md" style={{ background: PAPER, borderRadius: 28 }}>
-              <h3 className="text-headline-sm mb-2">Evolución semanal</h3>
-              <div className="h-24">
-                {isPresent && (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trendData} margin={{ top: 6, right: 8, left: 8, bottom: 6 }}>
-                    <XAxis dataKey="weekId" hide />
-                    <YAxis hide domain={["dataMin - 5", "dataMax + 5"]} />
-                    <Tooltip
-                      cursor={false}
-                      contentStyle={tooltipStyle}
-                      labelFormatter={(w) => `Semana ${w}`}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey={dataKey}
-                      stroke="var(--h-deep)"
-                      strokeWidth={3}
-                      strokeLinecap="round"
-                      isAnimationActive={false}
-                      dot={false}
-                      activeDot={{ r: 5, fill: "var(--h-deep)", stroke: "none" }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-                )}
+              {/* Badges de Resumen */}
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 flex items-start gap-2 rounded-xl p-3 text-[11px] font-medium leading-relaxed" style={{ background: "var(--risk-low-container)", color: "var(--on-surface)" }}>
+                  <span aria-hidden="true" className="material-symbols-outlined text-[16px] shrink-0" style={{ color: "var(--risk-low)" }}>check_circle</span>
+                  <div>
+                    Mejor resultado: <strong style={{ color: "var(--risk-low)", fontWeight: 800 }}>{bestDepartment.fullName} ({formatValue(bestDepartment.value)})</strong>
+                  </div>
+                </div>
+                <div className="flex-1 flex items-start gap-2 rounded-xl p-3 text-[11px] font-medium leading-relaxed" style={{ background: "var(--risk-high-container)", color: "var(--on-surface)" }}>
+                  <span aria-hidden="true" className="material-symbols-outlined text-[16px] shrink-0" style={{ color: "var(--risk-high)" }}>warning</span>
+                  <div>
+                    {config.higherIsBetter ? "Más oportunidad:" : "Atención requerida:"} <strong style={{ color: "var(--risk-high)", fontWeight: 800 }}>{attentionDepartment.fullName} ({formatValue(attentionDepartment.value)})</strong>
+                  </div>
+                </div>
               </div>
             </section>
           )}
 
           {/* Interpretación de la IA */}
-          <div className="p-space-md" style={{ background: "var(--h-soft)", borderRadius: 28 }}>
-            <div className="flex items-center gap-1.5 mb-2">
-              <span
-                aria-hidden="true"
-                className="material-symbols-outlined text-[18px]"
-                style={{ color: "var(--h-deep)" }}
-              >
-                auto_awesome
-              </span>
-              <h3 className="text-headline-sm">Interpretación</h3>
-            </div>
-
-            {loadingExplanation ? (
-              <div className="flex flex-col gap-2" role="status" aria-label="Analizando">
-                <div className="h-3 w-full rounded-full animate-pulse" style={{ background: "var(--h-bg)" }} />
-                <div className="h-3 w-4/5 rounded-full animate-pulse" style={{ background: "var(--h-bg)" }} />
+          <div className="relative overflow-hidden rounded-[32px] p-6 sm:p-7" style={{ background: "var(--h-soft)" }}>
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-3">
+                <span aria-hidden="true" className="material-symbols-outlined text-[20px]" style={{ color: "var(--h-deep)" }}>
+                  auto_awesome
+                </span>
+                <h3 className="text-base font-bold">Interpretación</h3>
               </div>
-            ) : (
-              <p className="text-body-md">{explanation || "Aún no hay un análisis."}</p>
-            )}
+
+              {loadingExplanation ? (
+                <AiSkeletonLoader />
+              ) : (
+                <p className="text-sm font-medium leading-relaxed opacity-90">
+                  {explanation || "Aún no hay un análisis."}
+                </p>
+              )}
+            </div>
           </div>
         </motion.div>
       </motion.div>

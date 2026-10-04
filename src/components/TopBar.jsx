@@ -8,15 +8,7 @@ export default function TopBar({ departmentId, onDepartmentChange }) {
   const { departments } = useDepartments();
 
   return (
-    <header className={`fixed top-0 ${collapsed ? "left-20" : "left-64"} right-0 h-16 bg-surface/80 backdrop-blur-xl shadow-sm z-40 flex items-center justify-between px-space-xl transition-[left] duration-300 ease-out`}>
-      <div className="flex items-center gap-space-sm bg-surface-container-low rounded-full px-space-md py-1.5 w-96 transition-colors">
-        <span className="material-symbols-outlined text-on-surface-variant text-[20px]">search</span>
-        <input
-          type="text"
-          placeholder="Buscar métricas, equipos, encuestas..."
-          className="w-full bg-transparent border-none outline-none text-body-sm text-on-surface placeholder:text-on-surface-variant"
-        />
-      </div>
+    <header className={`fixed top-0 ${collapsed ? "left-20" : "left-64"} right-0 h-16 bg-surface/80 backdrop-blur-xl shadow-sm z-40 flex items-center justify-end px-space-xl transition-[left] duration-300 ease-out`}>
       <div className="flex items-center gap-space-md">
         {onDepartmentChange && (
           <div className="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1.5 rounded-full text-on-surface-variant">

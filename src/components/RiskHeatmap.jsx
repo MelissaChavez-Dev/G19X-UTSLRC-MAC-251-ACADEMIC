@@ -1,5 +1,23 @@
 import { getRiskColorClasses } from "../utils/riskColors";
 
+/*
+  Paleta monocromática azul en dos modos.
+  Mismo criterio que las otras tarjetas: en oscuro los niveles se invierten.
+  La tabla vive en un panel interno claro (en oscuro, hundido) para que los
+  indicadores de riesgo conserven el fondo sobre el que fueron pensados y la
+  figura decorativa nunca quede detrás de ellos.
+
+                    claro      oscuro
+  contenedor       #b9e6ec    #243E66
+  figura (esquina) #a8d8eb    #1a3a68
+  panel de tabla   #EAF3FD    #172C4B
+  encabezado/línea #D6E6F8    #243E66
+  texto            #123A63    #E3EEFB
+
+  Los colores de indicadores (celdas, chips de nivel, puntos y leyenda) NO
+  se tocaron: siguen viniendo de getRiskColorClasses, TIER_STYLES y TIER_DOT.
+*/
+
 const COLUMNS = [
   { key: "cognitiveLoad", label: "Carga Cognitiva", invert: false },
   { key: "roleAmbiguity", label: "Ambigüedad de Rol", invert: false },
@@ -25,24 +43,36 @@ const TIER_DOT = {
   "no-data": "bg-outline-variant",
 };
 
+const INK = "text-[#123A63] dark:text-[#E3EEFB]";
+const INK_SOFT = "text-[#123A63]/75 dark:text-[#E3EEFB]/75";
+
 function LegendDot({ colorClass, label, bold }) {
   return (
     <div className="flex items-center gap-1.5">
       <span className={`w-3 h-3 rounded-sm ${colorClass}`} />
-      <span className={`text-on-surface-variant ${bold ? "font-semibold" : ""}`}>{label}</span>
+      <span className={`${INK_SOFT} ${bold ? "font-semibold" : ""}`}>{label}</span>
     </div>
   );
 }
 
 export default function RiskHeatmap({ rows }) {
   return (
-    <div className="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-sm mb-space-md">
+    <section
+      aria-labelledby="risk-title"
+      className="relative h-full overflow-hidden rounded-[40px] bg-[#b9e6ec] p-space-lg dark:bg-[#243E66]"
+    >
+      {/* Figura decorativa: círculo recortado por la esquina inferior derecha */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-25 -left-14 h-40 w-40 rounded-full bg-[#a8d8eb] dark:bg-[#1a3a68] sm:-bottom-16 sm:-right-16 sm:h-48 sm:w-48"
+      />
+
+      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-space-sm mb-space-md">
         <div>
-          <h2 className="text-headline-md text-on-surface tracking-tight">
+          <h2 id="risk-title" className={`text-headline-md tracking-tight ${INK}`}>
             Matriz de Riesgo Psicosocial
           </h2>
-          <p className="text-body-sm text-on-surface-variant">
+          <p className={`text-body-sm ${INK_SOFT}`}>
             Correlación de dinámicas de carga laboral con marcadores tipo ISO 45003
           </p>
         </div>
@@ -54,10 +84,10 @@ export default function RiskHeatmap({ rows }) {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="relative z-10 overflow-x-auto rounded-[28px] bg-[#EAF3FD] p-2 dark:bg-[#172C4B] sm:p-3">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-surface-container-low text-on-surface-variant text-label-md">
+            <tr className={`bg-[#D6E6F8] text-label-md dark:bg-[#243E66] ${INK_SOFT}`}>
               <th className="py-3 px-space-md rounded-l-lg">Departamento</th>
               {COLUMNS.map((col) => (
                 <th key={col.key} className="py-3 px-2 text-center">{col.label}</th>
@@ -65,10 +95,13 @@ export default function RiskHeatmap({ rows }) {
               <th className="py-3 px-space-md text-right rounded-r-lg">Nivel de Riesgo</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-surface-container-low text-body-sm">
+          <tbody className="divide-y divide-[#D6E6F8] text-body-sm dark:divide-[#243E66]">
             {rows.map((row) => (
-              <tr key={row.id} className="hover:bg-surface-container-low/50 transition-colors">
-                <td className="py-3.5 px-space-md font-semibold text-on-surface">
+              <tr
+                key={row.id}
+                className="transition-colors hover:bg-[#D6E6F8]/50 dark:hover:bg-[#243E66]/60"
+              >
+                <td className={`py-3.5 px-space-md font-semibold ${INK}`}>
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${TIER_DOT[row.tier.tone]}`} />
                     {row.name}
@@ -99,6 +132,6 @@ export default function RiskHeatmap({ rows }) {
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 }

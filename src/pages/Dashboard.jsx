@@ -327,17 +327,17 @@ function EmptyPulse() {
       </div>
       {/* Ajusta la ruta si tu encuesta vive en otra */}
       <Link
-        to="/encuesta"
+        to="/survey-builder"
         className="motion-press inline-flex items-center justify-center gap-space-xs self-start rounded-full bg-primary px-space-lg py-3 text-label-md text-on-primary md:self-auto"
       >
-        Abrir encuesta
+        Crear encuesta
       </Link>
     </section>
   );
 }
 
 /* Tarjeta sencilla para lo operativo (no abre modal). */
-function OpsTile({ icon, label, period, value, hint, diff }) {
+function OpsTile({ icon, label, period, value, hint, }) {
   return (
     <div style={{ borderRadius: 32 }} className="flex flex-col gap-space-sm bg-surface-container-low p-space-lg">
       <div className="flex items-center justify-between gap-space-sm text-on-surface-variant">
@@ -351,17 +351,14 @@ function OpsTile({ icon, label, period, value, hint, diff }) {
       </div>
       <div className="flex items-baseline gap-space-sm">
         <span className="text-3xl font-bold leading-none text-on-surface">{value}</span>
-        <DeltaNoteInline diff={diff} />
+      
       </div>
       <p className="text-label-sm text-on-surface-variant">{hint}</p>
     </div>
   );
 }
 
-function DeltaNoteInline({ diff }) {
-  if (diff === null || diff === undefined || diff === 0) return null;
-  return <span className="text-label-sm text-on-surface-variant">{formatDelta(diff, " pts")}</span>;
-}
+
 
 const OperationStrip = memo(function OperationStrip({
   absence,
@@ -396,7 +393,7 @@ const OperationStrip = memo(function OperationStrip({
               absenceLoading
                 ? "Calculando..."
                 : hasWorkdayRecords
-                  ? `${absence.absentDays} de ${absence.workDays} días esperados sin actividad`
+                  ? `${absence.absentDays} de ${absence.workDays} usuarios esperados sin actividad`
                   : "Sin registros aún, se calcula cada noche"
             }
           />
@@ -462,7 +459,7 @@ function ExportActions({ onExport, exporting, disabled }) {
         type="button" 
         onClick={() => onExport("pdf")} 
         disabled={disabled || exporting !== null} 
-        className={`${base} bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60`}
+        className={`${base} bg-red-400 text-red-900 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60`}
       >
         <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
           picture_as_pdf
@@ -473,7 +470,7 @@ function ExportActions({ onExport, exporting, disabled }) {
         type="button" 
         onClick={() => onExport("excel")} 
         disabled={disabled || exporting !== null} 
-        className={`${base} bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60`}
+        className={`${base} bg-emerald-400 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60`}
       >
         <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
           table

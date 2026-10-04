@@ -21,48 +21,62 @@ export default function KpiCard({
     <motion.div
       layoutId={id}
       onClick={interactive ? onExpand : undefined}
-      whileHover={interactive ? { y: -4, scale: 1.01 } : undefined}
-      whileTap={interactive ? { scale: 0.98 } : undefined}
-      transition={{ type: "spring", stiffness: 350, damping: 25 }}
-      className={`group relative bg-primary-container text-on-primary-container p-6 rounded-[28px] flex flex-col justify-between border-none shadow-sm transition-all duration-300 overflow-hidden ${interactive ? "cursor-pointer select-none hover:shadow-md" : "cursor-default"}`}
+      role={interactive ? "button" : "region"}
+      tabIndex={interactive ? 0 : undefined}
+      onKeyDown={(e) => interactive && e.key === "Enter" && onExpand()}
+      whileHover={interactive ? { y: -6, scale: 1.02 } : undefined}
+      whileTap={interactive ? { scale: 0.97 } : undefined}
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      className={`group relative flex flex-col justify-between overflow-hidden p-6 transition-all duration-300 ${
+        interactive
+          ? "cursor-pointer select-none bg-surface-container-low hover:bg-surface-container shadow-sm hover:shadow-xl hover:shadow-primary/10 rounded-[32px]"
+          : "cursor-default bg-surface-container-low rounded-[32px]"
+      }`}
     >
-      {/* Encabezado: Etiqueta en negrita nítida e Ícono Sólido */}
-      <div className="flex items-start justify-between gap-3">
-        <span className="text-[11px] font-black uppercase tracking-wider text-on-primary-container max-w-[80%] leading-snug">
+      {/* Mancha decorativa de fondo (se revela suavemente al hacer hover) */}
+      {interactive && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary opacity-0 transition-all duration-500 ease-out group-hover:scale-150 group-hover:opacity-10"
+        />
+      )}
+
+      {/* Encabezado: Etiqueta nítida e Ícono con sombra */}
+      <div className="relative z-10 flex items-start justify-between gap-3">
+        <span className="max-w-[75%] text-[12px] font-bold uppercase tracking-widest text-on-surface-variant leading-snug">
           {label}
         </span>
         
-        {/* Ícono plano de alto impacto */}
-        <div className="w-10 h-10 rounded-2xl bg-primary text-on-primary flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300 shadow-sm">
-          <span className="material-symbols-outlined text-[20px]">{icon}</span>
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-on-primary shadow-md transition-all duration-300 ease-out group-hover:rotate-12 group-hover:scale-110 group-hover:shadow-primary/30">
+          <span className="material-symbols-outlined text-[24px]">{icon}</span>
         </div>
       </div>
 
-      {/* Métrica Principal: Número 5XL ultra legible */}
-      <div className="my-4 flex flex-col gap-1.5">
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="text-5xl font-black text-on-primary-container tracking-tight leading-none">
+      {/* Métrica Principal */}
+      <div className="relative z-10 my-5 flex flex-col gap-2">
+        <div className="flex flex-wrap items-baseline gap-2">
+          <span className="text-5xl font-black tracking-tighter text-on-surface">
             {value}
           </span>
           {suffix && (
-            <span className="text-base font-bold text-on-primary-container">
+            <span className="text-lg font-bold text-on-surface-variant">
               {suffix}
             </span>
           )}
         </div>
 
-        {/* Badge Indicador / Delta */}
+        {/* Badge Indicador / Delta con colores más semánticos */}
         {hasDelta && (
-          <div className="mt-1 flex items-center">
+          <div className="flex items-center">
             <span
-              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black shadow-sm ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-sm ${
                 isPositive
-                  ? "bg-success-container text-on-success-container"
-                  : "bg-error-container text-on-error-container"
+                  ? "bg-success/15 text-success-700 dark:text-success-400"
+                  : "bg-error/15 text-error-700 dark:text-error-400"
               }`}
             >
-              <span className="material-symbols-outlined text-[14px]">
-                {isPositive ? "arrow_upward" : "arrow_downward"}
+              <span className="material-symbols-outlined text-[16px]">
+                {isPositive ? "trending_up" : "trending_down"}
               </span>
               {delta}
             </span>
@@ -70,14 +84,14 @@ export default function KpiCard({
         )}
       </div>
 
-      {/* Pie de tarjeta & Botón Píldora 'Ver análisis' */}
-      <div className="mt-auto pt-2 flex items-end justify-between gap-2 border-none">
+      {/* Pie de tarjeta & Botón Píldora */}
+      <div className="relative z-10 mt-auto flex items-end justify-between gap-2 border-t border-surface-container-highest/10 pt-4">
         {footerLabel ? (
           <div className="flex flex-col">
-            <span className="text-[11px] font-extrabold text-on-primary-container leading-tight">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
               {footerLabel}
             </span>
-            <span className="text-xs font-black text-on-primary-container leading-tight mt-0.5">
+            <span className="mt-0.5 text-sm font-black text-on-surface">
               {footerValue}
             </span>
           </div>
@@ -85,10 +99,10 @@ export default function KpiCard({
           <div />
         )}
 
-        {/* Botón Píldora de Acción */}
+        {/* Botón Píldora: Inicia sutil y se llena de color al hacer hover */}
         {showAction && (
-          <div className="inline-flex items-center gap-1.5 text-[11px] font-black text-on-primary bg-primary group-hover:bg-on-primary group-hover:text-primary px-3.5 py-1.5 rounded-full shadow-sm transition-colors duration-300 shrink-0">
-            <span className="material-symbols-outlined text-[14px] transition-transform group-hover:rotate-12">
+          <div className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-4 py-2 text-xs font-bold text-primary transition-all duration-300 group-hover:bg-primary group-hover:text-on-primary">
+            <span className="material-symbols-outlined text-[16px] transition-transform duration-500 group-hover:rotate-180">
               auto_awesome
             </span>
             <span>Ver análisis</span>

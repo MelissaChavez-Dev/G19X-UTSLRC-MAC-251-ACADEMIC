@@ -534,6 +534,53 @@ html {
 .hue-butter { --h-bg: var(--butter-bg); --h-soft: var(--butter-soft); --h-deep: var(--butter-deep); --h-ink: var(--butter-ink); }
 .hue-rose   { --h-bg: var(--rose-bg);   --h-soft: var(--rose-soft);   --h-deep: var(--rose-deep);   --h-ink: var(--rose-ink); }
 
+.metric-detail-dialog {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 24rem;
+  max-height: 84vh;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--h-deep) 14%, transparent);
+  border-radius: 40px;
+  box-shadow:
+    0 20px 50px -24px rgb(0 0 0 / 0.24),
+    0 8px 24px -16px color-mix(in oklab, var(--h-deep) 30%, transparent);
+}
+
+.metric-detail-scroll {
+  position: relative;
+  z-index: 10;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-color: color-mix(in oklab, var(--h-deep) 55%, transparent) transparent;
+  scrollbar-width: thin;
+}
+
+.metric-detail-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.metric-detail-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.metric-detail-scroll::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--h-deep) 55%, transparent);
+  background-clip: content-box;
+}
+
+.metric-detail-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--h-deep);
+  background-clip: content-box;
+}
+
 /* Bloque de color plano: sin borde, sin sombra */
 .tile {
   background: var(--h-soft, var(--surface-container));
