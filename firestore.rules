@@ -53,6 +53,10 @@ service cloud.firestore {
       }
     }
 
+    match /{path=**}/tasks/{taskId} {
+      allow read: if isAdmin();
+    }
+
     match /activityLogs/{logId} {
       allow create: if isSelf(request.resource.data.userId)
         && request.resource.data.keys().hasOnly([
