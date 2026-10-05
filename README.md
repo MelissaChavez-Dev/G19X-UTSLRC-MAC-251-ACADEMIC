@@ -26,8 +26,8 @@ Cuenta con una **doble experiencia**:
 
 1. **Clonar o descargar el repositorio:**
    ```bash
-   git clone https://github.com/yamyam1805/dashboard-ejecutivo-salud-organizacional.git
-   cd dashboard-ejecutivo-salud-organizacional
+   git clone https://github.com/MelissaChavez-Dev/G19X-UTSLRC-MAC-251-ACADEMIC.git
+   cd G19X-UTSLRC-MAC-251-ACADEMIC
    ```
 
 2. **Instalar dependencias:**
