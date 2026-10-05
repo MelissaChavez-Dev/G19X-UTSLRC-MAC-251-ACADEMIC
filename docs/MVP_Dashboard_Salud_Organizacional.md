@@ -34,9 +34,15 @@ Durante el proceso de desarrollo y validación, el MVP evolucionó de un "visual
 | **Espacio del Empleado (`/mi-espacio`)** | Portal individual para ver encuestas pendientes, tarjeta de unión a equipo (`JoinTeamCard`) y resumen personal de presencia. | **Completado** |
 | **Tableros Kanban por Equipo** | Tableros colaborativos (`/mis-proyectos` y `/equipos/:teamId`) con 3 columnas (*Por hacer*, *En progreso*, *Completado*) y drag-and-drop. | **Completado** |
 | **Directorio de Equipos (`TeamDirectory`)** | Administración de equipos, integrantes destacados con badges aqua y códigos únicos de unión (`joinCode`). | **Completado** |
-| **Gestión de Usuarios y Seguridad** | Creación administrativa de cuentas, contraseñas temporales, forzado de cambio de clave en primer inicio y control de acceso por roles (`admin`, `team_lead`, `employee`). | **Completado** |
+| **Gestión de Usuarios y Seguridad** | Creación administrativa de cuentas y control de acceso con los roles utilizados actualmente (`admin` y `employee`). | **Completado** |
 | **Monitoreo de Presencia Digital** | Registro no invasivo de actividad (`activityLogs`) contrastado contra horarios de trabajo asignados. | **Completado** |
 | **Diseño y Tema Claro/Oscuro** | Sistema de diseño de acentos por zona ("Executive Pulse"): lienzo base `#FFFCF7`, paleta pastel armonizada y soporte completo a modo oscuro (`.dark`). | **Completado** |
+
+### 2.1 Datos de prueba y cuentas
+
+- La aplicación no carga automáticamente respuestas de encuesta ni otros datos de demostración. La propietaria incorpora manualmente los datos de prueba en Firebase.
+- El entorno contiene únicamente cuentas de prueba personales de la propietaria; no se usan cuentas de empleados reales ni el rol `team_lead`.
+- Para las pruebas actuales, las contraseñas de las cuentas existentes se establecieron en `12345678`. Esta clave compartida es solo para pruebas y no debe utilizarse en producción.
 
 ---
 
@@ -46,8 +52,8 @@ Durante el proceso de desarrollo y validación, el MVP evolucionó de un "visual
 - **HU-02 (Dirección General):** *"Como directivo, quiero que la IA sintetice los comentarios cualitativos y proponga 3 acciones prioritarias que pueda convertir directamente en tareas para los equipos."* **[Cumplida]**
 - **HU-03 (Capital Humano):** *"Como responsable de talento, quiero exportar reportes en PDF y Excel para presentar resultados en comités directivos sin elaborar informes manuales."* **[Cumplida]**
 - **HU-04 (Colaborador):** *"Como empleado, quiero responder encuestas de bienestar de forma confidencial y rápida desde cualquier dispositivo."* **[Cumplida]**
-- **HU-05 (Líder / Integrante de Equipo):** *"Como miembro de un equipo, quiero visualizar las tareas derivadas de bienestar en un tablero Kanban para dar seguimiento continuo a las mejoras."* **[Cumplida]**
-- **HU-06 (Administrador):** *"Como administrador, quiero gestionar usuarios y equipos de forma segura, garantizando que el personal cambie su contraseña provisional al primer acceso."* **[Cumplida]**
+- **HU-05 (Empleado):** *"Como empleado, quiero visualizar las tareas derivadas de bienestar en un tablero Kanban para dar seguimiento continuo a las mejoras de mi equipo."* **[Cumplida]**
+- **HU-06 (Administrador):** *"Como administrador, quiero gestionar las cuentas y equipos de prueba desde la plataforma."* **[Cumplida]**
 
 ---
 

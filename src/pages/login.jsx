@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   signInWithEmailAndPassword,
-  sendPasswordResetEmail,
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
@@ -35,7 +34,6 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [resetStatus, setResetStatus] = useState(null); // null | "sending" | "sent"
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
@@ -50,22 +48,6 @@ export default function Login() {
       setError(getAuthErrorMessage(err.code));
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleForgotPassword() {
-    if (!email) {
-      setError("Ingresa tu correo para enviarte instrucciones de recuperación.");
-      return;
-    }
-    setError("");
-    setResetStatus("sending");
-    try {
-      await sendPasswordResetEmail(auth, email);
-      setResetStatus("sent");
-    } catch (err) {
-      setResetStatus(null);
-      setError(getAuthErrorMessage(err.code));
     }
   }
 
@@ -146,29 +128,15 @@ export default function Login() {
               </div>
 
               <div className="login-row-between">
-                  <label className="login-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                    />
-                    Recordarme
-                  </label>
-                  <button
-                    type="button"
-                    className="login-link-btn"
-                    onClick={handleForgotPassword}
-                    disabled={resetStatus === "sending"}
-                  >
-                    {resetStatus === "sending" ? "Enviando..." : "¿Olvidaste tu contraseña?"}
-                  </button>
-                </div>
-
-              {resetStatus === "sent" && (
-                <p className="login-success" role="status">
-                  Te enviamos un enlace a {email} para restablecer tu contraseña.
-                </p>
-              )}
+                <label className="login-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
+                  Recordarme
+                </label>
+              </div>
 
               {error && <p className="login-error" role="alert">{error}</p>}
 

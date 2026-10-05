@@ -16,7 +16,7 @@ La organización participante carecía de un mecanismo centralizado y automatiza
 
 Este **Product Requirement Document (PRD)** define las especificaciones integrales de la **Plataforma de Salud y Bienestar Organizacional**, una solución web completa que unifica dos experiencias:
 1. **Experiencia Ejecutiva (Dirección / RH):** Tableros de control con KPIs calculados en tiempo real, matriz de riesgo psicosocial (alineada con factores tipo ISO 45003), tendencias históricas, alertas tempranas, exportación ejecutiva (PDF/Excel) y un panel de asesoría estratégica impulsado por Inteligencia Artificial (Gemini) que convierte hallazgos diagnósticos en tareas operativas.
-2. **Experiencia Colaborativa (Empleados y Líderes de Equipo):** Portal personal (`/mi-espacio`), contestación de encuestas segmentadas por departamento, tableros Kanban interactivos para seguimiento de proyectos y visibilidad transparente de presencia digital para esquemas de trabajo híbridos o remotos.
+2. **Experiencia Colaborativa (Empleados):** Portal personal (`/mi-espacio`), contestación de encuestas segmentadas por departamento, tableros Kanban interactivos para seguimiento de proyectos y visibilidad transparente de presencia digital para esquemas de trabajo híbridos o remotos.
 
 ---
 
@@ -51,15 +51,15 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
 
 | Rol | Usuario | Propósito y Alcance de Acceso |
 |---|---|---|
-| **`admin`** | Dirección General / Capital Humano | Acceso total al Dashboard Ejecutivo (`/dashboard`), Gestión de Usuarios (`/admin/usuarios`), Directorio de Equipos (`/equipos`), Tableros de Equipos (`/equipos/:teamId`), Form Builder de Encuestas (`/survey-builder`), reportes y descargas PDF/Excel. |
-| **`team_lead`** | Líder de Departamento o Squad | Gestión del tablero de su equipo (`/equipos/:teamId` y `/mis-proyectos`), visualización de proyectos, acceso a su espacio personal (`/mi-espacio`) y respuesta a encuestas. |
-| **`employee`** | Colaborador / Integrante de equipo | Portal personal (`/mi-espacio`), contestación de encuestas pendientes dirigidas a su área (`/encuesta/:templateId`), autounión a equipo mediante código (`JoinTeamCard`), tablero Kanban de su equipo (`/mis-proyectos`) y resumen de presencia digital. |
+| **`admin`** | Dirección / propietaria del entorno | Acceso al Dashboard Ejecutivo (`/dashboard`), Gestión de Usuarios (`/admin/usuarios`), Directorio de Equipos (`/equipos`), tableros de equipo, Form Builder de Encuestas (`/survey-builder`), reportes y descargas PDF/Excel. |
+| **`employee`** | Colaborador | Portal personal (`/mi-espacio`), contestación de encuestas pendientes dirigidas a su área (`/encuesta/:templateId`), unión a equipo mediante código (`JoinTeamCard`), tablero de equipo (`/mis-proyectos`) y resumen de presencia digital. |
 
 ### 4.2 Flujo de Alta y Autenticación
-1. **Alta centralizada por Administrador:** Para proteger la integridad de la organización, no existe autorregistro abierto. La administradora registra al personal desde `/admin/usuarios` especificando nombre, correo, departamento, equipo y horario laboral (`workSchedule`).
-2. **Generación de credenciales temporales:** Se crea la cuenta en Firebase Auth con una contraseña provisional comunicada de forma segura por el administrador.
-3. **Cambio obligatorio de contraseña:** Mediante la bandera `mustChangePassword: true`, cualquier usuario con credencial temporal es redirigido a la pantalla obligatoria `/cambiar-password` antes de acceder a su espacio de trabajo.
-4. **Redirección condicional (`RoleBasedRedirect`):** Según el rol asignado en Firestore y custom claims, el sistema conduce a cada perfil a su vista autorizada.
+1. **Alta centralizada por Administrador:** No existe autorregistro abierto. La administradora crea las cuentas necesarias desde `/admin/usuarios`.
+2. **Control de roles:** El sistema utiliza los roles `admin` y `employee`; no se utiliza el rol `team_lead`.
+3. **Redirección condicional (`RoleBasedRedirect`):** Según el rol asignado, el sistema conduce al administrador a `/dashboard` y al empleado a `/mi-espacio`.
+
+**Entorno de pruebas actual:** Las cuentas existentes son cuentas de prueba personales de la propietaria, no cuentas de empleados reales. Sus contraseñas se establecieron en `12345678` para pruebas exclusivamente. Esta contraseña no es apropiada para producción y debe cambiarse antes de cualquier despliegue público.
 
 ---
 
@@ -119,6 +119,7 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
 ### 6.2 Motor de Encuestas (`SurveyBuilder` y `SurveyRunner`)
 - **RF-E01: Constructor de Encuestas (`SurveyBuilder`):** Creación visual de encuestas con biblioteca de preguntas (Likert 1-5, eNPS 0-10, opción múltiple y texto abierto) con reordenamiento arrastrable (`@dnd-kit`) y configuración de departamentos destino.
 - **RF-E02: Ejecutor de Encuestas (`SurveyRunner` / `WellnessSurvey`):** Interfaz enfocada (paso a paso), responsiva, con progreso visual, guardado en tiempo real en Firestore y validación de respuesta única por periodo.
+- **RF-E03: Datos de prueba:** La aplicación no realiza carga automática de respuestas de muestra. La propietaria ingresa manualmente las respuestas y datos de prueba en Firebase.
 
 ### 6.3 Espacio Colaborativo y Tableros Kanban (`/mi-espacio` y `/mis-proyectos`)
 - **RF-C01: Mi Espacio:** Vista del empleado que reúne encuestas pendientes, tarjeta de autounión a equipo (`JoinTeamCard`) y resumen de actividad.
