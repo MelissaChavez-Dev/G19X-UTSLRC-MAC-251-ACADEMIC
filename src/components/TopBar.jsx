@@ -8,7 +8,7 @@ export default function TopBar({ departmentId, onDepartmentChange }) {
   const { departments } = useDepartments();
 
   return (
-    <header className={`fixed top-0 ${collapsed ? "left-20" : "left-64"} right-0 h-16 bg-surface/80 backdrop-blur-xl shadow-sm z-40 flex items-center justify-end px-space-xl transition-[left] duration-300 ease-out`}>
+    <header className={`fixed top-0 ${collapsed ? "left-20" : "left-64"} right-0 h-16 bg-[#fffcf7]/90 dark:bg-surface/80 backdrop-blur-xl shadow-sm z-40 flex items-center justify-end px-space-xl transition-[left] duration-300 ease-out`}>
       <div className="flex items-center gap-space-md">
         {onDepartmentChange && (
           <div className="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1.5 rounded-full text-on-surface-variant">

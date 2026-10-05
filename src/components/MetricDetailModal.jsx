@@ -254,8 +254,8 @@ export default function MetricDetailModal({
 
               {/* Badges de Resumen */}
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                <div className="flex-1 flex items-start gap-2 rounded-xl p-3 text-[11px] font-medium leading-relaxed" style={{ background: "var(--risk-low-container)", color: "var(--on-surface)" }}>
-                  <span aria-hidden="true" className="material-symbols-outlined text-[16px] shrink-0" style={{ color: "var(--risk-low)" }}>check_circle</span>
+                <div className="flex-1 flex items-start gap-2 rounded-xl p-3 text-[11px] font-medium leading-relaxed" style={{ background: "var(--risk-low-container)", color: "var(--risk-low-container-text)" }}>
+                  <span aria-hidden="true" className="material-symbols-outlined text-[16px] shrink-0" style={{ color: "var(--risk-low-container-icon)" }}>check_circle</span>
                   <div>
                     Mejor resultado: <strong style={{ color: "var(--risk-low)", fontWeight: 800 }}>{bestDepartment.fullName} ({formatValue(bestDepartment.value)})</strong>
                   </div>

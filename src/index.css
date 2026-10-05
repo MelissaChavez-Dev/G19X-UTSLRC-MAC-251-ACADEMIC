@@ -4,12 +4,9 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ============================================================
-  Plataforma de bienestar organizacional — Design System "Zonas de color"
+  Plataforma de bienestar organizacional — Design System "Acentos por zona"
 
-   Idea central: cada sección o rol vive en su propio color pastel.
-   El fondo de la pantalla NO es blanco: es la zona completa.
-   Sin bordes y sin sombras: todo se separa por contraste de color
-   y por figuras (blobs) planas que acompañan el contenido.
+   Fondo marfil claro con acentos de salvia, azul, rosa y lavanda.
 
    Cómo usarlo:
   <div className="app-canvas zone-lavender"> ...página... </div>
@@ -24,50 +21,62 @@
    ============================================================ */
 
 /* ------------------------------------------------------------
-   1. PALETA BASE — seis familias pastel
-      bg = fondo de zona · soft = bloques · deep = acento · ink = texto
+   1. PALETA BASE — fondo azul claro con superficies cromáticas definidas
    ------------------------------------------------------------ */
 :root {
-  --lav-bg: #CFE4F6;   --lav-soft: #A9CFEE;   --lav-deep: #285F94;   --lav-ink: #0F2C47;
-  --peach-bg: #FCDCCB; --peach-soft: #F7BFA2; --peach-deep: #A5461F; --peach-ink: #4A1D0C;
-  --mint-bg: #CDEBDC;  --mint-soft: #A9DBC1;  --mint-deep: #226A4C;  --mint-ink: #0E3324;
-  --sky-bg: #DDD5F5;   --sky-soft: #C6B9EE;   --sky-deep: #5B4BA8;   --sky-ink: #251C4D;
-  --butter-bg: #F9EAB5; --butter-soft: #F1D678; --butter-deep: #7A5C0B; --butter-ink: #3D2E03;
-  --rose-bg: #F8D2E0;  --rose-soft: #EFB0C8;  --rose-deep: #9E3459;  --rose-ink: #4A1228;
+  --palette-lavender: #CDB4DB;
+  --palette-cream: #F6F1EB;
+  --palette-sage: #8FBF9F;
+  --palette-blue: #A7C7E7;
+  --palette-canvas: #FFFCF7;
+  --palette-navy: #1B2A41;
+  --aqua-soft: #A6CBC5;
+  --aqua-deep: #3B7976;
+  --aqua-ink: #264C4C;
+
+  --lav-bg: var(--palette-canvas);   --lav-soft: var(--palette-lavender); --lav-deep: #806488;   --lav-ink: #4F4054;
+  --peach-bg: var(--palette-canvas); --peach-soft: var(--palette-lavender); --peach-deep: #665477; --peach-ink: #4D405C;
+  --mint-bg: var(--palette-canvas);  --mint-soft: var(--palette-sage); --mint-deep: #4F765C;  --mint-ink: #354B3D;
+  --sky-bg: var(--palette-canvas);   --sky-soft: var(--palette-blue); --sky-deep: #4F7598;   --sky-ink: #364D66;
+  --butter-bg: var(--palette-canvas); --butter-soft: var(--palette-cream); --butter-deep: #4F7598; --butter-ink: #364D66;
+  --rose-bg: var(--palette-canvas);  --rose-soft: var(--palette-lavender); --rose-deep: #665477;  --rose-ink: #4D405C;
 
   --on-accent: #FFFFFF;
 
   /* Error (no depende de la zona) */
-  --err: #B3263E;
-  --err-soft: #F9D4D9;
-  --err-ink: #5A0F1C;
+  --err: #80566C;
+  --err-soft: #E8DDEA;
+  --err-ink: #4D405C;
 
-  /* Niveles de riesgo psicosocial (heatmap): menta → mantequilla → durazno → baya */
-  --risk-low: #226A4C;       --risk-low-container: #CDEBDD;
-  --risk-moderate: #7A5C0B;  --risk-moderate-container: #F5E7B0;
-  --risk-high: #A5461F;      --risk-high-container: #F8CDB5;
-  --risk-critical: #9E2F59;  --risk-critical-container: #F2B3C8;
+  /* Niveles de riesgo: salvia → azul → lavanda → rosa */
+  --risk-low: var(--mint-deep);       --risk-low-container: var(--mint-soft);
+  --risk-moderate: var(--sky-deep);   --risk-moderate-container: var(--sky-soft);
+  --risk-high: var(--lav-deep);       --risk-high-container: var(--lav-soft);
+  --risk-critical: var(--peach-deep); --risk-critical-container: var(--peach-soft);
 }
 
 .dark {
-  /* Pasteles nocturnos: mismo matiz, fondo profundo y acento claro */
-  --lav-bg: #12202E;   --lav-soft: #234563;   --lav-deep: #9CCBF0;   --lav-ink: #DFEDF9;
-  --peach-bg: #2A1A14; --peach-soft: #5A3424; --peach-deep: #F5B896; --peach-ink: #FBE9DF;
-  --mint-bg: #12261D;  --mint-soft: #264F3C;  --mint-deep: #92D9B7;  --mint-ink: #DDF3E9;
-  --sky-bg: #1C1930;   --sky-soft: #382F66;   --sky-deep: #BDB1F0;   --sky-ink: #EAE6FA;
-  --butter-bg: #292210; --butter-soft: #5A4B1B; --butter-deep: #EBD27A; --butter-ink: #F9F0D0;
-  --rose-bg: #2B151F;  --rose-soft: #5C2D43;  --rose-deep: #F0A9C2;  --rose-ink: #FBE3EC;
+  --aqua-soft: #294646;
+  --aqua-deep: #9ACBC3;
+  --aqua-ink: #E8F5F3;
 
-  --on-accent: #15121F;
+  --lav-bg: #292331;   --lav-soft: #403448; --lav-deep: #CDB4DB;   --lav-ink: #F5EEF8;
+  --peach-bg: #292331; --peach-soft: #403448; --peach-deep: #B9A3CA; --peach-ink: #F5EEF8;
+  --mint-bg: #1F3029;  --mint-soft: #30493A; --mint-deep: #8FBF9F;  --mint-ink: #EAF4ED;
+  --sky-bg: var(--palette-navy); --sky-soft: #304763; --sky-deep: #A7C7E7; --sky-ink: #EEF5FC;
+  --butter-bg: var(--palette-navy); --butter-soft: #34465A; --butter-deep: #A7C7E7; --butter-ink: #EEF5FC;
+  --rose-bg: #292331;  --rose-soft: #403448; --rose-deep: #B9A3CA;  --rose-ink: #F5EEF8;
 
-  --err: #F2A0AB;
-  --err-soft: #5A1A28;
-  --err-ink: #FADADD;
+  --on-accent: var(--palette-navy);
 
-  --risk-low: #92D9B7;       --risk-low-container: #1F4132;
-  --risk-moderate: #EBD27A;  --risk-moderate-container: #4A3E17;
-  --risk-high: #F5B896;      --risk-high-container: #4A2B1E;
-  --risk-critical: #F0A9C2;  --risk-critical-container: #4B2536;
+  --err: #CDB4DB;
+  --err-soft: #403448;
+  --err-ink: #F5EEF8;
+
+  --risk-low: var(--mint-deep);       --risk-low-container: #30493A;
+  --risk-moderate: var(--sky-deep);   --risk-moderate-container: #304763;
+  --risk-high: var(--lav-deep);       --risk-high-container: #403448;
+  --risk-critical: var(--peach-deep); --risk-critical-container: #403448;
 }
 
 /* ------------------------------------------------------------
@@ -87,26 +96,13 @@
   --t-soft: var(--peach-soft); --t-deep: var(--peach-deep); --t-ink: var(--peach-ink);
 }
 .zone-dashboard {
-  --p-bg: #DCE8F4;
-  --p-soft: #C3D9EA;
-  --p-deep: #365F83;
-  --p-ink: #19334B;
+  --p-bg: var(--sky-bg); --p-soft: var(--sky-soft); --p-deep: var(--sky-deep); --p-ink: var(--sky-ink);
   --s-soft: var(--mint-soft); --s-deep: var(--mint-deep); --s-ink: var(--mint-ink);
   --t-soft: var(--peach-soft); --t-deep: var(--peach-deep); --t-ink: var(--peach-ink);
-  --canvas-orb-a: #C58FD1;
-  --canvas-orb-b: #F4B17F;
-  --chart-2: var(--mint-deep);
+  --canvas-orb-a: color-mix(in srgb, var(--palette-blue) 16%, transparent);
+  --canvas-orb-b: color-mix(in srgb, var(--palette-lavender) 10%, transparent);
 }
 
-.zone-dashboard .motion-card {
-  --surface-container-lowest: #D5E9F6;
-  --surface-container-low: #C8E2F2;
-  --surface-container: #BBD9EB;
-  --on-surface: #183750;
-  --on-surface-variant: #36566E;
-  --primary-fixed: #B9D5E9;
-  --on-primary-fixed-variant: #183750;
-}
 .zone-peach {
   --p-bg: var(--peach-bg); --p-soft: var(--peach-soft); --p-deep: var(--peach-deep); --p-ink: var(--peach-ink);
   --s-soft: var(--mint-soft); --s-deep: var(--mint-deep); --s-ink: var(--mint-ink);
@@ -137,13 +133,13 @@
 [class*="zone-"] {
   /* Superficies: más claras que el fondo = "flotan" sin sombra */
   --surface: var(--p-bg);
-  --surface-dim: color-mix(in oklab, var(--p-bg) 85%, var(--p-deep));
+  --surface-dim: color-mix(in oklab, var(--p-bg) 96%, var(--p-deep));
   --surface-bright: var(--p-bg);
-  --surface-container-lowest: color-mix(in oklab, var(--p-bg) 12%, white);
-  --surface-container-low: color-mix(in oklab, var(--p-bg) 30%, white);
-  --surface-container: color-mix(in oklab, var(--p-bg) 50%, white);
+  --surface-container-lowest: color-mix(in oklab, var(--p-bg) 70%, var(--p-soft));
+  --surface-container-low: color-mix(in oklab, var(--p-bg) 52%, var(--p-soft));
+  --surface-container: color-mix(in oklab, var(--p-bg) 35%, var(--p-soft));
   --surface-container-high: var(--p-soft);
-  --surface-container-highest: color-mix(in oklab, var(--p-soft) 78%, var(--p-deep));
+  --surface-container-highest: var(--p-soft);
   --surface-variant: var(--surface-container-highest);
   --surface-tint: var(--p-deep);
 
@@ -192,8 +188,10 @@
   --success: var(--mint-deep);
   --success-container: var(--mint-soft);
   --on-success-container: var(--mint-ink);
-  --warning: var(--butter-deep);
-  --warning-container: var(--butter-soft);
+  --risk-low-container-text: var(--on-success-container);
+  --risk-low-container-icon: var(--on-success-container);
+  --warning: var(--risk-moderate);
+  --warning-container: var(--risk-moderate-container);
   --on-warning-container: var(--butter-ink);
 
   --background: var(--surface);
@@ -208,44 +206,30 @@
   --surface-container-lowest: color-mix(in oklab, var(--p-bg) 55%, black);
   --surface-container-low: color-mix(in oklab, var(--p-bg) 50%, var(--p-soft));
   --surface-container: var(--p-soft);
-  --surface-container-high: color-mix(in oklab, var(--p-soft) 80%, var(--p-deep));
-  --surface-container-highest: color-mix(in oklab, var(--p-soft) 68%, var(--p-deep));
+  --surface-container-high: color-mix(in oklab, var(--p-soft) 92%, var(--p-bg));
+  --surface-container-highest: var(--p-soft);
 
   --primary-container: color-mix(in oklab, var(--p-soft) 80%, var(--p-deep));
   --inverse-primary: color-mix(in oklab, var(--p-deep) 45%, black);
+  --risk-low-container-text: var(--on-surface);
+  --risk-low-container-icon: var(--risk-low);
 }
 
 .dark .zone-dashboard {
-  --p-bg: #202B3E;
-  --p-soft: #354B64;
-  --p-deep: #B9D0E5;
-  --p-ink: #F0F6FB;
-  --s-soft: #264F3C; --s-deep: #92D9B7; --s-ink: #DDF3E9;
-  --t-soft: #5A3424; --t-deep: #F5B896; --t-ink: #FBE9DF;
-  --canvas-orb-a: #70558F;
-  --canvas-orb-b: #9A603D;
-  --chart-2: var(--mint-deep);
+  --p-bg: var(--sky-bg); --p-soft: var(--sky-soft); --p-deep: var(--sky-deep); --p-ink: var(--sky-ink);
+  --s-soft: var(--mint-soft); --s-deep: var(--mint-deep); --s-ink: var(--mint-ink);
+  --t-soft: var(--peach-soft); --t-deep: var(--peach-deep); --t-ink: var(--peach-ink);
+  --canvas-orb-a: color-mix(in srgb, var(--palette-blue) 16%, transparent);
+  --canvas-orb-b: color-mix(in srgb, var(--palette-lavender) 10%, transparent);
 }
 
-.dark .zone-dashboard .motion-card {
-  --surface-container-lowest: #2A5273;
-  --surface-container-low: #315E82;
-  --surface-container: #38698E;
-  --surface-container-high: #44799F;
-  --on-surface: #F2F7FC;
-  --on-surface-variant: #D5E5F0;
-  --outline-variant: #527895;
-  --primary-fixed: #426B8A;
-  --on-primary-fixed-variant: #F2F7FC;
-}
-
-/* Paleta para gráficas y heatmap (usa los pasteles base) */
+/* Colores de alto contraste para gráficas y heatmap */
 :root {
-  --chart-1: var(--lav-deep);
+  --chart-1: var(--mint-deep);
   --chart-2: var(--sky-deep);
-  --chart-3: var(--mint-deep);
-  --chart-4: var(--peach-deep);
-  --chart-5: var(--rose-deep);
+  --chart-3: var(--lav-deep);
+  --chart-4: var(--palette-navy);
+  --chart-5: var(--peach-deep);
 
   /* Movimiento: resorte suave, sin rebote exagerado */
   --ease-spring: linear(
@@ -269,6 +253,9 @@
   --blob-b: 42% 58% 38% 62% / 52% 40% 60% 48%;
   --blob-c: 54% 46% 62% 38% / 40% 58% 42% 60%;
   --blob-d: 38% 62% 47% 53% / 60% 38% 62% 40%;
+}
+.dark {
+  --chart-4: var(--palette-cream);
 }
 
 /* Se eliminan las sombras predefinidas de Tailwind (shadow-md, etc.) */
@@ -455,6 +442,13 @@ html {
   overflow-x: hidden;
   transition: background-color var(--dur-long) var(--ease-emphasized);
 }
+html:not(.dark),
+html:not(.dark) body,
+html:not(.dark) .app-canvas,
+html:not(.dark) .login-page,
+html:not(.dark) .login-shell {
+  background-color: #fffcf7;
+}
 .app-canvas::before,
 .app-canvas::after {
   content: "";
@@ -632,6 +626,10 @@ html {
 }
 .motion-card.keep-card-color:hover {
   background: var(--surface-container);
+}
+:root:not(.dark) .motion-card.keep-card-color,
+:root:not(.dark) .motion-card.keep-card-color:hover {
+  background: var(--sky-soft);
 }
 
 /* Botones: respuesta con resorte; al presionar se comprimen y se redondean */

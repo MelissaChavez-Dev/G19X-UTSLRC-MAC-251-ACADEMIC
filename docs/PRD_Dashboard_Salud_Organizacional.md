@@ -1,167 +1,148 @@
-# PRD — Dashboard Ejecutivo de Salud Organizacional
+# PRD — Plataforma y Dashboard Ejecutivo de Salud Organizacional
 
-**Proyecto:** Dashboard Ejecutivo de Salud Organizacional
-**Empresa:** Organización participante (nombre provisional)
-**Autora:** Melissa Alejandra Chávez
-**Programa:** Programa de formación (nombre provisional)
-**Repositorio:** github.com/yamyam1805/dashboard-ejecutivo-salud-organizacional
-**Fecha:** Septiembre 2026
-**Estado del documento:** v2.0 — reemplaza la v1.0 (stack Azure/PostgreSQL descartado)
-
----
-
-## 1. Resumen ejecutivo
-
-La organización participante carece de un mecanismo centralizado para monitorear la salud organizacional de su capital humano. Los indicadores de bienestar, ausentismo, rotación, clima laboral, desempeño y factores psicosociales se encuentran dispersos en distintas fuentes y formatos, lo que obliga a generar reportes de forma manual y retrasa la toma de decisiones estratégicas.
-
-Este PRD define los requerimientos para desarrollar una **Plataforma de Bienestar Organizacional (nombre provisional)**, un dashboard ejecutivo que consolide dichos indicadores en tableros interactivos, con apoyo de inteligencia artificial (Gemini) para la generación de alertas e interpretación de tendencias, dirigido a la alta dirección de la empresa.
-
-El proyecto es de autoría individual de Melissa Alejandra Chávez, desarrollado dentro de un programa de formación (nombre provisional), y forma parte de una memoria de estadía que evalúa la solución propuesta.
+**Proyecto:** Dashboard Ejecutivo y Plataforma de Salud Organizacional  
+**Empresa:** Organización participante (nombre provisional)  
+**Autora:** Melissa Alejandra Chávez  
+**Programa:** Memoria de Estadía de TSU — UTSLRC  
+**Repositorio:** github.com/yamyam1805/dashboard-ejecutivo-salud-organizacional  
+**Versión:** 3.0 (Documento Integral Unificado — Núcleo Ejecutivo y Expansión Colaborativa)  
+**Fecha de actualización:** Octubre 2026  
 
 ---
 
-## 2. Problema a resolver
+## 1. Resumen Ejecutivo
 
-- La información de salud organizacional está dispersa entre áreas, sin un punto único de consulta.
-- La generación de reportes depende de procesos manuales, con alto consumo de tiempo y riesgo de inconsistencias entre versiones de un mismo indicador.
-- No existen tableros con tendencias históricas ni alertas ante desviaciones, por lo que la detección de problemas (ej. incremento de rotación, deterioro de clima laboral) es reactiva.
-- Las decisiones estratégicas de talento se sustentan más en percepción que en evidencia consolidada.
+La organización participante carecía de un mecanismo centralizado y automatizado para evaluar, diagnosticar y dar seguimiento a la salud organizacional de su talento humano. Los indicadores de bienestar, ausentismo, rotación, carga laboral, desempeño y clima organizacional se encontraban dispersos o se gestionaban de manera manual y reactiva.
 
-## 3. Objetivo del producto
+Este **Product Requirement Document (PRD)** define las especificaciones integrales de la **Plataforma de Salud y Bienestar Organizacional**, una solución web completa que unifica dos experiencias:
+1. **Experiencia Ejecutiva (Dirección / RH):** Tableros de control con KPIs calculados en tiempo real, matriz de riesgo psicosocial (alineada con factores tipo ISO 45003), tendencias históricas, alertas tempranas, exportación ejecutiva (PDF/Excel) y un panel de asesoría estratégica impulsado por Inteligencia Artificial (Gemini) que convierte hallazgos diagnósticos en tareas operativas.
+2. **Experiencia Colaborativa (Empleados y Líderes de Equipo):** Portal personal (`/mi-espacio`), contestación de encuestas segmentadas por departamento, tableros Kanban interactivos para seguimiento de proyectos y visibilidad transparente de presencia digital para esquemas de trabajo híbridos o remotos.
 
-Desarrollar un dashboard ejecutivo que integre datos de encuestas de bienestar y los presente, mediante visualizaciones interactivas y análisis generado por IA, como indicadores estratégicos que la alta dirección pueda usar para la toma de decisiones.
+---
 
-### 3.1 Objetivos específicos
+## 2. Problema a Resolver y Justificación
 
-| # | Objetivo | Finalidad |
-|---|----------|-----------|
-| 1 | Identificar los KPIs de salud organizacional | Definir las métricas que integrará el dashboard |
-| 2 | Diseñar la arquitectura del sistema (Firestore + Cloud Functions) | Establecer el flujo de datos entre la encuesta, el repositorio y el tablero |
-| 3 | Construir el motor de encuestas | Generar la fuente de datos que alimenta el dashboard |
-| 4 | Desarrollar una aplicación web con tableros interactivos | Presentar visualmente los indicadores estratégicos a la dirección |
-| 5 | Incorporar funcionalidades de IA (Gemini) a nivel macro y micro | Generar recomendaciones estratégicas y explicar gráficas individuales |
-| 6 | Validar la calidad y consistencia de la información | Garantizar la confiabilidad del tablero |
-| 7 | Elaborar documentación técnica | Facilitar el mantenimiento y sustentar el capítulo de Desarrollo Técnico de la memoria |
+- **Dispersión y fragmentación:** La información de bienestar y factores psicosociales residía en hojas de cálculo aisladas sin correlación con el desempeño ni con los equipos de trabajo.
+- **Toma de decisiones reactiva:** Ausencia de indicadores en tiempo real y alertas automáticas; los problemas de retención o agotamiento se detectaban cuando el colaborador ya renunciaba o reducía su rendimiento.
+- **Desconexión entre el diagnóstico y la acción:** Las encuestas tradicionales de clima laboral arrojaban reportes estáticos que rara vez se traducían en planes de acción ejecutables o medibles por equipo.
+- **Inconsistencia en el monitoreo remoto:** Necesidad de monitorear la salud y presencia del equipo sin caer en prácticas invasivas ni vulnerar la privacidad del colaborador.
 
-## 4. Usuarios objetivo
+---
 
-| Perfil | Rol respecto al producto | Necesidad principal |
-|--------|--------------------------|----------------------|
-| Alta dirección (CHRO / Dirección general) | Usuario final principal | Visualizar el estado de salud organizacional de un vistazo y recibir recomendaciones accionables |
-| Empleados | Usuario de la encuesta | Responder pulsos de bienestar de forma rápida y confidencial |
-| Administrador del sistema (rol futuro) | Gestor de encuestas | Construir y publicar nuevas encuestas sin depender de desarrollo |
+## 3. Objetivos del Producto
 
-## 5. Alcance
+### 3.1 Objetivo General
+Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos colaborativos que recopile datos de bienestar mediante encuestas activas, calcule métricas de salud organizacional y genere diagnósticos y tareas de intervención apoyados por Inteligencia Artificial para la toma de decisiones estratégicas.
 
-### 5.1 Dentro de alcance
-- Encuesta de bienestar tipo Typeform (una pregunta por pantalla), conectada a Firestore.
-- Dashboard ejecutivo con KPIs: eNPS, riesgo de rotación a 90 días, muestra activa de pulso, índice de seguridad psicológica.
-- Heatmap de riesgo psicosocial (departamentos × factores, basado en marcadores tipo ISO 45003).
-- Panel de IA a nivel macro: botón "Generar estrategia" que analiza el cohorte completo con Gemini y devuelve recomendaciones accionables en Markdown.
-- Panel de IA a nivel micro: análisis contextual al expandir una gráfica individual.
-- Tendencia semanal de sentimiento y "focos de fricción urgentes".
-- Análisis de sentimiento de texto libre mediante Gemini.
-- Autenticación de acceso mediante Firebase Authentication.
-- Datos simulados (dataset sintético generado por script, no datos reales de empleados).
+### 3.2 Objetivos Específicos
+1. **Centralización de KPIs:** Integrar en un solo panel métricas de salud neta (eNPS), presión laboral, seguridad psicológica, participación, rotación y presencia digital.
+2. **Diagnóstico Psicosocial Continuo:** Proveer una matriz de riesgo (heatmap) clasificada por departamento y factores organizacionales críticos.
+3. **Asesoría Estratégica con IA (Gemini):** Automatizar el análisis cualitativo y cuantitativo con recomendaciones ejecutivas estructuradas y vinculables directamente a planes de trabajo.
+4. **Cierre de Ciclo Diagnóstico-Acción (Kanban):** Permitir a la dirección y a los líderes convertir recomendaciones de IA o acuerdos internos en tarjetas de trabajo asignables y rastreables.
+5. **Gestión Flexible de Encuestas:** Brindar un constructor visual de encuestas (`SurveyBuilder`) y un ejecutor interactivo (`SurveyRunner`) con segmentación departamental y ciclos programados.
+6. **Seguridad y Control de Acceso por Roles:** Garantizar autenticación robusta, cambio obligatorio de credenciales temporales y permisos delimitados para Administradores, Líderes de Equipo y Empleados.
+7. **Reportes y Usabilidad Ejecutiva:** Ofrecer exportación formal a PDF y Excel multipestaña, así como un sistema de diseño con paleta accesible, modo oscuro y visualizaciones intuitivas.
 
-### 5.2 Dentro de alcance si el tiempo lo permite (no bloqueante para el MVP)
-- Form builder de encuestas con biblioteca de bloques (drag-and-drop simplificado).
-- Animación de expansión de gráficas con Framer Motion (modo enfoque/modal).
+---
 
-### 5.3 Fuera de alcance
-- Pulse surveys programadas automáticamente (envío periódico).
-- Kanban de seguimiento de recomendaciones de RH.
-- Integración con sistemas de nómina o CRM reales de terceros.
-- Aplicación móvil nativa.
-- Multiidioma.
-- Datos reales de empleados de la empresa.
+## 4. Usuarios y Modelo de Roles
 
-## 6. Requerimientos funcionales
+### 4.1 Definición de Perfiles
 
-| ID | Requerimiento | Prioridad |
-|----|---------------|-----------|
-| RF-01 | El sistema debe permitir a un empleado responder una encuesta de bienestar y almacenar la respuesta en Firestore | Alta |
-| RF-02 | El sistema debe presentar tableros interactivos con los KPIs de salud organizacional definidos | Alta |
-| RF-03 | El sistema debe mostrar un heatmap de riesgo psicosocial por departamento y factor | Alta |
-| RF-04 | El sistema debe mostrar tendencias históricas (semanal) de al menos un indicador | Alta |
-| RF-05 | El sistema debe generar, mediante Gemini, un análisis estratégico a nivel macro a partir de los datos agregados | Alta |
-| RF-06 | El sistema debe generar, mediante Gemini, un análisis contextual al expandir una gráfica específica | Media |
-| RF-07 | El sistema debe clasificar el sentimiento del texto libre de las respuestas mediante Gemini | Media |
-| RF-08 | El sistema debe validar que los datos no tengan valores nulos o duplicados antes de mostrarlos | Alta |
-| RF-09 | El sistema debe requerir autenticación mediante Firebase Authentication para acceder al dashboard | Alta |
-| RF-10 | El sistema debe contar con documentación técnica que describa su arquitectura y despliegue | Media |
+| Rol | Usuario | Propósito y Alcance de Acceso |
+|---|---|---|
+| **`admin`** | Dirección General / Capital Humano | Acceso total al Dashboard Ejecutivo (`/dashboard`), Gestión de Usuarios (`/admin/usuarios`), Directorio de Equipos (`/equipos`), Tableros de Equipos (`/equipos/:teamId`), Form Builder de Encuestas (`/survey-builder`), reportes y descargas PDF/Excel. |
+| **`team_lead`** | Líder de Departamento o Squad | Gestión del tablero de su equipo (`/equipos/:teamId` y `/mis-proyectos`), visualización de proyectos, acceso a su espacio personal (`/mi-espacio`) y respuesta a encuestas. |
+| **`employee`** | Colaborador / Integrante de equipo | Portal personal (`/mi-espacio`), contestación de encuestas pendientes dirigidas a su área (`/encuesta/:templateId`), autounión a equipo mediante código (`JoinTeamCard`), tablero Kanban de su equipo (`/mis-proyectos`) y resumen de presencia digital. |
 
-## 7. Requerimientos no funcionales
+### 4.2 Flujo de Alta y Autenticación
+1. **Alta centralizada por Administrador:** Para proteger la integridad de la organización, no existe autorregistro abierto. La administradora registra al personal desde `/admin/usuarios` especificando nombre, correo, departamento, equipo y horario laboral (`workSchedule`).
+2. **Generación de credenciales temporales:** Se crea la cuenta en Firebase Auth con una contraseña provisional comunicada de forma segura por el administrador.
+3. **Cambio obligatorio de contraseña:** Mediante la bandera `mustChangePassword: true`, cualquier usuario con credencial temporal es redirigido a la pantalla obligatoria `/cambiar-password` antes de acceder a su espacio de trabajo.
+4. **Redirección condicional (`RoleBasedRedirect`):** Según el rol asignado en Firestore y custom claims, el sistema conduce a cada perfil a su vista autorizada.
 
-| ID | Requerimiento | Descripción |
-|----|---------------|-------------|
-| RNF-01 | Seguridad | Autenticación mediante Firebase Auth; reglas de seguridad de Firestore que impidan lectura/escritura no autorizada; API key de Gemini nunca expuesta en el frontend (se invoca desde Cloud Functions) |
-| RNF-02 | Escalabilidad | La estructura de Firestore debe permitir agregar nuevos tipos de pregunta o indicador sin rediseño mayor |
-| RNF-03 | Usabilidad | Los tableros deben ser comprensibles para perfiles no técnicos (dirección), siguiendo el sistema de diseño "Executive Pulse" (paleta, tipografía Inter, componentes definidos en DESIGN.md) |
-| RNF-04 | Mantenibilidad | Historial de commits en GitHub con mensajes descriptivos y avance incremental verificable (evidencia de trabajo sostenido, no de última hora) |
-| RNF-05 | Consistencia visual | El frontend debe respetar fielmente los mockups y tokens de diseño entregados (colores semánticos, radios, sombras, tipografía) |
+---
 
-## 8. Stack tecnológico
+## 5. Arquitectura del Sistema y Stack Tecnológico
 
-- **Frontend:** React.js (Vite) + Tailwind CSS + Framer Motion
-- **Visualización:** Recharts / Tremor
-- **Backend / datos:** Firebase Authentication, Firestore
-- **Funciones en la nube:** Cloud Functions (Python 3.8+), como capa intermedia hacia Gemini
-- **Inteligencia artificial:** Gemini API (`gemini-3.8-flash`)
-- **Control de versiones:** Git / GitHub
-- **Diseño:** Sistema de diseño "Executive Pulse" (Stitch) — paleta, tipografía Inter, espaciados y componentes ya definidos
-- **Metodología de trabajo:** Scrum, con sprints diarios dado el periodo comprimido de desarrollo
+### 5.1 Stack de Desarrollo
+- **Frontend SPA:** React 19 + Vite 8.
+- **Estilos y Sistema Visual:** Tailwind CSS v4 + Framer Motion (transiciones y microinteracciones fluidas).
+- **Iconografía y Tipografía:** Google Material Symbols Outlined + Bricolage Grotesque / Figtree.
+- **Gráficas y Visualización:** Recharts + Componentes SVG reactivos a la medida (Medidor eNPS tipo termómetro con estados de ánimo).
+- **Arrastre e Interacción (DnD):** `@dnd-kit/core` y `@dnd-kit/sortable` para el constructor de encuestas y los tableros Kanban.
+- **Backend as a Service:** Firebase Authentication + Cloud Firestore.
+- **Inteligencia Artificial:** Google Gemini API (`gemini-3.8-flash`) integrada vía servicio seguro para síntesis ejecutiva, análisis de texto libre y explicaciones contextuales.
+- **Exportación de Reportes:** `jspdf` + `jspdf-autotable` (reportes PDF ejecutivos) y `xlsx` (libros de cálculo Excel con hojas segregadas).
 
-## 9. Arquitectura (visión general)
+### 5.2 Modelo de Colecciones en Firestore
+- **`users/{uid}`**: Perfil del usuario (`displayName`, `email`, `role`, `departmentId`, `teamId`, `workSchedule`, `mustChangePassword`, `active`).
+- **`teams/{teamId}`**: Datos de equipo (`name`, `departmentId`, `leaderId`, `joinCode`, `memberIds`, `createdAt`).
+- **`teams/{teamId}/tasks/{taskId}`**: Tarjetas de trabajo del Kanban (`title`, `description`, `status`, `origin: "ai_recommendation" | "manual"`, `sourceMetric`, `assignedTo`, `createdAt`, `updatedAt`).
+- **`surveyTemplates/{templateId}`**: Plantillas creadas (`title`, `status`, `targetDepartments`, `cycle`, `questions[]`).
+- **`responses/{responseId}`**: Respuestas individuales procesadas (`enps`, `factors`, `openComments`, `departmentId`, `submittedAt`).
+- **`surveyCompletions/{completionId}`**: Registro de control para evitar duplicidad de respuestas por ciclo y colaborador.
+- **`activityLogs/{logId}`**: Registro no invasivo de presencia digital (`userId`, `type`, `timestamp`).
+- **`departments/{deptId}`**: Catálogo de áreas organizacionales y headcounts asignados.
 
-```
-Encuesta de bienestar (React) ──► Firestore (responses)
-                                        │
-                                        ▼
-                              Datos simulados + reales de encuesta
-                                        │
-                                        ▼
-                     Cloud Functions (Python) — agregación de KPIs
-                                        │
-                          ┌─────────────┴─────────────┐
-                          ▼                            ▼
-                  Dashboard (React)            Gemini API (gemini-3.8-flash)
-                  KPIs, heatmap, tendencias     Análisis macro / micro / sentimiento
-                          │                            │
-                          └─────────────┬──────────────┘
-                                        ▼
-                        Panel de IA (recomendaciones en Markdown)
-```
+---
 
-## 10. Métricas de éxito
+## 6. Módulos y Requerimientos Funcionales
 
-| Métrica | Meta esperada |
-|---------|----------------|
-| Funcionalidad de punta a punta | La encuesta alimenta datos reales al dashboard (no datos hardcodeados para la demo) |
-| Cobertura de KPIs | Los 4 KPIs principales (eNPS, riesgo de rotación, muestra activa, índice de seguridad psicológica) visibles y calculados desde Firestore |
-| Fidelidad al diseño | El dashboard implementado corresponde visualmente a los mockups de Stitch |
-| Evidencia de desarrollo incremental | Historial de commits en GitHub con avance diario verificable durante el periodo de desarrollo |
-| Valor como evidencia académica | El proyecto sustenta el capítulo de Desarrollo Técnico y Resultados de la memoria de estadía |
+### 6.1 Dashboard Ejecutivo (`/dashboard`)
+- **RF-D01: Medidor eNPS Semicircular (Termómetro con Caras Emocionales):**
+  - Indicador principal en forma de medidor reactivo de −100 a +100 puntos.
+  - Aguja dinámica que rota según el puntaje exacto consolidado de respuestas.
+  - 4 rangos semánticos con glifos expresivos de estados de ánimo: *Bajo* (≤ −11, triste), *Bueno* (−10 a 19, neutro), *Muy bueno* (20 a 39, sonriente), y *Excelente* (≥ 40, alegre).
+  - Indicación numérica central limpia y comparativo de variación delta frente al periodo anterior.
+- **RF-D02: Métricas de Pulso Complementarias:**
+  - *Índice de presión laboral:* Evaluación sobre 100 puntos de carga y fricción operativa.
+  - *Participación en pulsos:* Porcentaje semanal y promedio de respuestas sobre el headcount real.
+  - *Seguridad psicológica:* Promedio sobre 5.0 puntos de libertad de expresión y confianza en el entorno.
+  - Modal de análisis micro con Gemini al interactuar con cualquier tarjeta.
+- **RF-D03: Matriz de Riesgo Psicosocial (`RiskHeatmap`):**
+  - Malla bidimensional Departamentos × Factores con código de color semántico (Riesgo Bajo, Moderado, Alto, Crítico).
+  - Banners de alerta temprana ante variaciones críticas.
+- **RF-D04: Tendencias Históricas y Focos de Fricción:**
+  - Gráfica de evolución semanal de bienestar y listado de focos urgentes de atención.
+- **RF-D05: Panel de Estrategia con Inteligencia Artificial (`AIStrategistPanel`):**
+  - Síntesis de comentarios abiertos y métricas cuantitativas vía Gemini.
+  - Generación de 3 acciones prioritarias estructuradas.
+  - Botón integrado **"Convertir en tarea"** para derivar recomendaciones de IA a los tableros de equipo.
+  - Modo minimizable/expandible con control condicional y soporte visual adaptativo: despliegue de ilustración conceptual (`ilust3.png`) en modo minimizado, e ilustración decorativa (`ilust4.png`) debajo de la matriz de riesgo únicamente cuando existe análisis generado y el panel se encuentra expandido.
+- **RF-D06: Bloque Operativo:**
+  - Métricas de Ausentismo digital, Tasa de rotación proyectada y Desempeño promedio con apoyo visual (`ilust 2.png`).
+- **RF-D07: Filtros y Exportaciones:**
+  - Filtro global por departamento en cabecera (`TopBar`).
+  - Botones de exportación a PDF (informe formal de alta dirección) y Excel (archivo multipestaña con respuestas anonimizadas, matriz y KPIs).
 
-## 11. Supuestos y restricciones
+### 6.2 Motor de Encuestas (`SurveyBuilder` y `SurveyRunner`)
+- **RF-E01: Constructor de Encuestas (`SurveyBuilder`):** Creación visual de encuestas con biblioteca de preguntas (Likert 1-5, eNPS 0-10, opción múltiple y texto abierto) con reordenamiento arrastrable (`@dnd-kit`) y configuración de departamentos destino.
+- **RF-E02: Ejecutor de Encuestas (`SurveyRunner` / `WellnessSurvey`):** Interfaz enfocada (paso a paso), responsiva, con progreso visual, guardado en tiempo real en Firestore y validación de respuesta única por periodo.
 
-- El desarrollo se realiza de forma individual, en un periodo comprimido de 10 días (22 de septiembre al 2 de octubre de 2026), no en las ~12 semanas típicas de una estadía completa.
-- Se trabaja con datos simulados, generados mediante script, no con datos reales de empleados de la empresa.
-- El acceso a la API de Gemini y a los servicios de Firebase está disponible sin restricciones durante el desarrollo.
-- El proyecto se desarrolla bajo modalidad remota, dentro de un programa de formación (nombre provisional).
-- El compañero de memoria desarrolla su propio proyecto (motor de segmentación de clientes) con un stack distinto (Azure), de forma completamente independiente a nivel técnico.
+### 6.3 Espacio Colaborativo y Tableros Kanban (`/mi-espacio` y `/mis-proyectos`)
+- **RF-C01: Mi Espacio:** Vista del empleado que reúne encuestas pendientes, tarjeta de autounión a equipo (`JoinTeamCard`) y resumen de actividad.
+- **RF-C02: Tableros Kanban (`TeamKanban` / `TeamBoard`):** Flujo de trabajo en 3 estados (*Por hacer*, *En progreso*, *Completado*) con arrastre interactivo, filtros y soporte para tareas manuales o generadas por IA.
+- **RF-C03: Directorio de Equipos (`TeamDirectory`):** Módulo administrativo con tarjetas de equipos, integrantes destacados con badges tonales aqua y generación de códigos de invitación.
 
-## 12. Riesgos
+### 6.4 Presencia Digital y Ausentismo Remoto
+- **RF-P01: Registro No Invasivo:** Captura throttled de eventos relevantes de actividad (login, navegación, envío de encuestas, movimientos en Kanban).
+- **RF-P02: Monitoreo Ético:** El ausentismo se calcula confrontando actividad con el horario asignado, presentándose de forma transparente al usuario y agregada para la dirección.
 
-| Riesgo | Impacto | Mitigación |
-|--------|---------|------------|
-| Tiempo de desarrollo muy acotado (10 días, trabajo individual) | Alto | Priorización estricta vía MVP; funcionalidades "si el tiempo lo permite" claramente separadas del núcleo |
-| Dependencia de servicios en la nube (Firebase, Gemini) | Medio | Documentar configuración y variables de entorno; `.gitignore` protege credenciales desde el primer commit |
-| Datos simulados poco realistas | Medio | Calibrar el generador de datos contra los rangos que muestran los mockups (ej. eNPS ~72, riesgo de rotación ~12%) |
-| Discrepancia entre el stack real y la ficha técnica original de la empresa (que mencionaba Azure) | Bajo | Documentado explícitamente en la memoria como cambio de stack autorizado a nivel de desarrollo individual |
+---
 
-## 13. Referencias
+## 7. Requerimientos No Funcionales
 
-- Ficha técnica del proyecto: *Proyecto de Desarrollo de un Dashboard Ejecutivo de Salud Organizacional* — Organización participante (nombre provisional).
-- Manual Metodológico para la Elaboración de Memoria de Estadía de TSU — UTSLRC (2023).
-- Sistema de diseño "Executive Pulse" — exportación Stitch (DESIGN.md), mockups: dashboard ejecutivo, encuesta de bienestar, form builder.
+| ID | Dimensión | Criterio de Cumplimiento |
+|---|---|---|
+| **RNF-01** | **Seguridad** | Reglas de seguridad en Firestore por colección; protección de credenciales y APIs en entorno seguro; sanitización de salidas Markdown contra XSS con `DOMPurify`. |
+| **RNF-02** | **Rendimiento** | Build optimizado con Vite; carga reactiva de datos vía hooks desacoplados; componentes pesados memoizados para evitar re-renderizados innecesarios. |
+| **RNF-03** | **Diseño y Accesibilidad** | Sistema de diseño de acentos por zona ("Executive Pulse"): lienzo base `#FFFCF7`, acentos pastel funcionales (azul, salvia, lavanda, durazno y aqua para IA), tipografías legibles y soporte total para modo oscuro (`.dark`). |
+| **RNF-04** | **Usabilidad Móvil** | Interfaz totalmente responsiva en escritorio, tabletas y dispositivos móviles. |
+| **RNF-05** | **Calidad y Mantenibilidad** | Código modular organizado por capas (`components`, `hooks`, `services`, `pages`, `utils`); compilación limpia sin errores de build. |
+
+---
+
+## 8. Relación con la Memoria de Estadía de TSU
+
+El presente documento constituye la especificación formal del proyecto de estadía profesional de **Melissa Alejandra Chávez** para la carrera de TSU en Desarrollo de Software Multiplataforma (UTSLRC). Sustenta directamente el capítulo de **Desarrollo Técnico del Proyecto** y define el marco metodológico contra el cual se validan los resultados, la arquitectura y las conclusiones de la memoria académica.

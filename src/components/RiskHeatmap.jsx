@@ -1,23 +1,5 @@
 import { getRiskColorClasses } from "../utils/riskColors";
 
-/*
-  Paleta monocromática azul en dos modos.
-  Mismo criterio que las otras tarjetas: en oscuro los niveles se invierten.
-  La tabla vive en un panel interno claro (en oscuro, hundido) para que los
-  indicadores de riesgo conserven el fondo sobre el que fueron pensados y la
-  figura decorativa nunca quede detrás de ellos.
-
-                    claro      oscuro
-  contenedor       #b9e6ec    #243E66
-  figura (esquina) #a8d8eb    #1a3a68
-  panel de tabla   #EAF3FD    #172C4B
-  encabezado/línea #D6E6F8    #243E66
-  texto            #123A63    #E3EEFB
-
-  Los colores de indicadores (celdas, chips de nivel, puntos y leyenda) NO
-  se tocaron: siguen viniendo de getRiskColorClasses, TIER_STYLES y TIER_DOT.
-*/
-
 const COLUMNS = [
   { key: "cognitiveLoad", label: "Carga Cognitiva", invert: false },
   { key: "roleAmbiguity", label: "Ambigüedad de Rol", invert: false },
@@ -43,8 +25,8 @@ const TIER_DOT = {
   "no-data": "bg-outline-variant",
 };
 
-const INK = "text-[#123A63] dark:text-[#E3EEFB]";
-const INK_SOFT = "text-[#123A63]/75 dark:text-[#E3EEFB]/75";
+const INK = "text-on-secondary-container";
+const INK_SOFT = "text-on-secondary-container/75";
 
 function LegendDot({ colorClass, label, bold }) {
   return (
@@ -59,12 +41,12 @@ export default function RiskHeatmap({ rows }) {
   return (
     <section
       aria-labelledby="risk-title"
-      className="relative h-full overflow-hidden rounded-[40px] bg-[#b9e6ec] p-space-lg dark:bg-[#243E66]"
+      className="relative min-w-0 overflow-hidden rounded-[40px] bg-secondary-container p-space-lg"
     >
       {/* Figura decorativa: círculo recortado por la esquina inferior derecha */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-25 -left-14 h-40 w-40 rounded-full bg-[#a8d8eb] dark:bg-[#1a3a68] sm:-bottom-16 sm:-right-16 sm:h-48 sm:w-48"
+        className="pointer-events-none absolute -bottom-25 -left-14 h-40 w-40 rounded-full bg-secondary/15 sm:-bottom-16 sm:-right-16 sm:h-48 sm:w-48"
       />
 
       <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-space-sm mb-space-md">
@@ -84,10 +66,10 @@ export default function RiskHeatmap({ rows }) {
         </div>
       </div>
 
-      <div className="relative z-10 overflow-x-auto rounded-[28px] bg-[#EAF3FD] p-2 dark:bg-[#172C4B] sm:p-3">
+      <div className="relative z-10 overflow-x-auto rounded-[28px] bg-surface-container-lowest p-2 sm:p-3">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className={`bg-[#D6E6F8] text-label-md dark:bg-[#243E66] ${INK_SOFT}`}>
+            <tr className={`bg-surface-container-low text-label-md ${INK_SOFT}`}>
               <th className="py-3 px-space-md rounded-l-lg">Departamento</th>
               {COLUMNS.map((col) => (
                 <th key={col.key} className="py-3 px-2 text-center">{col.label}</th>
@@ -95,11 +77,11 @@ export default function RiskHeatmap({ rows }) {
               <th className="py-3 px-space-md text-right rounded-r-lg">Nivel de Riesgo</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#D6E6F8] text-body-sm dark:divide-[#243E66]">
+          <tbody className="divide-y divide-surface-container-high text-body-sm">
             {rows.map((row) => (
               <tr
                 key={row.id}
-                className="transition-colors hover:bg-[#D6E6F8]/50 dark:hover:bg-[#243E66]/60"
+                className="transition-colors hover:bg-surface-container-high/50"
               >
                 <td className={`py-3.5 px-space-md font-semibold ${INK}`}>
                   <div className="flex items-center gap-2">

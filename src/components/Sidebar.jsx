@@ -125,7 +125,7 @@ export default function Sidebar() {
           }`}
         >
           <span
-            className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"
+            className="w-2.5 h-2.5 rounded-full bg-[var(--success)] animate-pulse shrink-0"
             aria-hidden="true"
           />
           {!collapsed && (

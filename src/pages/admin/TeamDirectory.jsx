@@ -361,7 +361,7 @@ export default function TeamDirectory() {
                       (team.memberIds || []).map((memberId) => (
                         <span
                           key={memberId}
-                          className="inline-flex items-center gap-1 rounded-full bg-primary-fixed px-space-sm py-1 text-label-md text-on-primary-fixed-variant"
+                          className="inline-flex items-center gap-1 rounded-full bg-[var(--aqua-soft)] px-space-sm py-1 text-label-md text-[var(--aqua-ink)]"
                         >
                           {team.memberNames?.[memberId] || "Integrante"}
                           <button
@@ -370,7 +370,7 @@ export default function TeamDirectory() {
                             onClick={() => handleRemoveMember(team, memberId, team.memberNames?.[memberId] || "este integrante")}
                             title={`Retirar a ${team.memberNames?.[memberId] || "este integrante"}`}
                             aria-label={`Retirar a ${team.memberNames?.[memberId] || "este integrante"}`}
-                            className="text-on-primary-fixed-variant hover:text-error disabled:opacity-50"
+                            className="text-[var(--aqua-ink)] hover:text-error disabled:opacity-50"
                           >
                             <span aria-hidden="true" className="material-symbols-outlined text-[15px]">close</span>
                           </button>

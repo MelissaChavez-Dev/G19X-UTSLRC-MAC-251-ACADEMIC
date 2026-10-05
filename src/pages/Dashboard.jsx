@@ -20,6 +20,8 @@ import { useSidebarState } from "../hooks/useSidebarState";
 import { useDepartments } from "../hooks/useDepartments";
 import { explainMetric } from "../services/aiService";
 import { exportDashboardPdf, exportResponsesExcel } from "../services/exportService";
+import teamIllustration from "../assets/ilust 2.png";
+import riskIllustration from "../assets/ilust4.png";
 
 /* ------------------------------------------------------------------
    Versiones memoizadas de los componentes pesados.
@@ -126,29 +128,97 @@ const PULSE_ROWS = [
 
 /* ---------- Piezas pequeñas ---------- */
 
-const RING_RADIUS = 42;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+const ENPS_LEVELS = [
+  { label: "Bajo", min: -100, max: -10, mood: "sad", color: "var(--error)", range: "< −10" },
+  { label: "Bueno", min: -10, max: 20, mood: "neutral", color: "var(--warning)", range: "−10 a 19" },
+  { label: "Muy bueno", min: 20, max: 40, mood: "smile", color: "var(--primary)", range: "20 a 39" },
+  { label: "Excelente", min: 40, max: 100, mood: "happy", color: "var(--success)", range: "≥ 40" },
+];
 
-function Ring({ progress, color, children }) {
+function enpsLevel(score) {
+  return ENPS_LEVELS.find((level) => score < level.max) ?? ENPS_LEVELS[ENPS_LEVELS.length - 1];
+}
+
+function enpsPoint(score, radius = 98) {
+  const progress = clamp01((score + 100) / 200);
+  const angle = Math.PI * (1 - progress);
+  return {
+    x: 140 + radius * Math.cos(angle),
+    y: 132 - radius * Math.sin(angle),
+  };
+}
+
+function enpsArc(start, end) {
+  const from = enpsPoint(start);
+  const to = enpsPoint(end);
+  return `M ${from.x} ${from.y} A 98 98 0 0 1 ${to.x} ${to.y}`;
+}
+
+function EnpsFaceGlyph({ level }) {
+  const mouth = {
+    sad: "M 8 16 Q 12 11 16 16",
+    neutral: "M 8 15 H 16",
+    smile: "M 8 13 Q 12 18 16 13",
+    happy: "M 7 12 Q 12 20 17 12",
+  }[level.mood];
+
   return (
-    <div className="relative h-44 w-44 shrink-0">
-      <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden="true">
-        <circle cx="50" cy="50" r={RING_RADIUS} fill="none" stroke="var(--surface-container-low)" strokeWidth="9" />
-        <circle
-          cx="50"
-          cy="50"
-          r={RING_RADIUS}
-          fill="none"
-          stroke={color}
-          strokeWidth="9"
-          strokeLinecap="round"
-          strokeDasharray={RING_CIRCUMFERENCE}
-          strokeDashoffset={RING_CIRCUMFERENCE * (1 - clamp01(progress))}
-          transform="rotate(-90 50 50)"
-          className="transition-[stroke-dashoffset] duration-700 ease-out motion-reduce:transition-none"
-        />
+    <>
+      <circle cx="12" cy="12" r="11" fill={level.color} />
+      <g fill="var(--on-accent)" stroke="var(--on-accent)" strokeLinecap="round" strokeWidth="1.5">
+        <circle cx="9" cy="9" r="0.9" />
+        <circle cx="15" cy="9" r="0.9" />
+        <path d={mouth} fill="none" />
+      </g>
+    </>
+  );
+}
+
+function EnpsThermometer({ score, sampleSize }) {
+  const level = enpsLevel(score);
+  const needleAngle = -90 + clamp01((score + 100) / 200) * 180;
+
+  return (
+    <div className="w-full max-w-[320px] shrink-0">
+      <svg
+        viewBox="0 0 280 184"
+        className="h-auto w-full overflow-visible"
+        role="img"
+        aria-label={`Medidor eNPS: ${score}, nivel ${sampleSize ? level.label : "sin respuestas"}`}
+      >
+        {ENPS_LEVELS.map((item, index) => {
+          const gap = 2;
+          const start = item.min + (index === 0 ? 0 : gap);
+          const end = item.max - (index === ENPS_LEVELS.length - 1 ? 0 : gap);
+          const facePoint = enpsPoint((item.min + item.max) / 2);
+
+          return (
+            <g key={item.label}>
+              <path d={enpsArc(start, end)} fill="none" stroke={item.color} strokeWidth="30" />
+              <g transform={`translate(${facePoint.x - 12} ${facePoint.y - 12})`}>
+                <EnpsFaceGlyph level={item} />
+              </g>
+            </g>
+          );
+        })}
+        <g transform={`rotate(${needleAngle} 140 132)`} className="transition-transform duration-700 ease-out motion-reduce:transition-none">
+          <path d="M 140 50 L 134 134 L 140 126 L 146 134 Z" fill="var(--on-surface)" />
+        </g>
+        <circle cx="140" cy="132" r="9" fill="var(--on-surface)" />
+        <text x="140" y="177" fill="var(--on-surface)" fontSize="27" fontWeight="700" textAnchor="middle">
+          {score > 0 ? `+${score}` : score}
+        </text>
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center">{children}</div>
+      <div className="mt-1 flex flex-wrap justify-center gap-x-3 gap-y-1">
+        {ENPS_LEVELS.map((item) => (
+          <span key={item.label} className="inline-flex items-center gap-1 text-label-sm text-on-surface-variant">
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0">
+              <EnpsFaceGlyph level={item} />
+            </svg>
+            {item.label}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -176,7 +246,7 @@ function DeltaNote({ diff, unit }) {
   );
 }
 
-/* Protagonista del bloque: un solo anillo grande con el eNPS. */
+/* Protagonista del bloque: un medidor eNPS semicircular. */
 const HeroTile = memo(function HeroTile({ def, metrics, previousMetrics, onExpand }) {
   const diff = previousMetrics ? change(metrics.enps, previousMetrics.enps) : null;
 
@@ -196,9 +266,7 @@ const HeroTile = memo(function HeroTile({ def, metrics, previousMetrics, onExpan
         style={{ background: "var(--primary)", opacity: 0.08, borderRadius: "60% 40% 55% 45% / 50% 60% 40% 50%" }}
       />
 
-      <Ring progress={(metrics.enps + 100) / 200} color="var(--primary)">
-        <span className="text-4xl font-bold leading-none text-on-surface">{metrics.enps}</span>
-      </Ring>
+      <EnpsThermometer score={metrics.enps} sampleSize={metrics.sampleSize} />
 
       <span className="relative flex min-w-0 flex-1 flex-col items-center gap-space-xs text-center sm:items-start sm:text-left">
         <span className="block text-headline-sm text-on-surface">{def.label}</span>
@@ -231,14 +299,14 @@ const PulseRow = memo(function PulseRow({ config, metrics, previousMetrics, head
       aria-label={`${def.label}: ${value}. Ver análisis`}
       style={{ 
         borderRadius: 32,
-        background: `color-mix(in srgb, ${config.color} 14%, var(--surface-container-low))`
+        background: `color-mix(in srgb, ${config.color} 18%, var(--surface-container))`
       }}
       className="motion-press group flex flex-1 items-center gap-space-md px-space-lg py-space-md text-left hover:brightness-95 transition-all"
     >
       <span
         aria-hidden="true"
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full shadow-sm"
-        style={{ background: config.color, color: "#fff" }}
+        style={{ background: config.color, color: "var(--on-accent)" }}
       >
         <span className="material-symbols-outlined text-[22px]">{def.icon}</span>
       </span>
@@ -256,7 +324,7 @@ const PulseRow = memo(function PulseRow({ config, metrics, previousMetrics, head
 
         <span
           aria-hidden="true"
-          className="block h-1.5 w-full overflow-hidden rounded-full bg-surface-container-high/50"
+          className="block h-1.5 w-full overflow-hidden rounded-full bg-surface-container-high/60"
         >
           <span
             className="block h-full rounded-full transition-[width] duration-700 ease-out motion-reduce:transition-none"
@@ -275,7 +343,7 @@ const PulseRow = memo(function PulseRow({ config, metrics, previousMetrics, head
       {/* Nuevo indicador visual para clic */}
       <span 
         aria-hidden="true" 
-        className="material-symbols-outlined text-on-surface-variant opacity-40 transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100"
+        className="material-symbols-outlined text-on-surface-variant opacity-60 transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100"
       >
         chevron_right
       </span>
@@ -382,50 +450,58 @@ const OperationStrip = memo(function OperationStrip({
   return (
     <section aria-labelledby="ops-heading" className="flex flex-col gap-space-sm">
       <SectionHeading id="ops-heading" title="Operación del equipo" />
-      <div className="grid grid-cols-1 gap-space-md md:grid-cols-3">
-        {showAbsence && (
-          <OpsTile
-            icon="person_off"
-            label="Ausentismo digital"
-            period="30 días"
-            value={absenceLoading ? "…" : `${absence?.rate ?? 0}%`}
-            hint={
-              absenceLoading
-                ? "Calculando..."
-                : hasWorkdayRecords
-                  ? `${absence.absentDays} de ${absence.workDays} usuarios esperados sin actividad`
-                  : "Sin registros aún, se calcula cada noche"
-            }
-          />
-        )}
-        {showTurnover && (
-          <OpsTile
-            icon="logout"
-            label="Rotación real"
-            period="90 días"
-            value={turnoverLoading ? "…" : Number.isFinite(turnover?.rate) ? `${turnover.rate}%` : "—"}
-            diff={turnoverDiff}
-            hint={
-              turnoverLoading
-                ? "Calculando..."
-                : `${turnover?.departures ?? 0} bajas sobre ${turnover?.headcount ?? 0} activos`
-            }
-          />
-        )}
-        {showPerformance && (
-          <OpsTile
-            icon="task_alt"
-            label="Cumplimiento de tareas"
-            value={performanceLoading ? "…" : Number.isFinite(performance?.onTimeRate) ? `${performance.onTimeRate}%` : "—"}
-            hint={
-              performanceLoading
-                ? "Calculando..."
-                : performance?.totalTasks
-                  ? `${performance.doneTasks}/${performance.totalTasks} hechas, ${performance.overdueTasks} vencidas`
-                  : "Sin tareas registradas aún"
-            }
-          />
-        )}
+      <div className="grid grid-cols-1 items-center gap-space-md xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="grid grid-cols-1 gap-space-md md:grid-cols-[repeat(auto-fit,minmax(12rem,1fr))]">
+          {showAbsence && (
+            <OpsTile
+              icon="person_off"
+              label="Ausentismo digital"
+              period="30 días"
+              value={absenceLoading ? "…" : `${absence?.rate ?? 0}%`}
+              hint={
+                absenceLoading
+                  ? "Calculando..."
+                  : hasWorkdayRecords
+                    ? `${absence.absentDays} de ${absence.workDays} usuarios esperados sin actividad`
+                    : "Sin registros aún, se calcula cada noche"
+              }
+            />
+          )}
+          {showTurnover && (
+            <OpsTile
+              icon="logout"
+              label="Rotación real"
+              period="90 días"
+              value={turnoverLoading ? "…" : Number.isFinite(turnover?.rate) ? `${turnover.rate}%` : "—"}
+              diff={turnoverDiff}
+              hint={
+                turnoverLoading
+                  ? "Calculando..."
+                  : `${turnover?.departures ?? 0} bajas sobre ${turnover?.headcount ?? 0} activos`
+              }
+            />
+          )}
+          {showPerformance && (
+            <OpsTile
+              icon="task_alt"
+              label="Cumplimiento de tareas"
+              value={performanceLoading ? "…" : Number.isFinite(performance?.onTimeRate) ? `${performance.onTimeRate}%` : "—"}
+              hint={
+                performanceLoading
+                  ? "Calculando..."
+                  : performance?.totalTasks
+                    ? `${performance.doneTasks}/${performance.totalTasks} hechas, ${performance.overdueTasks} vencidas`
+                    : "Sin tareas registradas aún"
+              }
+            />
+          )}
+        </div>
+        <img
+          src={teamIllustration}
+          alt=""
+          aria-hidden="true"
+          className="mx-auto h-auto w-48 object-contain xl:mx-0 xl:ml-auto xl:w-80"
+        />
       </div>
     </section>
   );
@@ -452,31 +528,36 @@ function PulseSkeleton() {
 /* Reemplaza tu componente ExportActions actual con este */
 function ExportActions({ onExport, exporting, disabled }) {
   const base =
-    "motion-press inline-flex items-center gap-space-xs rounded-full px-space-md py-2 text-label-md font-medium transition-colors disabled:opacity-50";
+    "motion-press inline-flex items-center gap-space-xs rounded-full px-space-md py-2 text-label-md font-medium transition-colors disabled:brightness-90";
   return (
-    <div className="flex flex-wrap gap-space-xs">
-      <button 
-        type="button" 
-        onClick={() => onExport("pdf")} 
-        disabled={disabled || exporting !== null} 
-        className={`${base} bg-red-400 text-red-900 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60`}
-      >
-        <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
-          picture_as_pdf
-        </span>
-        {exporting === "pdf" ? "Generando..." : "Reporte PDF"}
-      </button>
-      <button 
-        type="button" 
-        onClick={() => onExport("excel")} 
-        disabled={disabled || exporting !== null} 
-        className={`${base} bg-emerald-400 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60`}
-      >
-        <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
-          table
-        </span>
-        {exporting === "excel" ? "Generando..." : "Excel"}
-      </button>
+    <div className="flex flex-col items-end gap-space-xs">
+      <span id="export-actions-label" className="text-label-sm text-on-surface-variant">
+        Presiona para descargar el reporte PDF o Excel
+      </span>
+      <div className="flex flex-wrap gap-space-xs" role="group" aria-labelledby="export-actions-label">
+        <button
+          type="button"
+          onClick={() => onExport("pdf")}
+          disabled={disabled || exporting !== null}se
+          className={`${base} bg-error-container text-on-error-container hover:brightness-95 dark:bg-error-container dark:text-on-error-container dark:hover:brightness-110`}
+        >
+          <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
+            picture_as_pdf
+          </span>
+          {exporting === "pdf" ? "Generando..." : "Reporte PDF"}
+        </button>
+        <button
+          type="button"
+          onClick={() => onExport("excel")}
+          disabled={disabled || exporting !== null}
+          className={`${base} bg-success-container text-on-success-container hover:brightness-95 dark:bg-success-container dark:text-on-success-container dark:hover:brightness-110`}
+        >
+          <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
+            table
+          </span>
+          {exporting === "excel" ? "Generando..." : "Excel"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -498,6 +579,7 @@ export default function Dashboard() {
   const [failedIds, setFailedIds] = useState({}); // errores pasajeros: NO se guardan, permiten reintentar
   const [loadingId, setLoadingId] = useState(null); // id del KPI que se está analizando
   const [aiMarkdown, setAiMarkdown] = useState("");
+  const [aiSummaryMinimized, setAiSummaryMinimized] = useState(false);
   const [exporting, setExporting] = useState(null); // null | "pdf" | "excel"
   const [exportError, setExportError] = useState(null);
 
@@ -626,13 +708,27 @@ export default function Dashboard() {
           {/* 4. Dónde está el riesgo */}
           {deptRows && <MemoRiskAlertBanner rows={deptRows} />}
           {deptRows && (
-            <div className="grid grid-cols-1 items-stretch gap-space-md xl:grid-cols-[65%_35%]">
-              <MemoRiskHeatmap rows={deptRows} />
+            <div className="grid grid-cols-1 items-start gap-space-md xl:grid-cols-[minmax(0,65fr)_minmax(0,35fr)]">
+              <div className="flex min-w-0 self-stretch flex-col">
+                <MemoRiskHeatmap rows={deptRows} />
+                {aiMarkdown && !aiSummaryMinimized && (
+                  <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+                    <img
+                      src={riskIllustration}
+                      alt=""
+                      aria-hidden="true"
+                      className="h-full min-h-0 w-full object-contain"
+                    />
+                  </div>
+                )}
+              </div>
               <MemoAIStrategistPanel
                 orgMetrics={metrics}
                 departmentRisk={deptRows}
                 openComments={comments}
                 onAnalysisChange={setAiMarkdown}
+                minimized={aiSummaryMinimized}
+                onMinimizedChange={setAiSummaryMinimized}
               />
             </div>
           )}

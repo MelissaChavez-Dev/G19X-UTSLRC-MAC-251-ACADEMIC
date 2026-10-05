@@ -1,95 +1,75 @@
-# MVP — Dashboard Ejecutivo de Salud Organizacional
+# MVP — Plataforma y Dashboard Ejecutivo de Salud Organizacional
 
-**Proyecto:** Dashboard Ejecutivo de Salud Organizacional
-**Empresa:** Organización participante (nombre provisional)
-**Autora:** Melissa Alejandra Chávez
-**Basado en:** PRD_Dashboard_Salud_Organizacional.md (v2.0)
-**Ventana de desarrollo:** 22 de septiembre – 2 de octubre de 2026 (10 días, trabajo individual)
-**Estado del documento:** v2.0 — reemplaza la v1.0 (stack Azure/PostgreSQL, plazo de 12 semanas)
+**Proyecto:** Dashboard Ejecutivo y Plataforma de Salud Organizacional  
+**Empresa:** Organización participante (nombre provisional)  
+**Autora:** Melissa Alejandra Chávez  
+**Programa:** Memoria de Estadía de TSU — UTSLRC  
+**Repositorio:** github.com/yamyam1805/dashboard-ejecutivo-salud-organizacional  
+**Versión:** 3.0 (Alcance Real Implementado y Consolidado)  
+**Fecha de actualización:** Octubre 2026  
 
 ---
 
-## 1. Propósito del MVP
+## 1. Propósito y Evolución del MVP
 
-Definir el conjunto mínimo de funcionalidades que permite demostrar, dentro de una ventana de desarrollo de 10 días, un dashboard ejecutivo funcional de punta a punta: desde la captura de una encuesta de bienestar hasta su visualización como indicadores estratégicos con apoyo de IA — sin depender todavía de las funcionalidades de mayor pulido (form builder completo, animaciones, automatizaciones) contempladas en el PRD.
+El objetivo inicial del Producto Mínimo Viable (MVP) fue demostrar la viabilidad técnica y operativa de un tablero de control ejecutivo que integrara encuestas de pulso y recomendaciones automáticas de IA.
 
-## 2. Criterio para definir el MVP
+Durante el proceso de desarrollo y validación, el MVP evolucionó de un "visualizador de datos para directores" a una **plataforma interactiva de ciclo cerrado**: no solo diagnostica la salud organizacional, sino que permite a los colaboradores responder pulsos segmentados, habilita a los equipos a gestionar planes de acción mediante tableros Kanban y ofrece a la dirección herramientas avanzadas de exportación ejecutiva y monitoreo de presencia digital.
 
-Se prioriza lo que:
-1. Resuelve directamente el problema central (información dispersa → información consolidada y accionable).
-2. Es alcanzable dentro de la ventana real de 10 días de desarrollo individual.
-3. Es demostrable de forma funcional (no simulada) ante el sínodo evaluador.
+---
 
-Todo lo que no cumpla estos tres criterios se secuencia al final del cronograma (día 10) o se documenta como trabajo futuro, sin eliminarse de la visión del proyecto.
+## 2. Alcance Implementado del MVP
 
-## 3. Alcance funcional del MVP
+| Módulo / Funcionalidad | Descripción del Alcance en Producción | Estado |
+|---|---|:---:|
+| **Medidor eNPS tipo Termómetro** | Medidor semicircular reactivo con aguja animada, escala de −100 a +100 y 4 niveles semánticos con glifos de caras (*Bajo*, *Bueno*, *Muy bueno*, *Excelente*). | **Completado** |
+| **KPIs de Salud Organizacional** | Indicadores consolidados de eNPS, Presión Laboral (/100), Participación de Pulso (%) y Seguridad Psicológica (/5.0) con cálculo dinámico en Firestore. | **Completado** |
+| **Matriz de Riesgo Psicosocial** | Heatmap interactivo Departamentos × Factores con semaforización cromática y alertas tempranas de contingencia. | **Completado** |
+| **Panel de Estrategia con IA (Gemini)** | Síntesis ejecutiva de comentarios abiertos, generación de 3 recomendaciones estructuradas y conversión automática en tareas de equipo. | **Completado** |
+| **Composición Visual y Minimizado** | Panel de IA minimizable/expandible con despliegue de ilustraciones dinámicas (`ilust3.png` al minimizar, `ilust4.png` bajo el heatmap al expandir con análisis). | **Completado** |
+| **Métricas Operativas** | Indicadores de ausentismo digital, rotación proyectada a 90 días y desempeño promedio, con apoyo visual (`ilust 2.png`). | **Completado** |
+| **Filtro Departamental y Exportación** | Filtro dinámico en cabecera (`TopBar`), exportación de reporte ejecutivo formal a PDF y exportación de libro de cálculo en Excel (hojas múltiples). | **Completado** |
+| **Constructor de Encuestas (`SurveyBuilder`)** | Editor visual de preguntas con biblioteca de componentes, arrastre interactivo con `@dnd-kit`, ciclos de encuesta y asignación por departamento. | **Completado** |
+| **Ejecutor de Encuestas (`SurveyRunner`)** | Interfaz tipo Typeform (paso a paso), responsiva, con registro directo en Firestore y prevención de respuestas duplicadas. | **Completado** |
+| **Espacio del Empleado (`/mi-espacio`)** | Portal individual para ver encuestas pendientes, tarjeta de unión a equipo (`JoinTeamCard`) y resumen personal de presencia. | **Completado** |
+| **Tableros Kanban por Equipo** | Tableros colaborativos (`/mis-proyectos` y `/equipos/:teamId`) con 3 columnas (*Por hacer*, *En progreso*, *Completado*) y drag-and-drop. | **Completado** |
+| **Directorio de Equipos (`TeamDirectory`)** | Administración de equipos, integrantes destacados con badges aqua y códigos únicos de unión (`joinCode`). | **Completado** |
+| **Gestión de Usuarios y Seguridad** | Creación administrativa de cuentas, contraseñas temporales, forzado de cambio de clave en primer inicio y control de acceso por roles (`admin`, `team_lead`, `employee`). | **Completado** |
+| **Monitoreo de Presencia Digital** | Registro no invasivo de actividad (`activityLogs`) contrastado contra horarios de trabajo asignados. | **Completado** |
+| **Diseño y Tema Claro/Oscuro** | Sistema de diseño de acentos por zona ("Executive Pulse"): lienzo base `#FFFCF7`, paleta pastel armonizada y soporte completo a modo oscuro (`.dark`). | **Completado** |
 
-### 3.1 Núcleo (días 1–9, no negociable)
+---
 
-| Funcionalidad | Descripción | Objetivo específico relacionado (PRD) |
-|----------------|-------------|-----------------------------------|
-| Setup del proyecto | Firebase (Auth + Firestore) creado; scaffold React + Vite + Tailwind con los tokens de "Executive Pulse" cargados | Obj. 2 |
-| Datos simulados | Script generador de empleados, departamentos y respuestas históricas con tendencia realista, cargado en Firestore | Obj. 6 |
-| Encuesta funcional | Encuesta tipo Typeform (estructura fija), una pregunta por pantalla, guardado real en Firestore | Obj. 3 |
-| KPIs del dashboard | Tarjetas de eNPS, riesgo de rotación a 90 días, muestra activa de pulso e índice de seguridad psicológica, calculadas desde datos reales | Obj. 4 |
-| Heatmap de riesgo psicosocial | Matriz departamentos × factores con codificación de color semántica | Obj. 4 |
-| IA — análisis macro | Cloud Function en Python que agrega estadísticas del cohorte y llama a `gemini-3.8-flash`; botón "Generar estrategia" con salida en Markdown | Obj. 5 |
-| IA — análisis micro | Al hacer clic en una gráfica, se envían solo sus datos a Gemini y se muestra una explicación contextual (sin animación todavía) | Obj. 5 |
-| Sentimiento y tendencias | Clasificación de sentimiento del texto libre y sección de tendencia semanal / focos de fricción | Obj. 5 |
-| Autenticación | Acceso controlado mediante Firebase Authentication | RF-09 |
-| Documentación mínima | README y notas técnicas de arquitectura y despliegue | Obj. 7 |
+## 3. Historias de Usuario Validadas en el MVP
 
-### 3.2 Pulido (día 9–10, deseable pero no bloqueante)
+- **HU-01 (Dirección General):** *"Como director general, quiero visualizar en un solo vistazo la salud neta (eNPS) y el mapa de riesgos psicosociales para tomar decisiones estratégicas informadas."* **[Cumplida]**
+- **HU-02 (Dirección General):** *"Como directivo, quiero que la IA sintetice los comentarios cualitativos y proponga 3 acciones prioritarias que pueda convertir directamente en tareas para los equipos."* **[Cumplida]**
+- **HU-03 (Capital Humano):** *"Como responsable de talento, quiero exportar reportes en PDF y Excel para presentar resultados en comités directivos sin elaborar informes manuales."* **[Cumplida]**
+- **HU-04 (Colaborador):** *"Como empleado, quiero responder encuestas de bienestar de forma confidencial y rápida desde cualquier dispositivo."* **[Cumplida]**
+- **HU-05 (Líder / Integrante de Equipo):** *"Como miembro de un equipo, quiero visualizar las tareas derivadas de bienestar en un tablero Kanban para dar seguimiento continuo a las mejoras."* **[Cumplida]**
+- **HU-06 (Administrador):** *"Como administrador, quiero gestionar usuarios y equipos de forma segura, garantizando que el personal cambie su contraseña provisional al primer acceso."* **[Cumplida]**
 
-| Funcionalidad | Descripción |
-|----------------|-------------|
-| Animación de expansión de gráficas | Modal con transición fluida (Framer Motion), tal como en el mockup |
-| Form builder simplificado | Biblioteca de bloques fija (sin drag-and-drop completo si el tiempo no alcanza) |
+---
 
-### 3.3 Excluido del MVP (fase posterior, fuera de la ventana de 10 días)
+## 4. Criterios de Aceptación Cumplidos
 
-| Funcionalidad | Motivo de exclusión |
-|----------------|----------------------|
-| Pulse surveys programadas automáticamente | Requiere lógica de programación/notificaciones, fuera del núcleo |
-| Kanban de seguimiento de recomendaciones | Es un módulo de gestión de tareas, no de visualización de salud organizacional |
-| Drag-and-drop completo del form builder | Alto costo de desarrollo frente al beneficio para el objetivo central |
-| Integración de fuentes de datos reales de la empresa | Se trabaja con datos simulados por decisión de alcance |
+1. **Persistencia y Tiempo Real:** Todas las respuestas de encuesta, tareas de Kanban y registros de presencia se almacenan y consultan en Firebase Firestore.
+2. **Inteligencia Artificial Operativa:** La API de Google Gemini procesa datos agregados y texto libre en tiempo de ejecución, entregando recomendaciones ejecutivas y explicaciones de métricas individuales.
+3. **Flujo Cerrado Diagnóstico-Acción:** La conversión de recomendaciones de IA a tarjetas en `teams/{teamId}/tasks` opera de forma inmediata sin fricción.
+4. **Integridad de Accesos:** Rutas protegidas mediante `ProtectedRoute` y `RoleBasedRedirect` según el perfil autenticado.
+5. **Calidad de Compilación:** El proyecto compila limpiamente (`npm run build`) en Vite con cero advertencias de sintaxis y compatibilidad multiplataforma.
 
-## 4. Historias de usuario (MVP)
+---
 
-| ID | Como... | Quiero... | Para... |
-|----|---------|-----------|---------|
-| HU-01 | Empleado | Responder una encuesta de bienestar breve y clara | Compartir mi estado sin que me tome mucho tiempo |
-| HU-02 | Dirección general | Ver un tablero con los KPIs clave de salud organizacional | Tomar decisiones sin esperar un reporte manual |
-| HU-03 | Dirección general | Recibir una recomendación estratégica generada por IA | Saber qué acción priorizar sin interpretar los datos manualmente |
-| HU-04 | Dirección general | Hacer clic en una gráfica y obtener una explicación puntual | Entender el "porqué" detrás de un indicador sin salir del dashboard |
-| HU-05 | Usuario del sistema | Iniciar sesión de forma segura | Que solo personal autorizado acceda a la información |
+## 5. Trabajo Futuro y Recomendaciones (Fase Posterior)
 
-## 5. Criterios de aceptación del MVP
+1. Automatización de notificaciones por correo electrónico corporativo al publicarse nuevas encuestas o asignarse tareas.
+2. Integración directa (vía API/Webhooks) con herramientas de comunicación corporativa (Slack / Microsoft Teams).
+3. Evaluaciones periódicas tipo 360 grados y encuestas de pulso automáticas calendarizadas.
+4. Integración opcional con plataformas de nómina y RRHH existentes en la organización.
 
-- La encuesta guarda respuestas reales en Firestore (no datos hardcodeados para la demo).
-- El dashboard muestra los 4 KPIs principales calculados a partir de esos datos.
-- El heatmap refleja los datos simulados cargados, no valores fijos en el frontend.
-- El botón de análisis macro genera una respuesta real de Gemini (no un texto de ejemplo).
-- El acceso al dashboard requiere autenticación funcional.
-- Existe al menos un documento técnico breve (README) que describe la arquitectura implementada.
-- El repositorio de GitHub muestra un historial de commits distribuido a lo largo de los 10 días, no concentrado en uno o dos días.
+---
 
-## 6. Fuera de alcance total (ni MVP ni fase posterior dentro de esta ventana)
+## 6. Sustento para la Memoria de Estadía de TSU
 
-- Aplicación móvil nativa.
-- Soporte multiidioma.
-- Integración con sistemas de nómina o CRM reales de terceros.
-- Datos reales de empleados de la empresa.
-
-## 7. Ruta sugerida después del MVP
-
-1. Completar el form builder con drag-and-drop real.
-2. Implementar pulse surveys programadas.
-3. Agregar el Kanban de seguimiento de recomendaciones de RH.
-4. Evaluar la integración de una fuente de datos real de la empresa, si la confidencialidad lo permite.
-5. Formalizar reglas de seguridad de Firestore más granulares por rol.
-
-## 8. Relación con la memoria de estadía
-
-Este documento sustenta directamente el capítulo **Desarrollo Técnico del Proyecto** de la memoria: cada funcionalidad del núcleo corresponde a un día del cronograma real de desarrollo, y los criterios de aceptación pueden usarse como evidencia en el apartado de **Resultados y Discusiones**. Las funcionalidades excluidas del MVP se documentan como **trabajo futuro** en Conclusiones y Recomendaciones, reforzando esa sección en vez de restarle valor al proyecto.
+Este documento certifica el alcance funcional implementado por **Melissa Alejandra Chávez** para su proyecto de titulación en la Universidad Tecnológica de San Luis Río Colorado (UTSLRC). Demuestra el cumplimiento de los requerimientos de desarrollo de software multiplataforma, integrando arquitectura en la nube, interfaces modernas accesibles, seguridad basada en roles y servicios avanzados de Inteligencia Artificial.

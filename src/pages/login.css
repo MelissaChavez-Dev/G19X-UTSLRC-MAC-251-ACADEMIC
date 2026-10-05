@@ -77,8 +77,8 @@ body {
   place-items: center;
   border-radius: 10px;
   background: linear-gradient(145deg, var(--color-primary), var(--color-secondary));
-  box-shadow: 0 4px 10px rgba(110, 135, 99, 0.2);
-  color: #fff;
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--color-primary) 20%, transparent);
+  color: var(--on-accent);
   font-size: 17px;
 }
 
@@ -89,7 +89,7 @@ body {
 }
 
 .login-story-wordmark strong {
-  color: #2a2a22;
+  color: var(--color-on-primary-container);
   font-size: 16px;
   font-weight: 800;
 }
@@ -113,7 +113,7 @@ body {
   align-items: center;
   gap: 6px;
   padding: 44px 34px 20px;
-  background: linear-gradient(to top, rgba(42, 42, 34, 0.5), transparent);
+  background: linear-gradient(to top, rgba(27, 42, 65, 0.5), transparent);
   color: #fff;
   font-size: 12px;
 }
@@ -356,8 +356,8 @@ body {
   border: 0;
   border-radius: 999px;
   background: var(--coral);
-  box-shadow: 0 8px 18px -10px rgba(110, 135, 99, 0.4);
-  color: #fff;
+  box-shadow: 0 8px 18px -10px color-mix(in srgb, var(--color-primary) 40%, transparent);
+  color: var(--on-accent);
   cursor: pointer;
   font: inherit;
   font-size: 13px;
@@ -368,7 +368,7 @@ body {
 
 .login-submit:hover:not(:disabled) {
   background: var(--coral-hover);
-  box-shadow: 0 10px 20px -10px rgba(110, 135, 99, 0.45);
+  box-shadow: 0 10px 20px -10px color-mix(in srgb, var(--color-success) 45%, transparent);
 }
 
 .login-submit:disabled {

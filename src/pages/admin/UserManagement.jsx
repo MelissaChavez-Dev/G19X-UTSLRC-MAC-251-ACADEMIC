@@ -350,7 +350,7 @@ export default function UserManagement() {
       <Sidebar />
       <TopBar />
       <main className={`${collapsed ? "pl-20" : "pl-64"} pt-16 transition-[padding] duration-300 ease-out`}>
-        <div className="mx-auto flex w-full max-w-none flex-col gap-space-lg px-space-md py-space-lg sm:px-space-lg xl:px-space-xl">
+        <div className="mx-auto flex w-full max-w-none flex-col gap-space-lg px-space-md py-space-lg sm:px-space-lg xl:w-3/4 xl:px-space-xl">
           {/* Encabezado + resumen */}
           <div className="flex flex-wrap items-end justify-between gap-space-md animate-enter">
             <div>
@@ -592,41 +592,40 @@ export default function UserManagement() {
               )}
             />
 
-            {/* Filtros ajustados para que no se recorten */}
-            <div className="grid grid-cols-1 gap-space-sm my-space-md sm:grid-cols-2 lg:grid-cols-4">
-              <label className="relative block">
-                <span className="sr-only">Buscar por nombre o correo</span>
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant"><Icon name="search" /></span>
-                <input type="search" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar nombre o correo" className={`${inputClass} pl-10 w-full`} />
-              </label>
-              <label className="block">
-                <span className="sr-only">Filtrar por departamento</span>
-                <select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)} className={`${inputClass} w-full truncate`}>
-                  <option value="all">Todos los departamentos</option>
-                  {allDepartments.map((department) => (
-                    <option key={department.id} value={department.id}>
-                      {department.name}{department.active === false ? " (inactivo)" : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="sr-only">Filtrar por rol</span>
-                <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className={`${inputClass} w-full`}>
-                  <option value="all">Todos los roles</option>
-                  {ROLE_OPTIONS.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}
-                </select>
-              </label>
-              <label className="block">
-                <span className="sr-only">Filtrar por estado</span>
-                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={`${inputClass} w-full`}>
-                  <option value="all">Todos los estados</option>
-                  <option value="active">Activos</option>
-                  <option value="inactive">Inactivos</option>
-                </select>
-              </label>
-            </div>
-
+         {/* Filtros compactos en una sola línea en pantallas grandes */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-sm my-space-md">
+            <label className="relative block">
+              <span className="sr-only">Buscar por nombre o correo</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant"><Icon name="search" size={17} /></span>
+              <input type="search" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar nombre o correo" className={`${inputClass} pl-9 py-2 text-body-sm w-full`} />
+            </label>
+            <label className="block">
+              <span className="sr-only">Filtrar por departamento</span>
+              <select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)} className={`${inputClass} py-2 text-body-sm w-full truncate`}>
+                <option value="all">Todos los departamentos</option>
+                {allDepartments.map((department) => (
+                  <option key={department.id} value={department.id}>
+                    {department.name}{department.active === false ? " (inactivo)" : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="sr-only">Filtrar por rol</span>
+              <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className={`${inputClass} py-2 text-body-sm w-full`}>
+                <option value="all">Todos los roles</option>
+                {ROLE_OPTIONS.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="sr-only">Filtrar por estado</span>
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={`${inputClass} py-2 text-body-sm w-full`}>
+                <option value="all">Todos los estados</option>
+                <option value="active">Activos</option>
+                <option value="inactive">Inactivos</option>
+              </select>
+            </label>
+          </div>
             {directoryError && (
               <p role="alert" className="mb-space-md rounded-xl bg-error-container px-space-md py-space-sm text-body-sm text-on-error-container">
                 {directoryError}
@@ -638,7 +637,7 @@ export default function UserManagement() {
             ) : filteredUsers.length === 0 ? (
               <p className="py-space-lg text-center text-body-md text-on-surface-variant">No hay cuentas que coincidan con esos filtros.</p>
             ) : (
-              <div className="w-full overflow-hidden rounded-xl bg-surface-container-lowest">
+              <div className="w-full overflow-hidden rounded-md bg-surface-container-lowest">
                 <table className="w-full table-fixed border-collapse text-left">
                   <colgroup>
                     <col style={{ width: "32%" }} />
