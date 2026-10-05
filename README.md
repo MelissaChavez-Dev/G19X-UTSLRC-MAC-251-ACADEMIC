@@ -18,7 +18,7 @@ Cuenta con una **doble experiencia**:
 
 - **Node.js:** Versión 18.0 o superior (recomendada v20 o v24).
 - **npm:** Gestor de paquetes incluido con Node.js.
-- **Firebase:** Proyecto activo con Firebase Authentication y Cloud Firestore configurados.
+- **Firebase:** Proyecto activo con Firebase Authentication y Cloud Firestore configurados (se refiere a las API en .env.local, estas mismas las puede encontrar en KEYS.txt)
 
 ---
 
@@ -36,7 +36,8 @@ Cuenta con una **doble experiencia**:
    ```
 
 3. **Configurar variables de entorno:**
-   Crea o verifica el archivo `.env.local` en la raíz del proyecto con la configuración de tu proyecto en Firebase:
+   Crea o verifica el archivo `.env.local` en la raíz del proyecto con la configuración del proyecto en Firebase:
+   las claves con datos de prueba estan en KEYS.txt
    ```env
    VITE_FIREBASE_API_KEY=tu_api_key
    VITE_FIREBASE_AUTH_DOMAIN=tu-proyecto.firebaseapp.com
