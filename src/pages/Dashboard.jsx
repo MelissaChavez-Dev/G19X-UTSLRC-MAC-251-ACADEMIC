@@ -455,14 +455,14 @@ const OperationStrip = memo(function OperationStrip({
           {showAbsence && (
             <OpsTile
               icon="person_off"
-              label="Ausentismo digital"
+              label="Ausentismo"
               period="30 días"
               value={absenceLoading ? "…" : `${absence?.rate ?? 0}%`}
               hint={
                 absenceLoading
                   ? "Calculando..."
                   : hasWorkdayRecords
-                    ? `${absence.absentDays} de ${absence.workDays} usuarios esperados sin actividad`
+                    ? `${absence.absentDays} Faltas registradas, se esperan ${absence.workDays} asistencias hasta el dia de hoy.`
                     : "Sin registros aún, se calcula cada noche"
               }
             />
