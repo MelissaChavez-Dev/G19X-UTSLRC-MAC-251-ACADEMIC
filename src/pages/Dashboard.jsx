@@ -9,6 +9,7 @@ import AIStrategistPanel from "../components/AIStrategistPanel";
 import WeeklySentimentTrend from "../components/WeeklySentimentTrend";
 import FrictionHotspots from "../components/FrictionHotspots";
 import MetricDetailModal from "../components/MetricDetailModal";
+import SemanticMetricsPanel from "../components/SemanticMetricsPanel";
 import { useOrgHealthMetrics } from "../hooks/useOrgHealthMetrics";
 import { useDepartmentRisk } from "../hooks/useDepartmentRisk";
 import { useWeeklySentiment } from "../hooks/useWeeklySentiment";
@@ -692,6 +693,8 @@ export default function Dashboard() {
               No se pudieron cargar los indicadores. Revisa tu conexión o los permisos de tu cuenta.
             </p>
           )}
+
+          <SemanticMetricsPanel departmentId={departmentId} departments={departments} />
 
           {/* 3. Operación: una sola franja de tres tarjetas simples */}
           {metrics && (

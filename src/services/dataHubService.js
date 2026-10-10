@@ -14,7 +14,7 @@ import {
   updateDoc,
   writeBatch,
 } from "firebase/firestore";
-import { INITIAL_METRICS } from "../data/metricsCatalog";
+import { INITIAL_METRICS, MAX_IMPORT_ROWS } from "../data/metricsCatalog";
 import { db } from "./firebase";
 
 export async function ensureMetricsCatalog() {
@@ -26,6 +26,12 @@ export async function ensureMetricsCatalog() {
         transaction.set(references[index], {
           ...INITIAL_METRICS[index],
           createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      } else if ((snapshot.data().schemaVersion || 1) < INITIAL_METRICS[index].schemaVersion) {
+        transaction.update(references[index], {
+          aggregation: INITIAL_METRICS[index].aggregation,
+          schemaVersion: INITIAL_METRICS[index].schemaVersion,
           updatedAt: serverTimestamp(),
         });
       }
@@ -61,6 +67,16 @@ export async function getImportRecords(importId) {
     collection(db, "externalDataImports", importId, "records"),
     orderBy("sourceRowNumber", "asc"),
     limit(100)
+  );
+  const snapshot = await getDocs(recordsQuery);
+  return snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+}
+
+export async function getAllImportRecords(importId) {
+  const recordsQuery = query(
+    collection(db, "externalDataImports", importId, "records"),
+    orderBy("sourceRowNumber", "asc"),
+    limit(MAX_IMPORT_ROWS)
   );
   const snapshot = await getDocs(recordsQuery);
   return snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));

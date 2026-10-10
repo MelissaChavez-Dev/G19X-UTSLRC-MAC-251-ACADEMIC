@@ -16,7 +16,7 @@ Cuenta con una **doble experiencia**:
 
 La ruta administrativa `/admin/data-hub` permite importar archivos CSV y Excel (`.xlsx`) de hasta 10 MB y 5,000 filas. El asistente procesa la primera hoja, muestra una vista previa y permite mapear fecha, departamento y las métricas del catálogo antes de confirmar.
 
-Solo se conservan los campos mapeados; el archivo original y las demás columnas no se suben. Las filas inválidas se excluyen y se reportan. Los grupos con menos de cinco filas se permiten, pero generan una advertencia para que el administrador evalúe su posible identificabilidad. Las importaciones quedan separadas de `responses`, bajo `externalDataImports`; el catálogo inicial se persiste en `metricsCatalog`. En esta etapa, los datos importados se consultan por separado y todavía no alimentan los KPIs del dashboard.
+Solo se conservan los campos mapeados; el archivo original y las demás columnas no se suben. Las filas inválidas se excluyen y se reportan. Los grupos con menos de cinco filas se permiten, pero generan una advertencia para que el administrador evalúe su posible identificabilidad. Las importaciones quedan separadas de `responses`, bajo `externalDataImports`; el catálogo inicial se persiste en `metricsCatalog`. El dashboard ofrece un panel semántico aparte que calcula las métricas aprobadas para una fuente importada, los últimos 30 días y el departamento seleccionado; no combina automáticamente esos resultados con las respuestas de Firebase.
 
 La ruta y ambas colecciones requieren rol de administrador en Firestore. Despliega las reglas actualizadas antes de habilitar el módulo en el proyecto Firebase:
 

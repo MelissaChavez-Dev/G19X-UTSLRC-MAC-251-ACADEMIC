@@ -7,10 +7,11 @@ export const INITIAL_METRICS = [
     period: "Últimos 30 días",
     validFilters: ["dateRange", "departmentId"],
     sources: ["responses", "externalDataImports"],
-    aggregation: "PERCENTAGE",
+    aggregation: "AVG",
     minValue: 0,
     maxValue: 100,
     sortOrder: 1,
+    schemaVersion: 2,
   },
   {
     id: "psychSafety",
@@ -24,6 +25,7 @@ export const INITIAL_METRICS = [
     minValue: 1,
     maxValue: 5,
     sortOrder: 2,
+    schemaVersion: 2,
   },
   {
     id: "attritionRisk",
@@ -37,6 +39,7 @@ export const INITIAL_METRICS = [
     minValue: 0,
     maxValue: 100,
     sortOrder: 3,
+    schemaVersion: 2,
   },
 ];
 
