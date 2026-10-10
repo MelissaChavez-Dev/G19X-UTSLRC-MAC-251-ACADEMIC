@@ -49,7 +49,9 @@ function computeMetrics(responses, headcount) {
 
 export function useOrgHealthMetrics(departmentId = null) {
   const [metrics, setMetrics] = useState(null);
+  const [currentPeriodMetrics, setCurrentPeriodMetrics] = useState(null);
   const [previousMetrics, setPreviousMetrics] = useState(null);
+  const [updatedAt, setUpdatedAt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { total: totalHeadcount, forDepartment } = useHeadcount();
@@ -73,11 +75,15 @@ export function useOrgHealthMetrics(departmentId = null) {
           return date >= cutoff60 && date < cutoff30;
         });
 
+        setCurrentPeriodMetrics(computeMetrics(current, headcount));
         setMetrics(computeMetrics(current.length ? current : all, headcount));
         setPreviousMetrics(computeMetrics(previous.length ? previous : current, headcount));
+        setUpdatedAt(new Date());
       } catch (err) {
         console.error(err);
         setError(err);
+        setCurrentPeriodMetrics(null);
+        setUpdatedAt(null);
       } finally {
         setLoading(false);
       }
@@ -85,5 +91,13 @@ export function useOrgHealthMetrics(departmentId = null) {
     load();
   }, [departmentId, totalHeadcount, forDepartment]);
 
-  return { metrics, previousMetrics, loading, error, headcount: departmentId ? forDepartment(departmentId) : totalHeadcount };
+  return {
+    metrics,
+    currentPeriodMetrics,
+    previousMetrics,
+    updatedAt,
+    loading,
+    error,
+    headcount: departmentId ? forDepartment(departmentId) : totalHeadcount,
+  };
 }

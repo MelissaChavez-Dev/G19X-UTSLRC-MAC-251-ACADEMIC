@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import WellnessSurvey from "./pages/WellnessSurvey";
 import Login from "./pages/login";
@@ -11,7 +11,7 @@ import TeamBoard from "./pages/TeamBoard";
 import ForcePasswordChange from "./pages/ForcePasswordChange";
 import UserManagement from "./pages/admin/UserManagement";
 import TeamDirectory from "./pages/admin/TeamDirectory";
-import DataHub from "./pages/admin/DataHub";
+import CanvasStudio from "./pages/admin/CanvasStudio";
 import MisProyectos from "./pages/MisProyectos";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleBasedRedirect from "./components/RoleBasedRedirect";
@@ -76,7 +76,15 @@ function App() {
               path="/admin/data-hub"
               element={
                 <ProtectedRoute roles={["admin"]}>
-                  <DataHub />
+                  <Navigate to="/admin/canvas-studio?view=sources" replace />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/canvas-studio"
+              element={
+                <ProtectedRoute roles={["admin"]}>
+                  <CanvasStudio />
                 </ProtectedRoute>
               }
             />

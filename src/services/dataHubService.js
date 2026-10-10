@@ -88,6 +88,7 @@ export async function saveDataImport({
   rejectedRows,
   inputRows,
   smallCohortGroups,
+  transformations = [],
   createdBy,
   onProgress,
 }) {
@@ -103,6 +104,7 @@ export async function saveDataImport({
     rejectedRows,
     inputRows,
     smallCohortGroups,
+    transformations,
   });
 
   try {

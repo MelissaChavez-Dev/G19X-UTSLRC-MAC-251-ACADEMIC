@@ -42,18 +42,42 @@ export function AuthProvider({ children }) {
       unsubscribeProfile = onSnapshot(
         doc(db, "users", firebaseUser.uid),
         async (snap) => {
-          const token = await firebaseUser.getIdTokenResult();
+          const profile = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+          let token;
+          try {
+            token = await firebaseUser.getIdTokenResult();
+            if (profile?.role && token.claims.role !== profile.role) {
+              token = await firebaseUser.getIdTokenResult(true);
+            }
+          } catch (error) {
+            console.error("No se pudo renovar el token para comprobar el rol:", error);
+            setState({
+              user: firebaseUser,
+              claims: null,
+              profile,
+              loading: false,
+            });
+            return;
+          }
+          if (auth.currentUser?.uid !== firebaseUser.uid) return;
           setState({
             user: firebaseUser,
             claims: token.claims,
-            profile: snap.exists() ? { id: snap.id, ...snap.data() } : null,
+            profile,
             loading: false,
           });
         },
-        async () => {
+        async (error) => {
           // Si el perfil aún no existe, igual resolvemos con los claims
-          const token = await firebaseUser.getIdTokenResult();
-          setState({ user: firebaseUser, claims: token.claims, profile: null, loading: false });
+          console.error("No se pudo escuchar el perfil del usuario:", error);
+          try {
+            const token = await firebaseUser.getIdTokenResult(true);
+            if (auth.currentUser?.uid !== firebaseUser.uid) return;
+            setState({ user: firebaseUser, claims: token.claims, profile: null, loading: false });
+          } catch (tokenError) {
+            console.error("No se pudo renovar el token de autenticación:", tokenError);
+            setState({ user: firebaseUser, claims: null, profile: null, loading: false });
+          }
         }
       );
     });
@@ -65,9 +89,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function refreshClaims() {
-    if (!auth.currentUser) return;
+    if (!auth.currentUser) return null;
     const token = await auth.currentUser.getIdTokenResult(true);
     setState((prev) => ({ ...prev, claims: token.claims }));
+    return token.claims;
   }
 
   const role = state.claims?.role || state.profile?.role || null;

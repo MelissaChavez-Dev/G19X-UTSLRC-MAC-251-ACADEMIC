@@ -6,7 +6,7 @@ import { useSidebarState } from "../hooks/useSidebarState";
 const NAV_ITEMS = [
   { icon: "grid_view", label: "Resumen", to: "/dashboard" },
   { icon: "assignment_add", label: "Constructor de encuestas", to: "/survey-builder" },
-  { icon: "database", label: "Data Hub", to: "/admin/data-hub" },
+  { icon: "analytics", label: "BI Studio", to: "/admin/canvas-studio" },
   { icon: "manage_accounts", label: "Gestión de usuarios", to: "/admin/usuarios" },
   { icon: "groups", label: "Directorio del equipo", to: "/equipos" },
 ];

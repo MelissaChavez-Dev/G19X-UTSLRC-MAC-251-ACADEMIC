@@ -98,12 +98,53 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /customDashboards/{dashboardId} {
+      allow read: if isAdmin() && resource.data.ownerUid == request.auth.uid;
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          "ownerUid", "name", "sourceType", "sourceImportId", "widgets", "createdAt", "updatedAt"
+        ])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 80
+        && request.resource.data.sourceType in ["responses", "externalDataImports"]
+        && request.resource.data.widgets is list
+        && request.resource.data.widgets.size() <= 20
+        && (
+          (request.resource.data.sourceType == "responses" && request.resource.data.sourceImportId == null)
+          || (request.resource.data.sourceType == "externalDataImports"
+            && request.resource.data.sourceImportId is string
+            && request.resource.data.sourceImportId.size() > 0)
+        );
+      allow update: if isAdmin()
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "name", "sourceType", "sourceImportId", "widgets", "updatedAt"
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 80
+        && request.resource.data.sourceType in ["responses", "externalDataImports"]
+        && request.resource.data.widgets is list
+        && request.resource.data.widgets.size() <= 20
+        && (
+          (request.resource.data.sourceType == "responses" && request.resource.data.sourceImportId == null)
+          || (request.resource.data.sourceType == "externalDataImports"
+            && request.resource.data.sourceImportId is string
+            && request.resource.data.sourceImportId.size() > 0)
+        );
+      allow delete: if isAdmin() && resource.data.ownerUid == request.auth.uid;
+    }
+
     match /externalDataImports/{importId} {
       allow read: if isAdmin();
       allow create: if isAdmin()
         && request.resource.data.keys().hasOnly([
           "sourceFileName", "sourceType", "createdBy", "createdAt", "completedAt",
-          "status", "acceptedRows", "rejectedRows", "inputRows", "smallCohortGroups"
+          "status", "acceptedRows", "rejectedRows", "inputRows", "smallCohortGroups",
+          "transformations"
         ])
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.status == "uploading"
@@ -113,7 +154,12 @@ service cloud.firestore {
         && request.resource.data.acceptedRows is int
         && request.resource.data.rejectedRows is int
         && request.resource.data.inputRows is int
-        && request.resource.data.smallCohortGroups is int;
+        && request.resource.data.smallCohortGroups is int
+        && (
+          !("transformations" in request.resource.data)
+          || (request.resource.data.transformations is list
+            && request.resource.data.transformations.size() <= 500)
+        );
       allow update: if isAdmin()
         && resource.data.status == "uploading"
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([

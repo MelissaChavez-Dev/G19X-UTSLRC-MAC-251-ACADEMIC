@@ -12,11 +12,19 @@ Cuenta con una **doble experiencia**:
 - **Experiencia Ejecutiva (Dirección / RH):** Tableros interactivos con KPIs en tiempo real, medidor de eNPS tipo termómetro semicircular con caras expresivas, matriz de riesgo departamental, tendencias históricas, exportación formal a PDF/Excel y un panel de asesoría estratégica impulsado por Inteligencia Artificial (Google Gemini) que convierte diagnósticos cualitativos en tareas de equipo.
 - **Experiencia Colaborativa (Empleados):** Portal de colaboradores (`/mi-espacio`), contestación ágil de encuestas segmentadas, seguimiento de tareas de bienestar en tableros Kanban (`/mis-proyectos`) y resumen transparente de presencia digital para esquemas de trabajo remoto e híbrido.
 
-### Data Hub (entrega inicial)
+### BI Studio: fuentes y lienzo en un solo espacio
 
-La ruta administrativa `/admin/data-hub` permite importar archivos CSV y Excel (`.xlsx`) de hasta 10 MB y 5,000 filas. El asistente procesa la primera hoja, muestra una vista previa y permite mapear fecha, departamento y las métricas del catálogo antes de confirmar.
+La ruta administrativa `/admin/canvas-studio` reúne la gestión de fuentes y el constructor de tableros con secciones internas de **Fuentes** y **Lienzo**. La ruta anterior `/admin/data-hub` redirige a Fuentes para conservar compatibilidad. El asistente permite importar archivos CSV y Excel (`.xlsx`) de hasta 10 MB y 5,000 filas. Procesa la primera hoja, muestra una vista previa y permite mapear fecha, departamento y las métricas del catálogo antes de confirmar.
 
-Solo se conservan los campos mapeados; el archivo original y las demás columnas no se suben. Las filas inválidas se excluyen y se reportan. Los grupos con menos de cinco filas se permiten, pero generan una advertencia para que el administrador evalúe su posible identificabilidad. Las importaciones quedan separadas de `responses`, bajo `externalDataImports`; el catálogo inicial se persiste en `metricsCatalog`. El dashboard ofrece un panel semántico aparte que calcula las métricas aprobadas para una fuente importada, los últimos 30 días y el departamento seleccionado; no combina automáticamente esos resultados con las respuestas de Firebase.
+Solo se conservan los campos mapeados; el archivo original y las demás columnas no se suben. Las filas inválidas se excluyen y se reportan. Los grupos con menos de cinco filas se permiten, pero generan una advertencia para que el administrador evalúe su posible identificabilidad. Las importaciones quedan separadas de `responses`, bajo `externalDataImports`; el catálogo inicial se persiste en `metricsCatalog`. El dashboard ofrece un panel semántico aparte que calcula las métricas aprobadas para los últimos 30 días y el departamento seleccionado. Por defecto las fuentes permanecen separadas; el administrador puede activar un promedio simple 50/50 con las respuestas de Firebase y deshacerlo en cualquier momento, sin modificar los datos originales.
+
+Desde Fuentes se puede revisar el historial de archivos y conectarlos directamente al lienzo. El explorador permite renombrar y excluir columnas, aplicar escala y ajuste numérico y derivar una columna con suma, resta, multiplicación o división antes de mapearla; las reglas de transformación se guardan como metadatos de auditoría. Los tableros privados permiten construir KPI desde el catálogo con promedio, suma, conteo o porcentaje, agruparlos por fecha o departamento, y añadir widgets KPI, línea, barras o tabla. Cada widget admite periodo independiente de 7, 14 o 30 días, umbral, paleta salvia/menta/bosque, ordenamiento por arrastre y anchos de 3, 6, 9 o 12 columnas. Cada tablero utiliza una fuente a la vez —encuestas nativas o una importación—; admite hasta 20 widgets y conserva su configuración. La vista ejecutiva predeterminada no se modifica.
+
+Los cambios de validación de reglas para metadatos de transformación deben desplegarse antes de subir importaciones transformadas:
+
+```bash
+firebase deploy --only firestore:rules
+```
 
 La ruta y ambas colecciones requieren rol de administrador en Firestore. Despliega las reglas actualizadas antes de habilitar el módulo en el proyecto Firebase:
 
@@ -127,11 +135,11 @@ El sistema utiliza los roles `admin` y `employee`; no hay autorregistro abierto.
 ├── public/                    # Archivos estáticos y logos
 ├── src/
 │   ├── assets/                # Ilustraciones y recursos gráficos
-│   ├── components/            # Componentes de interfaz (medidor eNPS, AI Strategist, Heatmap, TopBar, Kanban, etc.)
+│   ├── components/            # Componentes de interfaz (medidor eNPS, Canvas, AI Strategist, Heatmap, TopBar, Kanban, etc.)
 │   ├── data/                  # Preguntas base, plantillas, temas y catálogo de métricas
 │   ├── hooks/                 # Hooks personalizados de React (useOrgHealthMetrics, useAuth, useTheme, etc.)
-│   ├── pages/                 # Páginas (Dashboard, DataHub, Login, MiEspacio, SurveyBuilder, etc.)
-│   ├── services/              # Servicios de Firebase, Data Hub, Gemini IA y exportaciones
+│   ├── pages/                 # Páginas (Dashboard, DataHub, CanvasStudio, Login, MiEspacio, SurveyBuilder, etc.)
+│   ├── services/              # Servicios de Firebase, Data Hub, Canvas, Gemini IA y exportaciones
 │   └── utils/                 # Utilidades de fechas, importación, métricas y riesgo
 ├── firestore.rules            # Reglas de seguridad de Firestore
 ├── package.json               # Dependencias y scripts del proyecto

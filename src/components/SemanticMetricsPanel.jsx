@@ -7,14 +7,14 @@ import {
   subscribeImportBatches,
   subscribeMetricsCatalog,
 } from "../services/dataHubService";
-import { calculateSemanticMetrics } from "../utils/semanticMetrics";
+import { calculateSemanticMetrics, combineEqualWeightSources } from "../utils/semanticMetrics";
 
 const INPUT_CLASS =
   "w-full max-w-xl rounded-lg border border-outline-variant bg-surface-container-low px-space-md py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-2 focus:ring-primary/30";
 const EMPTY_RECORDS = [];
 
 function formatDate(timestamp) {
-  const date = timestamp?.toDate?.();
+  const date = timestamp?.toDate?.() || (timestamp instanceof Date ? timestamp : null);
   return date
     ? new Intl.DateTimeFormat("es", { dateStyle: "medium", timeStyle: "short" }).format(date)
     : "—";
@@ -26,12 +26,19 @@ function formatValue(value, unit) {
   return unit === "%" ? `${formatted}%` : `${formatted} ${unit}`.trim();
 }
 
-export default function SemanticMetricsPanel({ departmentId, departments }) {
+export default function SemanticMetricsPanel({
+  departmentId,
+  departments,
+  nativeMetrics,
+  nativeUpdatedAt,
+  nativeLoading,
+}) {
   const [metrics, setMetrics] = useState([]);
   const [batches, setBatches] = useState([]);
   const [selectedImportId, setSelectedImportId] = useState("");
   const [recordResult, setRecordResult] = useState({ importId: "", records: [], error: "", loadedAt: null });
   const [catalogError, setCatalogError] = useState("");
+  const [isCombined, setIsCombined] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -120,6 +127,11 @@ export default function SemanticMetricsPanel({ departmentId, departments }) {
     }),
     [records, importedMetrics, periodStart, periodEnd, departmentFilters]
   );
+  const nativeValues = {
+    participationRate: nativeMetrics?.activePulseRate,
+    psychSafety: nativeMetrics?.psychSafety,
+    attritionRisk: nativeMetrics?.attritionRisk,
+  };
 
   return (
     <section aria-labelledby="semantic-metrics-heading" className="flex flex-col gap-space-md rounded-[32px] bg-surface-container-low p-space-lg">
@@ -127,7 +139,7 @@ export default function SemanticMetricsPanel({ departmentId, departments }) {
         <div>
           <h2 id="semantic-metrics-heading" className="text-headline-sm text-on-surface">Métricas del modelo semántico</h2>
           <p className="mt-1 max-w-3xl text-body-sm text-on-surface-variant">
-            Cálculos sobre un archivo importado, con filtros del catálogo. Esta fuente se muestra por separado y no se promedia con las respuestas de Firebase.
+            Cálculos con los filtros del catálogo. Puedes consultar el archivo solo o combinarlo temporalmente con Firebase, sin modificar ninguna fuente original.
           </p>
         </div>
         <Link to="/admin/data-hub" className="text-label-md text-primary underline">
@@ -136,6 +148,28 @@ export default function SemanticMetricsPanel({ departmentId, departments }) {
       </div>
 
       {catalogError && <p role="alert" className="rounded-xl bg-error-container px-space-md py-space-sm text-body-sm text-on-error-container">{catalogError}</p>}
+
+      {selectedBatch && (
+        <div className="flex flex-wrap items-center gap-space-sm rounded-xl bg-surface-container-lowest p-space-md">
+          <p className="flex-1 text-body-sm text-on-surface-variant">
+            {isCombined
+              ? "Promedio simple por fuente: 50% Firebase + 50% archivo importado. La combinación es temporal y reversible."
+              : "El archivo y las respuestas de Firebase se mantienen separados hasta que elijas combinarlos."}
+          </p>
+          <button
+            type="button"
+            onClick={() => setIsCombined((current) => !current)}
+            disabled={nativeLoading || !nativeMetrics?.sampleSize}
+            className="rounded-full border border-outline-variant px-space-md py-2 text-label-md text-on-surface hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isCombined ? "Deshacer combinación" : "Combinar promedios (50/50)"}
+          </button>
+          {nativeLoading && <span role="status" className="text-label-sm text-on-surface-variant">Cargando respuestas de Firebase…</span>}
+          {!nativeLoading && !nativeMetrics?.sampleSize && (
+            <span className="text-label-sm text-on-surface-variant">Se necesitan respuestas nativas del periodo para combinar.</span>
+          )}
+        </div>
+      )}
 
       {batches.length > 0 && (
         <label className="flex flex-col gap-space-xs text-label-md text-on-surface" htmlFor="semantic-import-source">
@@ -175,21 +209,53 @@ export default function SemanticMetricsPanel({ departmentId, departments }) {
 
       {selectedBatch && !recordsLoading && !recordsError && (
         <div className="grid gap-space-sm md:grid-cols-3">
-          {calculatedMetrics.map(({ metric, value, count, error }) => (
-            <article key={metric.id} className="rounded-2xl bg-surface-container-lowest p-space-md">
-              <h3 className="text-label-md text-on-surface">{metric.name}</h3>
-              <p className="mt-space-xs text-headline-lg text-on-surface">{formatValue(value, metric.unit)}</p>
-              <p className="mt-1 text-label-sm text-on-surface-variant">
-                {count} valores · {metric.aggregation} · {metric.period}
-              </p>
-              {error && <p role="status" className="mt-space-sm text-body-sm text-error">{error}</p>}
-              {!error && count === 0 && <p className="mt-space-sm text-body-sm text-on-surface-variant">Sin valores válidos para este filtro.</p>}
-              <p className="mt-space-sm border-t border-outline-variant/50 pt-space-sm text-label-sm text-on-surface-variant">
-                Origen: {selectedBatch.sourceFileName}<br />
-                Actualización: {formatDate(selectedBatch.completedAt || selectedBatch.createdAt)}
-              </p>
-            </article>
-          ))}
+          {calculatedMetrics.map(({ metric, value, count, error }) => {
+            const hasNativeSample = (nativeMetrics?.sampleSize || 0) > 0;
+            const nativeValue = hasNativeSample ? nativeValues[metric.id] : null;
+            let displayedValue = value;
+            let blendError = "";
+            if (isCombined) {
+              try {
+                displayedValue = combineEqualWeightSources(nativeValue, value, metric);
+              } catch (combineError) {
+                displayedValue = null;
+                blendError = combineError.message;
+              }
+            }
+            const hasCombinedValues = Number.isFinite(nativeValue) && Number.isFinite(value);
+
+            return (
+              <article key={metric.id} className="rounded-2xl bg-surface-container-lowest p-space-md">
+                <h3 className="text-label-md text-on-surface">{metric.name}</h3>
+                <p className="mt-space-xs text-headline-lg text-on-surface">{formatValue(displayedValue, metric.unit)}</p>
+                {isCombined ? (
+                  <>
+                    <p className="mt-1 text-label-sm text-on-surface-variant">
+                      {hasCombinedValues
+                        ? `Promedio 50/50 · Firebase n=${nativeMetrics.sampleSize} + archivo n=${count}`
+                        : "No se combinó: ambas fuentes necesitan valores válidos."}
+                    </p>
+                    {blendError && <p role="alert" className="mt-space-sm text-body-sm text-error">{blendError}</p>}
+                    {!hasCombinedValues && (
+                      <p role="status" className="mt-space-sm text-body-sm text-on-surface-variant">
+                        No se sustituye una fuente ausente por la otra.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="mt-1 text-label-sm text-on-surface-variant">
+                    {count} valores · {metric.aggregation} · {metric.period}
+                  </p>
+                )}
+                {error && <p role="status" className="mt-space-sm text-body-sm text-error">{error}</p>}
+                {!error && count === 0 && <p className="mt-space-sm text-body-sm text-on-surface-variant">Sin valores válidos para este filtro.</p>}
+                <p className="mt-space-sm border-t border-outline-variant/50 pt-space-sm text-label-sm text-on-surface-variant">
+                  Origen importado: {selectedBatch.sourceFileName} · actualización {formatDate(selectedBatch.completedAt || selectedBatch.createdAt)}<br />
+                  {isCombined && `Origen nativo: responses · n=${nativeMetrics?.sampleSize || 0} · consulta ${formatDate(nativeUpdatedAt)}`}
+                </p>
+              </article>
+            );
+          })}
         </div>
       )}
 

@@ -6,6 +6,75 @@ function isBlank(value) {
   return value === null || value === undefined || (typeof value === "string" && !value.trim());
 }
 
+function parseNumericTransform(value) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().replace(/%$/, "").replace(",", ".");
+  if (!/^[+-]?(?:\d+(?:\.\d+)?|\.\d+)$/.test(normalized)) return null;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function calculateDerivedValue(left, right, operation) {
+  const first = parseNumericTransform(left);
+  const second = parseNumericTransform(right);
+  if (first === null || second === null) return null;
+  if (operation === "add") return first + second;
+  if (operation === "subtract") return first - second;
+  if (operation === "multiply") return first * second;
+  if (operation === "divide") return second === 0 ? null : first / second;
+  throw new Error(`Operación de columna derivada no permitida: ${operation}.`);
+}
+
+export function applyImportTransforms(parsedFile, {
+  columnLabels = {},
+  scaleTransforms = {},
+  derivedColumns = [],
+}) {
+  if (!parsedFile || !Array.isArray(parsedFile.columns) || !Array.isArray(parsedFile.rows)) {
+    throw new Error("No se puede transformar un archivo con estructura inválida.");
+  }
+
+  const columns = [
+    ...parsedFile.columns.map((column) => ({
+      ...column,
+      label: columnLabels[column.id]?.trim() || column.label,
+    })),
+    ...derivedColumns.map(({ id, name }) => ({ id, label: name })),
+  ];
+  const rows = parsedFile.rows.map((row) => {
+    const values = {};
+    parsedFile.columns.forEach((column) => {
+      const original = row.values[column.id];
+      const clean = typeof original === "string" ? original.trim() : original;
+      const transform = scaleTransforms[column.id];
+      if (!transform || (transform.scale === "" && transform.offset === "")) {
+        values[column.id] = clean;
+        return;
+      }
+      const numeric = parseNumericTransform(clean);
+      if (numeric === null) {
+        values[column.id] = clean;
+        return;
+      }
+      const scale = transform.scale === "" ? 1 : Number(transform.scale);
+      const offset = transform.offset === "" ? 0 : Number(transform.offset);
+      values[column.id] = Number.isFinite(scale) && Number.isFinite(offset)
+        ? numeric * scale + offset
+        : clean;
+    });
+    derivedColumns.forEach((derived) => {
+      values[derived.id] = calculateDerivedValue(
+        values[derived.leftColumn],
+        values[derived.rightColumn],
+        derived.operation
+      );
+    });
+    return { ...row, values };
+  });
+  return { ...parsedFile, columns, rows };
+}
+
 function parseDate(value) {
   if (value instanceof Date && Number.isFinite(value.getTime())) {
     return value.toISOString().slice(0, 10);

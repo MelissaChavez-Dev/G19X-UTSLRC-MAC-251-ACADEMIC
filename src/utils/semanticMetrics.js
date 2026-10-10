@@ -29,6 +29,20 @@ export function evaluateAggregation(aggregation, values, { numerator = 0, denomi
   }
 }
 
+export function combineEqualWeightSources(firstValue, secondValue, metric) {
+  if (!validNumber(firstValue) || !validNumber(secondValue)) return null;
+  if (
+    firstValue < metric.minValue || firstValue > metric.maxValue ||
+    secondValue < metric.minValue || secondValue > metric.maxValue
+  ) {
+    throw new Error(`Una de las fuentes está fuera del rango válido para ${metric.name}.`);
+  }
+  const combined = (firstValue + secondValue) / 2;
+  return Number.isFinite(combined) && combined >= metric.minValue && combined <= metric.maxValue
+    ? combined
+    : null;
+}
+
 function applyMetricFilters(records, metric, filters) {
   const validFilters = new Set(metric.validFilters || []);
   return records.filter((record) => {

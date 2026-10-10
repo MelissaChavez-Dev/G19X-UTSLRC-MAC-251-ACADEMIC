@@ -567,7 +567,7 @@ export default function Dashboard() {
   const [departmentId, setDepartmentId] = useState(null);
   const { collapsed } = useSidebarState();
   const { departments } = useDepartments();
-  const { metrics, previousMetrics, loading, headcount } = useOrgHealthMetrics(departmentId);
+  const { metrics, currentPeriodMetrics, previousMetrics, updatedAt, loading, headcount } = useOrgHealthMetrics(departmentId);
   const { rows: deptRows, loading: deptLoading } = useDepartmentRisk(departmentId);
   const { trend, hotspots, comments, loading: sentimentLoading } = useWeeklySentiment(departmentId);
   const { trends: weeklyTrends } = useWeeklyTrends(departmentId);
@@ -694,7 +694,13 @@ export default function Dashboard() {
             </p>
           )}
 
-          <SemanticMetricsPanel departmentId={departmentId} departments={departments} />
+          <SemanticMetricsPanel
+            departmentId={departmentId}
+            departments={departments}
+            nativeMetrics={currentPeriodMetrics}
+            nativeUpdatedAt={updatedAt}
+            nativeLoading={loading}
+          />
 
           {/* 3. Operación: una sola franja de tres tarjetas simples */}
           {metrics && (
