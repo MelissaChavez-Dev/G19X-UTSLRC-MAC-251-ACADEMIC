@@ -8,6 +8,7 @@ export default function SankeyWidget({
   links = [], // [{ source: 0, target: 4, value: 12 }]
   width = 600,
   height = 280,
+  compact = false,
 }) {
   const sankeyData = useMemo(() => {
     if (!nodes.length || !links.length) return null;
@@ -33,7 +34,7 @@ export default function SankeyWidget({
 
   if (!sankeyData) {
     return (
-      <div className="flex h-56 items-center justify-center text-body-sm text-on-surface-variant">
+      <div className={`flex h-full items-center justify-center text-on-surface-variant ${compact ? "min-h-0 text-[10px]" : "min-h-56 text-body-sm"}`}>
         Sin flujos de datos suficientes para el diagrama Sankey.
       </div>
     );
@@ -82,7 +83,7 @@ export default function SankeyWidget({
                   y={(node.y0 + node.y1) / 2}
                   dy="0.35em"
                   textAnchor={isLeft ? "start" : "end"}
-                  fontSize={11}
+                  fontSize={compact ? 8 : 11}
                   fill="var(--on-surface)"
                   className="font-medium"
                 >

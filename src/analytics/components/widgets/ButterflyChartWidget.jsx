@@ -21,11 +21,12 @@ export default function ButterflyChartWidget({
   rightLabel = "Masculino",
   leftColor = "#74846a",
   rightColor = "#355c4b",
+  compact = false,
   onItemClick,
 }) {
   if (!data || data.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center text-body-sm text-on-surface-variant">
+      <div className={`flex h-full items-center justify-center text-on-surface-variant ${compact ? "min-h-0 text-xs" : "min-h-48 text-body-sm"}`}>
         Sin datos disponibles.
       </div>
     );
@@ -44,25 +45,25 @@ export default function ButterflyChartWidget({
   );
 
   return (
-    <div className="h-full min-h-[10rem] w-full">
+    <div className={`h-full w-full ${compact ? "min-h-0" : "min-h-[10rem]"}`}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           layout="vertical"
           data={transformedData}
           stackOffset="sign"
-          margin={{ top: 8, right: 24, bottom: 0, left: 24 }}
+          margin={compact ? { top: 2, right: 8, bottom: 0, left: 8 } : { top: 8, right: 24, bottom: 0, left: 24 }}
         >
           <XAxis
             type="number"
             domain={[-maxVal, maxVal]}
             tickFormatter={(val) => Math.abs(val)}
-            tick={{ fill: "var(--on-surface-variant)", fontSize: 11 }}
+            tick={{ fill: "var(--on-surface-variant)", fontSize: compact ? 10 : 11 }}
           />
           <YAxis
             type="category"
             dataKey={categoryKey}
-            width={110}
-            tick={{ fill: "var(--on-surface)", fontSize: 11 }}
+            width={compact ? 56 : 110}
+            tick={{ fill: "var(--on-surface)", fontSize: compact ? 10 : 11 }}
           />
           <Tooltip
             formatter={(val, name) => [
@@ -78,8 +79,8 @@ export default function ButterflyChartWidget({
           />
           <Legend
             verticalAlign="top"
-            height={32}
-            wrapperStyle={{ fontSize: "12px" }}
+            height={compact ? 16 : 32}
+            wrapperStyle={{ fontSize: compact ? "10px" : "12px" }}
           />
           <Bar
             name={leftLabel}

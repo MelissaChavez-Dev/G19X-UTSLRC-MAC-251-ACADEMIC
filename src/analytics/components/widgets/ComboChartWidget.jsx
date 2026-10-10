@@ -21,38 +21,39 @@ export default function ComboChartWidget({
   lineColor = "#d1b65c",
   barUnit = "",
   lineUnit = "%",
+  compact = false,
 }) {
   if (!data || data.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center text-body-sm text-on-surface-variant">
+      <div className={`flex h-full items-center justify-center text-on-surface-variant ${compact ? "min-h-0 text-xs" : "min-h-48 text-body-sm"}`}>
         Sin datos disponibles.
       </div>
     );
   }
 
   return (
-    <div className="h-full min-h-[10rem] w-full">
+    <div className={`h-full w-full ${compact ? "min-h-0" : "min-h-[10rem]"}`}>
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 8, right: 16, bottom: 20, left: -10 }}>
+        <ComposedChart data={data} margin={compact ? { top: 2, right: 4, bottom: 8, left: -6 } : { top: 8, right: 16, bottom: 20, left: -10 }}>
           <CartesianGrid stroke="var(--outline-variant)" strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey={xKey}
             angle={data.length > 5 ? -25 : 0}
             textAnchor={data.length > 5 ? "end" : "middle"}
             interval={0}
-            tick={{ fill: "var(--on-surface-variant)", fontSize: 11 }}
+            tick={{ fill: "var(--on-surface-variant)", fontSize: compact ? 10 : 11 }}
           />
           {/* Primary Y Axis for Bars */}
           <YAxis
             yAxisId="left"
-            tick={{ fill: "var(--on-surface-variant)", fontSize: 11 }}
+            tick={{ fill: "var(--on-surface-variant)", fontSize: compact ? 10 : 11 }}
             tickFormatter={(val) => Number(val).toLocaleString("es-MX")}
           />
           {/* Secondary Y Axis for Line */}
           <YAxis
             yAxisId="right"
             orientation="right"
-            tick={{ fill: lineColor, fontSize: 11 }}
+            tick={{ fill: lineColor, fontSize: compact ? 10 : 11 }}
             tickFormatter={(val) => `${val}%`}
           />
           <Tooltip
@@ -69,7 +70,7 @@ export default function ComboChartWidget({
               fontSize: "12px",
             }}
           />
-          <Legend verticalAlign="top" height={32} wrapperStyle={{ fontSize: "12px" }} />
+          <Legend verticalAlign="top" height={compact ? 18 : 32} wrapperStyle={{ fontSize: compact ? "10px" : "12px" }} />
           <Bar
             yAxisId="left"
             name={barLabel}
@@ -83,8 +84,8 @@ export default function ComboChartWidget({
             type="monotone"
             dataKey={lineKey}
             stroke={lineColor}
-            strokeWidth={3}
-            dot={{ r: 4, fill: lineColor }}
+            strokeWidth={compact ? 2 : 3}
+            dot={{ r: compact ? 1 : 4, fill: lineColor }}
           />
         </ComposedChart>
       </ResponsiveContainer>

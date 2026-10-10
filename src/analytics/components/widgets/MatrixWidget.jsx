@@ -6,6 +6,7 @@ export default function MatrixWidget({
   alternatorOptions = null, // e.g. [{ id: "tenure", label: "Por Experiencia" }, { id: "age", label: "Por Edad" }]
   onAlternatorChange = null,
   activeAlternator = null,
+  compact = false,
 }) {
   const [internalAlternator, setInternalAlternator] = useState(
     alternatorOptions ? alternatorOptions[0]?.id : null
@@ -15,7 +16,7 @@ export default function MatrixWidget({
 
   if (!matrixData || matrixData.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center text-body-sm text-on-surface-variant">
+      <div className={`flex h-full items-center justify-center text-on-surface-variant ${compact ? "min-h-0 text-[10px]" : "min-h-48 text-body-sm"}`}>
         Sin datos disponibles.
       </div>
     );
@@ -33,11 +34,11 @@ export default function MatrixWidget({
   );
 
   return (
-    <div className="flex flex-col gap-2 w-full text-body-sm">
+    <div className={`flex h-full min-h-0 w-full flex-col ${compact ? "gap-1 text-[10px]" : "gap-2 text-body-sm"}`}>
       {/* Optional Alternator Toggle */}
       {alternatorOptions && (
         <div className="flex justify-end gap-1">
-          <div className="inline-flex rounded-lg bg-surface-container-low p-1 text-label-sm">
+          <div className={`inline-flex rounded-lg bg-surface-container-low p-1 ${compact ? "text-[9px]" : "text-label-sm"}`}>
             {alternatorOptions.map((opt) => (
               <button
                 key={opt.id}
@@ -46,7 +47,7 @@ export default function MatrixWidget({
                   setInternalAlternator(opt.id);
                   onAlternatorChange?.(opt.id);
                 }}
-                className={`rounded-md px-2.5 py-1 transition-colors ${
+                className={`rounded-md transition-colors ${compact ? "px-1.5 py-0.5" : "px-2.5 py-1"} ${
                   currentAlt === opt.id
                     ? "bg-surface-container-lowest font-medium text-primary shadow-xs"
                     : "text-on-surface-variant hover:text-on-surface"
@@ -60,13 +61,13 @@ export default function MatrixWidget({
       )}
 
       {/* Matrix Table */}
-      <div className="overflow-x-auto rounded-xl border border-outline-variant/60 bg-surface-container-lowest">
-        <table className="min-w-full text-left text-body-sm">
-          <thead className="bg-surface-container-low text-label-sm text-on-surface-variant">
+      <div className={`min-h-0 overflow-auto rounded-xl border border-outline-variant/60 bg-surface-container-lowest ${compact ? "flex-1" : "overflow-x-auto"}`}>
+        <table className={`min-w-full text-left ${compact ? "text-[9px]" : "text-body-sm"}`}>
+          <thead className={`bg-surface-container-low text-on-surface-variant ${compact ? "text-[9px]" : "text-label-sm"}`}>
             <tr>
-              <th className="px-3 py-2.5">{rowLabel}</th>
+              <th className={compact ? "px-1.5 py-1" : "px-3 py-2.5"}>{rowLabel}</th>
               {colKeys.map((col) => (
-                <th key={col} className="px-3 py-2.5 text-center">{col}</th>
+                <th key={col} className={`text-center ${compact ? "px-1.5 py-1" : "px-3 py-2.5"}`}>{col}</th>
               ))}
             </tr>
           </thead>
@@ -80,7 +81,7 @@ export default function MatrixWidget({
                   return (
                     <td
                       key={col}
-                      className="px-3 py-2 text-center text-on-surface"
+                      className={`text-center text-on-surface ${compact ? "px-1.5 py-1" : "px-3 py-2"}`}
                       style={{
                         backgroundColor: val > 0 ? `rgba(237, 196, 0, ${0.12 + ratio * 0.35})` : "transparent",
                       }}

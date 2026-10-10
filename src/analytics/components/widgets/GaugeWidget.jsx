@@ -6,6 +6,7 @@ export default function GaugeWidget({
   title = "",
   unit = "%",
   color = "#4f8070",
+  compact = false,
 }) {
   const safeVal = Math.max(min, Math.min(max, Number(value) || 0));
   const pct = (safeVal - min) / (max - min);
@@ -17,11 +18,11 @@ export default function GaugeWidget({
   const strokeDashoffset = circumference * (1 - pct);
 
   return (
-    <div className="flex flex-col items-center justify-center p-2 text-center">
-      {title && <span className="mb-1 text-label-sm text-on-surface-variant">{title}</span>}
+    <div className={`flex h-full flex-col items-center justify-center text-center ${compact ? "p-0.5" : "p-2"}`}>
+      {title && <span className={`text-on-surface-variant ${compact ? "mb-0 text-[9px]" : "mb-1 text-label-sm"}`}>{title}</span>}
 
       <div className="relative flex items-center justify-center">
-        <svg width="180" height="105" viewBox="0 0 180 105">
+        <svg width={compact ? "140" : "180"} height={compact ? "82" : "105"} viewBox="0 0 180 105">
           {/* Background track */}
           <path
             d="M 15 95 A 70 70 0 0 1 165 95"
@@ -56,16 +57,16 @@ export default function GaugeWidget({
 
         {/* Center Value */}
         <div className="absolute bottom-1 flex flex-col items-center">
-          <span className="text-headline-md font-bold text-on-surface">
+          <span className={`font-bold text-on-surface ${compact ? "text-sm" : "text-headline-md"}`}>
             {safeVal.toFixed(1)}{unit}
           </span>
-          <span className="text-body-xs text-on-surface-variant">
+          <span className={compact ? "text-[9px] text-on-surface-variant" : "text-body-xs text-on-surface-variant"}>
             Meta: {target}{unit}
           </span>
         </div>
       </div>
 
-      <div className="mt-1 flex w-full max-w-[170px] justify-between text-body-xs text-on-surface-variant">
+      <div className={`flex w-full max-w-[170px] justify-between text-on-surface-variant ${compact ? "mt-0 text-[8px]" : "mt-1 text-body-xs"}`}>
         <span>{min}{unit}</span>
         <span>{max}{unit}</span>
       </div>

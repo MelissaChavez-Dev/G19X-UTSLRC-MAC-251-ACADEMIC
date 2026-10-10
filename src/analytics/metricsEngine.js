@@ -219,6 +219,39 @@ export function compute(metricKey, rows = [], context = {}, extraDatasets = {}) 
       return avgHeadcount > 0 ? Math.round((terms / avgHeadcount) * 1000) / 10 : 0;
     }
 
+    case "terminationRate": {
+      const dimension = context.dimension || "department";
+      const groups = new Map();
+      scope.forEach((employee) => {
+        const name = String(employee[dimension] || "Unknown");
+        const group = groups.get(name) || {
+          name,
+          activeStart: 0,
+          activeEnd: 0,
+          terminations: 0,
+        };
+        if (isEmployeeActiveAt(employee, bounds.startDate)) group.activeStart += 1;
+        if (isEmployeeActiveAt(employee, bounds.endDate)) group.activeEnd += 1;
+        if (isTerminatedInPeriod(employee, bounds.startDate, bounds.endDate)) group.terminations += 1;
+        groups.set(name, group);
+      });
+
+      return [...groups.values()]
+        .filter((group) => group.activeStart > 0 || group.activeEnd > 0)
+        .map((group) => {
+          const averageHeadcount = (group.activeStart + group.activeEnd) / 2;
+          return {
+            name: group.name,
+            count: averageHeadcount > 0
+              ? Math.round((group.terminations / averageHeadcount) * 1000) / 10
+              : 0,
+            terminations: group.terminations,
+            averageHeadcount,
+          };
+        })
+        .sort((a, b) => b.count - a.count);
+    }
+
     case "voluntaryRate": {
       const activeStart = scope.filter((emp) => isEmployeeActiveAt(emp, bounds.startDate)).length;
       const activeEnd = scope.filter((emp) => isEmployeeActiveAt(emp, bounds.endDate)).length;

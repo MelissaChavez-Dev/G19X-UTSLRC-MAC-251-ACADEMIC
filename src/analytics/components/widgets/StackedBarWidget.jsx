@@ -17,11 +17,12 @@ export default function StackedBarWidget({
   seriesKeys = [], // e.g. ["Regular", "Contract"] or ["Female", "Male"]
   isPercent = false,
   unit = "",
+  compact = false,
   onItemClick,
 }) {
   if (!data || data.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center text-body-sm text-on-surface-variant">
+      <div className={`flex h-full items-center justify-center text-on-surface-variant ${compact ? "min-h-0 text-xs" : "min-h-48 text-body-sm"}`}>
         Sin datos disponibles.
       </div>
     );
@@ -33,12 +34,12 @@ export default function StackedBarWidget({
     : Object.keys(data[0] || {}).filter((k) => k !== categoryKey && k !== "total");
 
   return (
-    <div className="h-full min-h-[10rem] w-full">
+    <div className={`h-full w-full ${compact ? "min-h-0" : "min-h-[10rem]"}`}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
           stackOffset={isPercent ? "expand" : "none"}
-          margin={{ top: 8, right: 12, bottom: 20, left: -10 }}
+          margin={compact ? { top: 2, right: 4, bottom: 8, left: -6 } : { top: 8, right: 12, bottom: 20, left: -10 }}
         >
           <CartesianGrid stroke="var(--outline-variant)" strokeDasharray="3 3" vertical={false} />
           <XAxis
@@ -46,11 +47,11 @@ export default function StackedBarWidget({
             interval={0}
             angle={data.length > 5 ? -25 : 0}
             textAnchor={data.length > 5 ? "end" : "middle"}
-            tick={{ fill: "var(--on-surface-variant)", fontSize: 11 }}
+            tick={{ fill: "var(--on-surface-variant)", fontSize: compact ? 10 : 11 }}
           />
           <YAxis
             tickFormatter={(val) => (isPercent ? `${Math.round(val * 100)}%` : val)}
-            tick={{ fill: "var(--on-surface-variant)", fontSize: 11 }}
+            tick={{ fill: "var(--on-surface-variant)", fontSize: compact ? 10 : 11 }}
           />
           <Tooltip
             formatter={(value, name) => [
@@ -68,8 +69,8 @@ export default function StackedBarWidget({
           />
           <Legend
             verticalAlign="top"
-            height={32}
-            wrapperStyle={{ fontSize: "12px" }}
+            height={compact ? 16 : 32}
+            wrapperStyle={{ fontSize: compact ? "10px" : "12px" }}
           />
           {keys.map((key, idx) => (
             <Bar

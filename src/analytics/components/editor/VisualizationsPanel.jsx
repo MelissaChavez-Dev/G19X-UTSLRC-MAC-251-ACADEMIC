@@ -12,7 +12,7 @@ const WIDGET_TYPES = [
   { id: "matrix", label: "Matriz de Calor 2D", icon: "grid_on" },
   { id: "sankey", label: "Flujo Sankey", icon: "account_tree" },
   { id: "gauge", label: "Medidor Radial", icon: "incomplete_circle" },
-  { id: "textBoard", label: "Summary Board", icon: "article" },
+  { id: "textBoard", label: "Resumen ejecutivo", icon: "article" },
   { id: "slicer", label: "Control Slicer", icon: "filter_alt" },
 ];
 

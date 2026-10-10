@@ -5,6 +5,7 @@ export default function TableWidget({
   columns = [], // [{ key, label, render }]
   pageSize = 10,
   searchPlaceholder = "Buscar...",
+  compact = false,
   onRowClick,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -47,7 +48,7 @@ export default function TableWidget({
   }
 
   return (
-    <div className="flex flex-col gap-2 w-full text-body-sm">
+    <div className={`flex h-full min-h-0 w-full flex-col ${compact ? "gap-1 text-[10px]" : "gap-2 text-body-sm"}`}>
       {/* Search Input */}
       <div className="flex items-center justify-between gap-2">
         <input
@@ -58,7 +59,9 @@ export default function TableWidget({
             setSearchTerm(e.target.value);
             setPage(1);
           }}
-          className="rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-1.5 text-body-sm text-on-surface outline-none focus:border-primary max-w-xs"
+          className={`max-w-xs rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface outline-none focus:border-primary ${
+            compact ? "px-2 py-1 text-[10px]" : "px-3 py-1.5 text-body-sm"
+          }`}
         />
         <span className="text-label-sm text-on-surface-variant">
           Total: {sortedData.length.toLocaleString("es-MX")} registros
@@ -66,20 +69,20 @@ export default function TableWidget({
       </div>
 
       {/* Table container */}
-      <div className="overflow-x-auto border border-[#dedede] bg-white">
-        <table className="min-w-full text-left text-body-sm">
+      <div className={`min-h-0 overflow-auto border border-[#dedede] bg-white ${compact ? "flex-1" : "overflow-x-auto"}`}>
+        <table className={`min-w-full text-left ${compact ? "text-[10px]" : "text-body-sm"}`}>
           <thead className="bg-[#edc400] text-[11px] font-semibold text-[#292929]">
             <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
                   onClick={() => handleSort(col.key)}
-                  className="cursor-pointer select-none px-3 py-2.5 hover:text-on-surface"
+                  className={`cursor-pointer select-none hover:text-on-surface ${compact ? "px-2 py-1" : "px-3 py-2.5"}`}
                 >
                   <span className="inline-flex items-center gap-1">
                     {col.label}
                     {sortConfig.key === col.key && (
-                      <span className="material-symbols-outlined text-[14px]">
+                      <span className={`material-symbols-outlined ${compact ? "text-[11px]" : "text-[14px]"}`}>
                         {sortConfig.direction === "asc" ? "arrow_upward" : "arrow_downward"}
                       </span>
                     )}
@@ -91,7 +94,7 @@ export default function TableWidget({
           <tbody>
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-3 py-6 text-center text-on-surface-variant">
+                <td colSpan={columns.length} className={compact ? "px-2 py-3 text-center text-on-surface-variant" : "px-3 py-6 text-center text-on-surface-variant"}>
                   No hay registros que coincidan.
                 </td>
               </tr>
@@ -105,7 +108,7 @@ export default function TableWidget({
                   }`}
                 >
                   {columns.map((col) => (
-                    <td key={col.key} className="px-3 py-2 text-on-surface">
+                    <td key={col.key} className={`text-on-surface ${compact ? "px-2 py-1" : "px-3 py-2"}`}>
                       {col.render ? col.render(row[col.key], row) : (row[col.key] ?? "—")}
                     </td>
                   ))}

@@ -19,7 +19,8 @@ export default function SlicerWidget({
   type = "yearButtons", // "yearButtons" | "monthButtons" | "dropdown" | "buttonList" | "slider"
   filterKey = "year",
   label = "Filtro",
-  options = [], // for dropdown or buttonList: [{ value, label }]
+  options = [],
+  layoutConfig = {}, // for dropdown or buttonList: [{ value, label }]
   min = 0,
   max = 1,
   step = 0.05,
@@ -35,13 +36,14 @@ export default function SlicerWidget({
   } = useHrFilters();
 
   const currentValue = filters[filterKey];
+  const yearColumns = Math.max(1, Math.min(8, Number(layoutConfig.columns) || 4));
 
   // 1. Year Buttons Slicer
   if (type === "yearButtons") {
     return (
       <div className="flex flex-col gap-1">
         <span className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider">{label}</span>
-        <div className="flex flex-wrap gap-1">
+        <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${yearColumns}, minmax(0, 1fr))` }}>
           {availableYears.map((year) => {
             const isActive = Number(filters.year) === year;
             return (
@@ -107,7 +109,7 @@ export default function SlicerWidget({
   if (type === "dropdown") {
     let resolvedOptions = options;
     if (filterKey === "businessUnit" && resolvedOptions.length === 0) {
-      resolvedOptions = [{ value: "", label: "Todas las unidades" }, ...availableBusinessUnits.map((bu) => ({ value: bu, label: bu }))];
+      resolvedOptions = [{ value: "", label: layoutConfig.allLabel || "Todas las unidades" }, ...availableBusinessUnits.map((bu) => ({ value: bu, label: bu }))];
     } else if (filterKey === "department" && resolvedOptions.length === 0) {
       resolvedOptions = [{ value: "", label: "Todos los departamentos" }, ...availableDepartments.map((dept) => ({ value: dept, label: dept }))];
     } else if (filterKey === "region" && resolvedOptions.length === 0) {

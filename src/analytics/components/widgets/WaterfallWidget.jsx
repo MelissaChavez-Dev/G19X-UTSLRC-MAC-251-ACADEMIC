@@ -45,24 +45,25 @@ function computeWaterfallStages(data) {
  */
 export default function WaterfallWidget({
   data = [], // [{ stage, count, isTotal, isIncrease, isDecrease }]
+  compact = false,
 }) {
   const transformed = useMemo(() => computeWaterfallStages(data), [data]);
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center text-body-sm text-on-surface-variant">
+      <div className={`flex h-full items-center justify-center text-on-surface-variant ${compact ? "min-h-0 text-xs" : "min-h-48 text-body-sm"}`}>
         Sin datos disponibles.
       </div>
     );
   }
 
   return (
-    <div className="h-full min-h-[10rem] w-full">
+    <div className={`h-full w-full ${compact ? "min-h-0" : "min-h-[10rem]"}`}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={transformed} margin={{ top: 12, right: 16, bottom: 0, left: -10 }}>
+        <BarChart data={transformed} margin={compact ? { top: 2, right: 4, bottom: 0, left: -6 } : { top: 12, right: 16, bottom: 0, left: -10 }}>
           <CartesianGrid stroke="var(--outline-variant)" strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="stage" tick={{ fill: "var(--on-surface-variant)", fontSize: 11 }} />
-          <YAxis tick={{ fill: "var(--on-surface-variant)", fontSize: 11 }} />
+          <XAxis dataKey="stage" tick={{ fill: "var(--on-surface-variant)", fontSize: compact ? 10 : 11 }} />
+          <YAxis tick={{ fill: "var(--on-surface-variant)", fontSize: compact ? 10 : 11 }} />
           <Tooltip
             formatter={(value, name, props) => [
               props.payload.displayValue > 0

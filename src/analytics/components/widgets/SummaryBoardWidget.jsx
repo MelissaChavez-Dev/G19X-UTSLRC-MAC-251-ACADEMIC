@@ -7,17 +7,20 @@ export default function SummaryBoardWidget({
   onAskGemini,
   loadingGemini = false,
   geminiExplanation = "",
+  compact = false,
 }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="flex flex-col justify-between gap-space-sm rounded-2xl border border-secondary/30 bg-surface-container-lowest p-space-md shadow-xs">
-      <header className="flex items-center justify-between gap-2 border-b border-outline-variant/40 pb-2">
+    <div className={`flex h-full min-h-0 flex-col justify-between rounded-2xl border border-secondary/30 bg-surface-container-lowest ${
+      compact ? "gap-1 overflow-auto p-2 shadow-none" : "gap-space-sm p-space-md shadow-xs"
+    }`}>
+      <header className={`flex items-center justify-between gap-2 border-b border-outline-variant/40 ${compact ? "pb-1" : "pb-2"}`}>
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-secondary" aria-hidden="true">
             auto_awesome
           </span>
-          <h3 className="text-label-lg font-semibold text-on-surface">Summary Board · Diagnóstico Sintético</h3>
+          <h3 className={`font-semibold text-on-surface ${compact ? "text-[11px]" : "text-label-lg"}`}>Resumen ejecutivo · diagnóstico sintético</h3>
         </div>
 
         {onAskGemini && (
@@ -39,7 +42,7 @@ export default function SummaryBoardWidget({
       </header>
 
       {/* Bulleted Narrative Statements */}
-      <ul className="space-y-2 py-1 text-body-sm text-on-surface leading-relaxed">
+      <ul className={`text-on-surface leading-relaxed ${compact ? "space-y-1 py-0 text-[10px]" : "space-y-2 py-1 text-body-sm"}`}>
         {statements.map((stmt, idx) => (
           <li key={idx} className="flex items-start gap-2">
             <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-secondary shrink-0" aria-hidden="true" />
@@ -53,7 +56,9 @@ export default function SummaryBoardWidget({
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
-          className="rounded-xl border border-secondary/40 bg-secondary-container/20 p-space-md text-body-sm text-on-surface"
+          className={`rounded-xl border border-secondary/40 bg-secondary-container/20 text-on-surface ${
+            compact ? "p-2 text-[10px]" : "p-space-md text-body-sm"
+          }`}
         >
           <div className="flex items-center justify-between font-semibold text-secondary mb-1">
             <span>Perspectiva Estratégica de Gemini</span>

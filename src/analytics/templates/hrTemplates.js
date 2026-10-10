@@ -4,186 +4,295 @@
  * Zero salary/financial fields.
  */
 
+/**
+ * Tema visual compartido (estilo "HR at a Glance": amarillo + grises neutros).
+ * Las páginas lo heredan; cada widget puede sobrescribir colores con options.color.
+ */
+export const HR_THEME = {
+  name: "hr-glance-yellow",
+  font: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+  colors: {
+    primary: "#F0C419",      // barras, dona (segmento principal), línea de sparkline
+    primaryFill: "#FAE6A0",  // relleno del área bajo el sparkline
+    secondary: "#A6A6A6",    // segundo segmento de dona / series secundarias
+    sectionLabel: "#E8B90E", // texto de la etiqueta de sección
+    text: "#252423",
+    textMuted: "#605E5C",
+    positive: "#2E9E44",
+    negative: "#D13438",
+    surface: "#FFFFFF",
+    canvas: "#F3F2F1",
+    headerGradient: ["#F7F7F7", "#E4E4E4"],
+  },
+  band: { radius: 2, shadow: "0 2px 6px rgba(0,0,0,.18)" },
+  kpi: { bigNumberSize: 40, plainNumberColor: "#F0C419", deltaPositive: "▲", deltaNegative: "▼" },
+  yearButtons: { activeBg: "#F0C419", border: "#C8C6C4" },
+};
+
 export const HR_TEMPLATES = [
   // ----------------------------------------------------
-  // 0. Inicio: Employee Life Cycle
+  // 0. Inicio: Ciclo de vida del empleado
   // ----------------------------------------------------
   {
     id: "page-0",
     templateKey: "employee_lifecycle",
-    title: "Inicio: Employee Life Cycle",
+    title: "Inicio: Ciclo de vida del empleado",
     description: "Navegador interactivo del ciclo de vida del talento organizacional.",
     slicers: [],
     widgets: [],
   },
 
   // ----------------------------------------------------
-  // 1. HR at a Glance
+  // 1. Recursos Humanos de un vistazo
   // ----------------------------------------------------
   {
     id: "page-1",
     templateKey: "hr_at_a_glance",
-    title: "1. HR at a Glance",
+    title: "1. Recursos Humanos de un vistazo",
     description: "Visión ejecutiva integral de colaboradores, diversidad, contratación y bajas.",
-    slicers: [
-      { type: "yearButtons", filterKey: "year", label: "Año" },
-      { type: "dropdown", filterKey: "businessUnit", label: "Unidad de Negocio" },
+
+    // Cabecera estilo Power BI: logo + título, filtros a la derecha y navegación.
+    header: {
+      title: "Recursos Humanos de un vistazo",
+      logo: "hr-monogram",
+      navigation: { home: true, next: true },
+    },
+
+    // Esta página usa una cuadrícula de 24 columnas (el resto de páginas sigue en 12).
+    grid: { columns: 24, rowHeight: 32, gap: 8 },
+
+    // Una banda blanca con sombra por sección (Colaboradores / Diversidad / Contratación / Bajas).
+    bands: [
+      { y: 0, h: 3 },
+      { y: 3, h: 3 },
+      { y: 6, h: 3 },
+      { y: 9, h: 3 },
     ],
+
+    slicers: [
+      {
+        type: "yearButtons",
+        filterKey: "year",
+        label: "Año",
+        layoutConfig: { columns: 4, years: [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024], defaultValue: "latest" },
+      },
+      { type: "dropdown", filterKey: "businessUnit", label: "Unidad de Negocio", layoutConfig: { allLabel: "Todas" } },
+    ],
+
     widgets: [
-      // Fila 1: Employees
+      // ───────────── Banda 1: Colaboradores ─────────────
+      {
+        id: "w1-s1",
+        type: "sectionLabel",
+        title: "Colaboradores",
+        options: { icon: "groups", iconStyle: "silhouette" },
+        layout: { x: 0, y: 0, w: 3, h: 3 },
+      },
       {
         id: "w1-1",
         type: "kpi",
-        title: "Head Count",
+        title: "Total de colaboradores",
         measure: "headCount",
-        options: { comparisonMeasure: "yoyHeadcount", icon: "groups", unit: "colab." },
-        layout: { x: 0, y: 0, w: 3, h: 2 },
-      },
-      {
-        id: "w1-2",
-        type: "kpi",
-        title: "Colaboradores Regulares",
-        measure: "headCount",
-        filters: { hireType: "Regular" },
-        options: { icon: "badge", unit: "reg." },
-        layout: { x: 3, y: 0, w: 3, h: 2 },
-      },
-      {
-        id: "w1-3",
-        type: "kpi",
-        title: "Antigüedad Promedio",
-        measure: "avgTenure",
-        options: { icon: "history", unit: "años" },
-        layout: { x: 6, y: 0, w: 3, h: 2 },
+        options: {
+          variant: "sparkline",
+          sparkline: { measure: "monthlyTrend", key: "headCount", style: "area" },
+          comparisonMeasure: "yoyHeadcount",
+          unit: "colab.",
+        },
+        layout: { x: 3, y: 0, w: 5, h: 3 },
       },
       {
         id: "w1-4",
         type: "donut",
-        title: "Tipo de Contratación",
+        title: "Tipo de contratación",
         measure: "distribution",
         dimension: "hireType",
-        options: { unit: "emp" },
-        layout: { x: 9, y: 0, w: 3, h: 2 },
+        options: { unit: "colab.", labelMode: "outside", showValues: true },
+        layout: { x: 8, y: 0, w: 5, h: 3 },
+      },
+      {
+        id: "w1-17",
+        type: "bar",
+        title: "Colaboradores por nivel organizacional",
+        measure: "distribution",
+        dimension: "orgLevel",
+        options: { unit: "colab.", orientation: "vertical", showValues: "top", sort: "valueDesc", hideAxis: true },
+        layout: { x: 13, y: 0, w: 5, h: 3 },
+      },
+      {
+        id: "w1-2",
+        type: "kpi",
+        title: "Colaboradores regulares",
+        measure: "headCount",
+        filters: { hireType: "Regular" },
+        options: { variant: "plain", unit: "reg." },
+        layout: { x: 18, y: 0, w: 3, h: 3 },
+      },
+      {
+        id: "w1-3",
+        type: "kpi",
+        title: "Antigüedad promedio (años)",
+        measure: "avgTenure",
+        options: { variant: "plain", unit: "años", decimals: 2 },
+        layout: { x: 21, y: 0, w: 3, h: 3 },
       },
 
-      // Fila 2: Diversity
+      // ───────────── Banda 2: Diversidad ─────────────
+      {
+        id: "w1-s2",
+        type: "sectionLabel",
+        title: "Diversidad",
+        options: { icon: "diversity_3", iconStyle: "badge" },
+        layout: { x: 0, y: 3, w: 3, h: 3 },
+      },
       {
         id: "w1-5",
         type: "kpi",
-        title: "% Mujeres Líderes",
+        title: "% Mujeres líderes",
         measure: "femaleLeadersPct",
-        options: { icon: "female", unit: "%" },
-        layout: { x: 0, y: 2, w: 3, h: 2 },
-      },
-      {
-        id: "w1-6",
-        type: "kpi",
-        title: "Edad Promedio",
-        measure: "avgAge",
-        options: { icon: "cake", unit: "años" },
-        layout: { x: 3, y: 2, w: 3, h: 2 },
+        options: {
+          variant: "sparkline",
+          sparkline: { measure: "monthlyFemaleLeadersTrend", key: "value", style: "area" },
+          unit: "%",
+          decimals: 2,
+        },
+        layout: { x: 3, y: 3, w: 5, h: 3 },
       },
       {
         id: "w1-7",
         type: "donut",
-        title: "Distribución por Género",
+        title: "Colaboradores por género",
         measure: "distribution",
         dimension: "gender",
-        options: { unit: "colab." },
-        layout: { x: 6, y: 2, w: 3, h: 2 },
+        options: { unit: "colab.", labelMode: "outside", showValues: true },
+        layout: { x: 8, y: 3, w: 5, h: 3 },
       },
       {
         id: "w1-8",
         type: "bar",
-        title: "Rango de Edad",
+        title: "Colaboradores por rango de edad",
         measure: "distribution",
         dimension: "ageBand",
-        options: { unit: "colab." },
-        layout: { x: 9, y: 2, w: 3, h: 2 },
+        options: { unit: "colab.", orientation: "vertical", showValues: "top", sort: "valueDesc", hideAxis: true },
+        layout: { x: 13, y: 3, w: 5, h: 3 },
+      },
+      {
+        id: "w1-6",
+        type: "kpi",
+        title: "Edad promedio de colaboradores",
+        measure: "avgAge",
+        options: { variant: "plain", unit: "años", decimals: 2 },
+        layout: { x: 18, y: 3, w: 6, h: 3 },
       },
 
-      // Fila 3: Hiring
+      // ───────────── Banda 3: Contratación ─────────────
+      {
+        id: "w1-s3",
+        type: "sectionLabel",
+        title: "Contratación",
+        options: { icon: "person_search", iconStyle: "silhouette" },
+        layout: { x: 0, y: 6, w: 3, h: 3 },
+      },
       {
         id: "w1-9",
         type: "kpi",
-        title: "Nuevas Contrataciones",
+        title: "Nuevas contrataciones",
         measure: "hires",
-        options: { comparisonMeasure: "yoyHires", icon: "person_add", unit: "altas" },
-        layout: { x: 0, y: 4, w: 3, h: 2 },
-      },
-      {
-        id: "w1-10",
-        type: "bar",
-        title: "Contrataciones por Edad",
-        measure: "distribution",
-        dimension: "ageBand",
-        options: { unit: "altas", population: "hires" },
-        layout: { x: 3, y: 4, w: 3, h: 2 },
+        options: {
+          variant: "sparkline",
+          sparkline: { measure: "monthlyTrend", key: "hires", style: "area" },
+          comparisonMeasure: "yoyHires",
+          unit: "altas",
+        },
+        layout: { x: 3, y: 6, w: 5, h: 3 },
       },
       {
         id: "w1-11",
         type: "donut",
-        title: "Contrataciones por Contrato",
+        title: "Contrataciones por tipo de contrato",
         measure: "distribution",
         dimension: "hireType",
-        options: { unit: "altas", population: "hires" },
-        layout: { x: 6, y: 4, w: 3, h: 2 },
+        options: { unit: "altas", population: "hires", labelMode: "outside", showValues: true },
+        layout: { x: 8, y: 6, w: 5, h: 3 },
+      },
+      {
+        id: "w1-10",
+        type: "bar",
+        title: "Contrataciones por rango de edad",
+        measure: "distribution",
+        dimension: "ageBand",
+        options: { unit: "altas", population: "hires", orientation: "vertical", showValues: "top", sort: "valueDesc", hideAxis: true },
+        layout: { x: 13, y: 6, w: 6, h: 3 },
       },
       {
         id: "w1-12",
         type: "donut",
-        title: "Contrataciones por Género",
+        title: "Contrataciones por género",
         measure: "distribution",
         dimension: "gender",
-        options: { unit: "altas", population: "hires" },
-        layout: { x: 9, y: 4, w: 3, h: 2 },
+        options: { unit: "altas", population: "hires", labelMode: "outside", showValues: true },
+        layout: { x: 19, y: 6, w: 5, h: 3 },
       },
 
-      // Fila 4: Terminations
+      // ───────────── Banda 4: Bajas ─────────────
+      {
+        id: "w1-s4",
+        type: "sectionLabel",
+        title: "Bajas",
+        options: { icon: "person_remove", iconStyle: "silhouette" },
+        layout: { x: 0, y: 9, w: 3, h: 3 },
+      },
       {
         id: "w1-13",
         type: "kpi",
-        title: "Bajas del Ejercicio",
+        title: "Bajas del ejercicio",
         measure: "terminations",
-        options: { comparisonMeasure: "yoyTerminations", icon: "person_remove", unit: "bajas", invertDelta: true },
-        layout: { x: 0, y: 6, w: 3, h: 2 },
-      },
-      {
-        id: "w1-14",
-        type: "kpi",
-        title: "Tasa de Salida (Exit Rate)",
-        measure: "exitRate",
-        options: { icon: "logout", unit: "%", invertDelta: true },
-        layout: { x: 3, y: 6, w: 3, h: 2 },
+        options: {
+          variant: "sparkline",
+          sparkline: { measure: "monthlyTrend", key: "terminations", style: "area" },
+          comparisonMeasure: "yoyTerminations",
+          unit: "bajas",
+          invertDelta: true,
+        },
+        layout: { x: 3, y: 9, w: 5, h: 3 },
       },
       {
         id: "w1-15",
         type: "donut",
-        title: "Categoría de Baja",
+        title: "Bajas por categoría",
         measure: "distribution",
         dimension: "terminationCategory",
-        options: { unit: "bajas", population: "terminations" },
-        layout: { x: 6, y: 6, w: 3, h: 2 },
+        options: { unit: "bajas", population: "terminations", labelMode: "outside", showValues: true },
+        layout: { x: 8, y: 9, w: 5, h: 3 },
+      },
+      {
+        id: "w1-18",
+        type: "bar",
+        title: "Tasa de baja por nivel organizacional",
+        measure: "terminationRate", // medida nueva: bajas del grupo / plantilla del grupo
+        dimension: "orgLevel",
+        options: { unit: "%", decimals: 2, orientation: "vertical", showValues: "top", sort: "valueDesc", hideAxis: true },
+        layout: { x: 13, y: 9, w: 5, h: 3 },
       },
       {
         id: "w1-16",
         type: "bar",
-        title: "Bajas por Antigüedad",
-        measure: "distribution",
+        title: "Tasa de baja por antigüedad",
+        measure: "terminationRate",
         dimension: "tenureBand",
-        options: { unit: "bajas", population: "terminations" },
-        layout: { x: 9, y: 6, w: 3, h: 2 },
+        options: { unit: "%", decimals: 2, orientation: "vertical", showValues: "top", sort: "natural", hideAxis: true },
+        layout: { x: 18, y: 9, w: 6, h: 3 },
       },
     ],
   },
 
   // ----------------------------------------------------
-  // 2. Demographic Analysis
+  // 2. Análisis demográfico
   // ----------------------------------------------------
   {
     id: "page-2",
     templateKey: "demographic_analysis",
-    title: "2. Demographic Analysis",
+    title: "2. Análisis demográfico",
     description: "Análisis demográfico de la plantilla activa sin datos salariales.",
     slicers: [
       { type: "yearButtons", filterKey: "year", label: "Año" },
@@ -193,7 +302,7 @@ export const HR_TEMPLATES = [
       {
         id: "w2-1",
         type: "kpi",
-        title: "Head Count",
+        title: "Total de colaboradores",
         measure: "headCount",
         options: { icon: "groups", unit: "colab." },
         layout: { x: 0, y: 0, w: 3, h: 2 },
@@ -201,7 +310,7 @@ export const HR_TEMPLATES = [
       {
         id: "w2-2",
         type: "kpi",
-        title: "Nuevos Ingresos (Joiners)",
+        title: "Nuevos ingresos",
         measure: "joiners",
         options: { icon: "person_add", unit: "altas" },
         layout: { x: 3, y: 0, w: 3, h: 2 },
@@ -209,7 +318,7 @@ export const HR_TEMPLATES = [
       {
         id: "w2-3",
         type: "kpi",
-        title: "Bajas (Terminations)",
+        title: "Bajas",
         measure: "terminations",
         options: { icon: "person_remove", unit: "bajas", invertDelta: true },
         layout: { x: 6, y: 0, w: 3, h: 2 },
@@ -217,7 +326,7 @@ export const HR_TEMPLATES = [
       {
         id: "w2-4",
         type: "kpi",
-        title: "% Mujeres High-Level",
+        title: "% de mujeres en puestos directivos",
         measure: "femaleLeadersPct",
         options: { icon: "female", unit: "%" },
         layout: { x: 9, y: 0, w: 3, h: 2 },
@@ -225,7 +334,7 @@ export const HR_TEMPLATES = [
       {
         id: "w2-5",
         type: "donut",
-        title: "Contratación (Hire Type)",
+        title: "Tipo de contratación",
         measure: "distribution",
         dimension: "hireType",
         options: { unit: "colab." },
@@ -251,7 +360,7 @@ export const HR_TEMPLATES = [
       {
         id: "w2-8",
         type: "bar",
-        title: "Distribución por Antigüedad (Tenure)",
+        title: "Distribución por antigüedad",
         measure: "distribution",
         dimension: "tenureBand",
         options: { unit: "colab." },
@@ -260,7 +369,7 @@ export const HR_TEMPLATES = [
       {
         id: "w2-9",
         type: "line",
-        title: "Evolución Mensual de Dotación (CY vs LY)",
+        title: "Evolución mensual de la plantilla (año actual vs. anterior)",
         measure: "monthlyTrend",
         options: { currentKey: "headCount", currentLabel: "Año Actual", priorKey: "headCountLY", priorLabel: "Año Anterior (LY)", unit: "colab." },
         layout: { x: 4, y: 5, w: 8, h: 3 },
@@ -269,12 +378,12 @@ export const HR_TEMPLATES = [
   },
 
   // ----------------------------------------------------
-  // 3. Diversity Analysis
+  // 3. Análisis de diversidad
   // ----------------------------------------------------
   {
     id: "page-3",
     templateKey: "diversity_analysis",
-    title: "3. Diversity Analysis",
+    title: "3. Análisis de diversidad",
     description: "Equidad de género, generaciones y perfiles educativos de la organización.",
     slicers: [
       { type: "yearButtons", filterKey: "year", label: "Año" },
@@ -334,12 +443,12 @@ export const HR_TEMPLATES = [
   },
 
   // ----------------------------------------------------
-  // 4. Employee Profile (Interactive dedicated profile viewer)
+  // 4. Perfil del empleado (vista interactiva)
   // ----------------------------------------------------
   {
     id: "page-4",
     templateKey: "employee_profile",
-    title: "4. Employee Profile",
+    title: "4. Perfil del empleado",
     description: "Ficha del colaborador con datos personales, laborales, licencias y evaluación (sin salario).",
     slicers: [
       { type: "dropdown", filterKey: "department", label: "Departamento" },
@@ -349,12 +458,12 @@ export const HR_TEMPLATES = [
   },
 
   // ----------------------------------------------------
-  // 5. Historical & Trends
+  // 5. Historial y tendencias
   // ----------------------------------------------------
   {
     id: "page-5",
     templateKey: "historical_trends",
-    title: "5. Historical & Trends",
+    title: "5. Historial y tendencias",
     description: "Evolución histórica multianual, cascada MoM y dinámicas de rotación.",
     slicers: [
       { type: "yearButtons", filterKey: "year", label: "Año" },
@@ -364,7 +473,7 @@ export const HR_TEMPLATES = [
       {
         id: "w5-1",
         type: "kpi",
-        title: "Head Count Activo",
+        title: "Plantilla activa",
         measure: "headCount",
         options: { comparisonMeasure: "yoyHeadcount", icon: "groups", unit: "colab." },
         layout: { x: 0, y: 0, w: 3, h: 2 },
@@ -380,14 +489,14 @@ export const HR_TEMPLATES = [
       {
         id: "w5-3",
         type: "waterfall",
-        title: "Cascada de Movimiento MoM (Flujo Neto)",
+        title: "Movimiento mensual de la plantilla (flujo neto)",
         measure: "waterfall",
         layout: { x: 6, y: 0, w: 6, h: 2 },
       },
       {
         id: "w5-4",
         type: "line",
-        title: "Dotación Mensual (CY vs LY)",
+        title: "Plantilla mensual (año actual vs. anterior)",
         measure: "monthlyTrend",
         options: { currentKey: "headCount", currentLabel: "Actual", priorKey: "headCountLY", priorLabel: "Año Anterior", unit: "colab." },
         layout: { x: 0, y: 2, w: 6, h: 3 },
@@ -395,7 +504,7 @@ export const HR_TEMPLATES = [
       {
         id: "w5-5",
         type: "line",
-        title: "Bajas Mensuales (CY vs LY)",
+        title: "Bajas mensuales (año actual vs. anterior)",
         measure: "monthlyTrend",
         options: { currentKey: "terminations", currentLabel: "Bajas CY", priorKey: "terminationsLY", priorLabel: "Bajas LY", currentColor: "#355c4b", priorColor: "#9b9a91", unit: "bajas" },
         layout: { x: 6, y: 2, w: 6, h: 3 },
@@ -420,12 +529,12 @@ export const HR_TEMPLATES = [
   },
 
   // ----------------------------------------------------
-  // 6. New Starters
+  // 6. Nuevas contrataciones
   // ----------------------------------------------------
   {
     id: "page-6",
     templateKey: "new_starters",
-    title: "6. New Starters",
+    title: "6. Nuevas contrataciones",
     description: "Incorporaciones recientes, velocidad de contratación e inserción por área.",
     slicers: [
       { type: "yearButtons", filterKey: "year", label: "Año" },
@@ -436,7 +545,7 @@ export const HR_TEMPLATES = [
       {
         id: "w6-1",
         type: "kpi",
-        title: "Nuevos Ingresos (Joiners)",
+        title: "Nuevos ingresos",
         measure: "joiners",
         options: { comparisonMeasure: "yoyHires", icon: "person_add", unit: "altas" },
         layout: { x: 0, y: 0, w: 3, h: 2 },
@@ -444,7 +553,7 @@ export const HR_TEMPLATES = [
       {
         id: "w6-3",
         type: "gauge",
-        title: "% Mujeres Líderes en Joiners",
+        title: "% de mujeres entre nuevos ingresos",
         measure: "femaleLeadersJoinersPct",
         options: { target: 50, gaugeTitle: "Paridad en Liderazgo" },
         layout: { x: 3, y: 0, w: 3, h: 2 },
@@ -452,7 +561,7 @@ export const HR_TEMPLATES = [
       {
         id: "w6-9",
         type: "kpi",
-        title: "Joiners Promedio por Día Hábil",
+        title: "Promedio de nuevos ingresos por día hábil",
         measure: "averageJoinersPerDay",
         options: { icon: "today", unit: "altas/día" },
         layout: { x: 6, y: 0, w: 3, h: 2 },
@@ -468,7 +577,7 @@ export const HR_TEMPLATES = [
       {
         id: "w6-4",
         type: "donut",
-        title: "Joiners por Género",
+        title: "Nuevos ingresos por género",
         measure: "distribution",
         dimension: "gender",
         options: { unit: "altas", population: "hires" },
@@ -477,7 +586,7 @@ export const HR_TEMPLATES = [
       {
         id: "w6-5",
         type: "line",
-        title: "Ingresos en 12 Meses Móviles (Rolling 12M)",
+        title: "Ingresos en 12 meses móviles",
         measure: "rolling12Joiners",
         options: { currentKey: "joiners", currentLabel: "Nuevos Ingresos", unit: "altas" },
         layout: { x: 3, y: 2, w: 5, h: 3 },
@@ -493,7 +602,7 @@ export const HR_TEMPLATES = [
       {
         id: "w6-7",
         type: "butterfly",
-        title: "Joiners: Nivel Organizacional × Género",
+        title: "Nuevos ingresos: nivel organizacional × género",
         measure: "crossMatrix",
         options: { dimensionA: "orgLevel", leftKey: "Female", rightKey: "Male", leftLabel: "Femenino", rightLabel: "Masculino", population: "hires" },
         layout: { x: 0, y: 5, w: 6, h: 3 },
@@ -501,7 +610,7 @@ export const HR_TEMPLATES = [
       {
         id: "w6-8",
         type: "bar",
-        title: "Joiners por Región",
+        title: "Nuevos ingresos por región",
         measure: "distribution",
         dimension: "region",
         options: { unit: "altas", population: "hires" },
@@ -511,12 +620,12 @@ export const HR_TEMPLATES = [
   },
 
   // ----------------------------------------------------
-  // 7. Expectation Rating
+  // 7. Evaluación del desempeño
   // ----------------------------------------------------
   {
     id: "page-7",
     templateKey: "expectation_rating",
-    title: "7. Expectation Rating",
+    title: "7. Evaluación del desempeño",
     description: "Evaluación de desempeño organizacional y su correlación con la permanencia.",
     slicers: [
       {
@@ -536,7 +645,7 @@ export const HR_TEMPLATES = [
       {
         id: "w7-1",
         type: "kpi",
-        title: "Head Count en Evaluación",
+        title: "Colaboradores evaluados",
         measure: "headCount",
         options: { icon: "rate_review", unit: "colab." },
         layout: { x: 0, y: 0, w: 3, h: 2 },
@@ -576,7 +685,7 @@ export const HR_TEMPLATES = [
       {
         id: "w7-6",
         type: "stackedBar",
-        title: "Distribución 100% por Rating y Género",
+        title: "Distribución porcentual por evaluación y género",
         measure: "crossMatrix",
         options: { dimensionA: "performanceRating", seriesKeys: ["Female", "Male", "Other"], isPercent: true },
         layout: { x: 6, y: 2, w: 6, h: 3 },
@@ -584,7 +693,7 @@ export const HR_TEMPLATES = [
       {
         id: "w7-7",
         type: "matrix",
-        title: "Matriz Desempeño × Rango de Edad / Experiencia",
+        title: "Matriz de desempeño por edad y antigüedad",
         measure: "crossMatrix",
         options: {
           dimensionA: "performanceRating",
@@ -601,12 +710,12 @@ export const HR_TEMPLATES = [
   },
 
   // ----------------------------------------------------
-  // 8. Absenteeism
+  // 8. Ausentismo
   // ----------------------------------------------------
   {
     id: "page-8",
     templateKey: "absenteeism",
-    title: "8. Absenteeism",
+    title: "8. Ausentismo",
     description: "Monitoreo del ausentismo laboral por turnos, departamentos y niveles.",
     slicers: [
       { type: "yearButtons", filterKey: "year", label: "Año" },
@@ -634,7 +743,7 @@ export const HR_TEMPLATES = [
       {
         id: "w8-3",
         type: "kpi",
-        title: "Tasa de Salida (Exit Rate)",
+        title: "Tasa de salida",
         measure: "exitRate",
         options: { icon: "logout", unit: "%", invertDelta: true },
         layout: { x: 8, y: 0, w: 4, h: 2 },
@@ -677,12 +786,12 @@ export const HR_TEMPLATES = [
   },
 
   // ----------------------------------------------------
-  // 9. Department Leave Analysis
+  // 9. Análisis de licencias por departamento
   // ----------------------------------------------------
   {
     id: "page-9",
     templateKey: "department_leave_analysis",
-    title: "9. Department Leave Analysis",
+    title: "9. Análisis de licencias por departamento",
     description: "Comportamiento de licencias anuales y por enfermedad (sin cobro monetario).",
     slicers: [
       { type: "yearButtons", filterKey: "year", label: "Año" },
@@ -745,12 +854,12 @@ export const HR_TEMPLATES = [
   },
 
   // ----------------------------------------------------
-  // 10. Termination Profile
+  // 10. Perfil de bajas
   // ----------------------------------------------------
   {
     id: "page-10",
     templateKey: "termination_profile",
-    title: "10. Termination Profile",
+    title: "10. Perfil de bajas",
     description: "Perfil de bajas, causales principales y flujo Sankey hacia motivos de salida.",
     slicers: [
       { type: "yearButtons", filterKey: "year", label: "Año" },
@@ -769,7 +878,7 @@ export const HR_TEMPLATES = [
       {
         id: "w10-2",
         type: "kpi",
-        title: "Tasa de Salida (Exit Rate)",
+        title: "Tasa de salida",
         measure: "exitRate",
         options: { icon: "logout", unit: "%", invertDelta: true },
         layout: { x: 4, y: 0, w: 4, h: 2 },
@@ -812,7 +921,7 @@ export const HR_TEMPLATES = [
       {
         id: "w10-7",
         type: "sankey",
-        title: "Flujo Sankey: Unidad de Negocio → Categoría de Baja",
+        title: "Flujo: unidad de negocio → categoría de baja",
         measure: "sankeyData",
         options: {
           dimensionA: "businessUnit",
@@ -827,12 +936,12 @@ export const HR_TEMPLATES = [
   },
 
   // ----------------------------------------------------
-  // 11. Attrition Analysis
+  // 11. Análisis de rotación
   // ----------------------------------------------------
   {
     id: "page-11",
     templateKey: "attrition_analysis",
-    title: "11. Attrition Analysis",
+    title: "11. Análisis de rotación",
     description: "Desglose pormenorizado de atrición voluntaria, involuntaria y tendencias.",
     slicers: [
       { type: "yearButtons", filterKey: "year", label: "Año" },
@@ -843,7 +952,7 @@ export const HR_TEMPLATES = [
       {
         id: "w11-1",
         type: "kpi",
-        title: "Exit Rate",
+        title: "Tasa de salida",
         measure: "exitRate",
         options: { icon: "trending_down", unit: "%", invertDelta: true },
         layout: { x: 0, y: 0, w: 3, h: 2 },
@@ -851,7 +960,7 @@ export const HR_TEMPLATES = [
       {
         id: "w11-2",
         type: "kpi",
-        title: "Voluntary Rate",
+        title: "Tasa de bajas voluntarias",
         measure: "voluntaryRate",
         options: { icon: "volunteer_activism", unit: "%", invertDelta: true },
         layout: { x: 3, y: 0, w: 3, h: 2 },
@@ -859,7 +968,7 @@ export const HR_TEMPLATES = [
       {
         id: "w11-3",
         type: "kpi",
-        title: "Involuntary Rate",
+        title: "Tasa de bajas involuntarias",
         measure: "involuntaryRate",
         options: { icon: "gavel", unit: "%", invertDelta: true },
         layout: { x: 6, y: 0, w: 3, h: 2 },
@@ -867,7 +976,7 @@ export const HR_TEMPLATES = [
       {
         id: "w11-4",
         type: "kpi",
-        title: "Regular Employees Rate",
+        title: "Tasa de colaboradores regulares",
         measure: "regularEmployeesRate",
         options: { icon: "badge", unit: "%", invertDelta: true },
         layout: { x: 9, y: 0, w: 3, h: 2 },
@@ -875,7 +984,7 @@ export const HR_TEMPLATES = [
       {
         id: "w11-5",
         type: "line",
-        title: "Tendencia Mensual de Atrición (CY vs LY)",
+        title: "Tendencia mensual de rotación (año actual vs. anterior)",
         measure: "monthlyTrend",
         options: { currentKey: "attritionRate", currentLabel: "Atrición CY", priorKey: "attritionRateLY", priorLabel: "Atrición LY", currentColor: "#c77968", priorColor: "#9b9a91", unit: "%" },
         layout: { x: 0, y: 2, w: 6, h: 3 },
@@ -901,12 +1010,12 @@ export const HR_TEMPLATES = [
   },
 
   // ----------------------------------------------------
-  // 12. Attrition Prediction (Interactive predictive table)
+  // 12. Predicción de rotación (tabla interactiva)
   // ----------------------------------------------------
   {
     id: "page-12",
     templateKey: "attrition_prediction",
-    title: "12. Attrition Prediction",
+    title: "12. Predicción de rotación",
     description: "Modelo predictivo de probabilidad de fuga de talento y alertas de riesgo.",
     slicers: [
       { type: "dropdown", filterKey: "businessUnit", label: "Unidad de Negocio" },
@@ -917,13 +1026,13 @@ export const HR_TEMPLATES = [
   },
 
   // ----------------------------------------------------
-  // 13. Department Profile
+  // 13. Perfil del departamento
   // ----------------------------------------------------
   {
     id: "page-13",
     templateKey: "department_profile",
-    title: "13. Department Profile",
-    description: "Radiografía profunda por departamento, flujo Sankey y Summary Board con IA.",
+    title: "13. Perfil del departamento",
+    description: "Radiografía detallada por departamento, flujo entre áreas y resumen ejecutivo con IA.",
     slicers: [
       { type: "dropdown", filterKey: "department", label: "Departamento" },
       { type: "dropdown", filterKey: "location", label: "Ubicación" },
@@ -932,7 +1041,7 @@ export const HR_TEMPLATES = [
       {
         id: "w13-1",
         type: "kpi",
-        title: "Currently Employed",
+        title: "Colaboradores activos",
         measure: "headCount",
         options: { icon: "groups", unit: "colab." },
         layout: { x: 0, y: 0, w: 4, h: 2 },
@@ -940,7 +1049,7 @@ export const HR_TEMPLATES = [
       {
         id: "w13-2",
         type: "kpi",
-        title: "Nuevos Ingresos (Joiners)",
+        title: "Nuevos ingresos",
         measure: "joiners",
         options: { icon: "person_add", unit: "altas" },
         layout: { x: 4, y: 0, w: 4, h: 2 },
@@ -964,7 +1073,7 @@ export const HR_TEMPLATES = [
       {
         id: "w13-5",
         type: "sankey",
-        title: "Flujo Sankey: Generación → Categoría de Baja",
+        title: "Flujo: generación → categoría de baja",
         measure: "sankeyData",
         options: {
           dimensionA: "generation",
@@ -978,7 +1087,7 @@ export const HR_TEMPLATES = [
       {
         id: "w13-6",
         type: "textBoard",
-        title: "Summary Board",
+        title: "Resumen ejecutivo",
         measure: "summaryBoardNarrative",
         options: {
           note: "La atrición considera el comportamiento acumulado del ejercicio fiscal anterior. No contiene indicadores salariales.",

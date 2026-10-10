@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 export default function KpiWidget({
   title,
   value,
+  compact = false,
   unit = "",
   comparisonValue = null,
   comparisonLabel = "vs año anterior",
@@ -29,19 +30,21 @@ export default function KpiWidget({
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex h-full flex-col justify-between rounded-2xl border border-outline-variant/50 bg-surface-container-lowest p-space-md shadow-xs"
+      className={`flex h-full flex-col justify-between rounded-xl border border-outline-variant/50 bg-surface-container-lowest ${
+        compact ? "p-2 shadow-none" : "p-space-md shadow-xs"
+      }`}
     >
       <header className="flex items-center justify-between gap-2">
-        <span className="text-label-md font-medium text-on-surface-variant truncate">{title}</span>
+        <span className={`font-medium text-on-surface-variant truncate ${compact ? "text-xs leading-tight" : "text-label-md"}`}>{title}</span>
         {icon && (
-          <span className="material-symbols-outlined text-[20px] text-primary shrink-0" aria-hidden="true">
+          <span className={`material-symbols-outlined text-primary shrink-0 ${compact ? "text-[20px]" : "text-[20px]"}`} aria-hidden="true">
             {icon}
           </span>
         )}
       </header>
 
-      <div className="my-space-xs flex items-baseline gap-2">
-        <span className="text-headline-lg font-semibold tracking-tight text-primary">
+      <div className={`flex items-baseline gap-2 ${compact ? "my-0.5" : "my-space-xs"}`}>
+        <span className={`font-semibold tracking-tight ${compact ? "text-[34px] leading-none text-[#c5a000]" : "text-headline-lg text-primary"}`}>
           {formattedValue}
         </span>
         {badgeText && (
@@ -51,16 +54,18 @@ export default function KpiWidget({
         )}
       </div>
 
-      <footer className="flex items-center gap-2 text-label-sm">
+      <footer className={`flex items-center gap-1 ${compact ? "text-[12px]" : "text-label-sm"}`}>
         {deltaPct !== null ? (
           <span
-            className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 font-semibold ${
+            className={`inline-flex items-center gap-0.5 rounded-full font-semibold ${
+              compact ? "px-1 py-0" : "px-2 py-0.5"
+            } ${
               isPositive
                 ? "bg-primary-container text-on-primary-container"
                 : "bg-error-container text-on-error-container"
             }`}
           >
-            <span className="material-symbols-outlined text-[14px]" aria-hidden="true">
+            <span className={`material-symbols-outlined ${compact ? "text-[14px]" : "text-[14px]"}`} aria-hidden="true">
               {deltaPct >= 0 ? "trending_up" : "trending_down"}
             </span>
             {deltaPct >= 0 ? `+${deltaPct}%` : `${deltaPct}%`}

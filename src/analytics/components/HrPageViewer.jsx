@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
 import GenericWidgetRenderer from "./GenericWidgetRenderer";
@@ -121,9 +122,13 @@ export default function HrPageViewer({
 }) {
   const { filters, clearAllFilters } = useHrFilters();
   const reportRef = useRef(null);
+  const canvasRef = useRef(null);
   const [capturing, setCapturing] = useState(false);
   const [captureError, setCaptureError] = useState("");
   const [drillEmployee, setDrillEmployee] = useState(null);
+  const [isNarrowCanvas, setIsNarrowCanvas] = useState(false);
+  const [pageMenuOpen, setPageMenuOpen] = useState(false);
+  const pageMenuRef = useRef(null);
 
   // Edit Mode state
   const [selectedWidgetId, setSelectedWidgetId] = useState(null);
@@ -140,6 +145,12 @@ export default function HrPageViewer({
   const currentPage = pages[currentPageIndex] || pages[0] || { title: "Página Principal", widgets: [], slicers: [] };
   const widgets = currentPage.widgets || [];
   const slicers = currentPage.slicers || [];
+  const isCompactReport = currentPageIndex > 0 || Boolean(currentPage.grid);
+  const isDenseLayout = Boolean(currentPage.grid);
+  const configuredColumns = Math.max(1, Math.min(24, Number(currentPage.grid?.columns) || 12));
+  const gridColumns = isNarrowCanvas && configuredColumns > 12 ? 12 : configuredColumns;
+  const gridRowHeight = isNarrowCanvas ? 56 : Number(currentPage.grid?.rowHeight) || 112;
+  const gridGap = Number(currentPage.grid?.gap ?? 12);
   const filterSummary = [
     `Año: ${filters.year ?? "—"}`,
     filters.month ? `Mes: ${filters.month}` : null,
@@ -150,6 +161,35 @@ export default function HrPageViewer({
     filters.performanceRating ? `Desempeño: ${filters.performanceRating}` : null,
     filters.crossFilter ? `${filters.crossFilter.dimension}: ${filters.crossFilter.value}` : null,
   ].filter(Boolean);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || configuredColumns <= 12 || typeof ResizeObserver === "undefined") {
+      setIsNarrowCanvas(false);
+      return undefined;
+    }
+    const observer = new ResizeObserver(([entry]) => {
+      setIsNarrowCanvas(entry.contentRect.width < 960);
+    });
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, [currentPage.id, configuredColumns]);
+
+  useEffect(() => {
+    if (!pageMenuOpen) return undefined;
+    const closeOnOutsideClick = (event) => {
+      if (!pageMenuRef.current?.contains(event.target)) setPageMenuOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setPageMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [pageMenuOpen]);
 
   const selectedWidget = widgets.find((w) => w.id === selectedWidgetId) || null;
 
@@ -401,11 +441,15 @@ export default function HrPageViewer({
   );
 
   return (
-    <div className={`flex flex-col gap-space-md w-full ${isEditMode ? "xl:pr-[21rem] transition-all" : ""}`}>
+    <div className={`flex w-full flex-col ${
+      isDenseLayout ? "gap-2" : isCompactReport ? "gap-space-sm" : "gap-space-md"
+    } ${isEditMode ? "xl:pr-[21rem] transition-all" : ""}`}>
       {/* Top Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-space-sm rounded-3xl border border-outline-variant/50 border-b-2 border-b-secondary bg-surface-container-lowest px-space-lg py-space-md shadow-xs">
+      {!isCompactReport && <div className={`flex flex-wrap items-center justify-between gap-space-sm border border-outline-variant/50 border-b-2 border-b-secondary bg-surface-container-lowest shadow-xs ${
+        isCompactReport ? "rounded-xl px-space-md py-1" : "rounded-3xl px-space-lg py-space-md"
+      }`}>
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <div className="mr-2 hidden items-center gap-2 sm:flex" aria-hidden="true">
+          <div className={`${isCompactReport ? "hidden" : "mr-2 hidden items-center gap-2 sm:flex"}`} aria-hidden="true">
             <span className="text-3xl font-black tracking-tight text-primary">HR</span>
             <span className="h-9 border-l-2 border-secondary" />
           </div>
@@ -421,11 +465,11 @@ export default function HrPageViewer({
           )}
 
           <div className="min-w-0">
-            <h1 className="truncate text-headline-lg font-medium tracking-tight text-on-surface">{currentPage.title}</h1>
+            <h1 className={`${isCompactReport ? "sr-only" : "truncate text-headline-lg font-medium tracking-tight text-on-surface"}`}>{currentPage.title}</h1>
             {dashboard.id && <p className="truncate text-body-xs text-on-surface-variant">{dashboard.name || "HR Analytics"}</p>}
           </div>
 
-          {onOpenDashboardManager && (
+          {onOpenDashboardManager && !isCompactReport && (
             <button
               type="button"
               onClick={onOpenDashboardManager}
@@ -497,7 +541,7 @@ export default function HrPageViewer({
             </button>
           )}
         </div>
-      </div>
+      </div>}
 
       {captureError && (
         <p role="alert" className="rounded-xl bg-error-container px-space-md py-space-sm text-body-sm text-on-error-container">
@@ -560,24 +604,51 @@ export default function HrPageViewer({
         </div>
       )}
 
-      <div ref={reportRef} className="flex flex-col gap-space-sm rounded-3xl bg-surface-container-low/50 p-space-md">
-        <header className="flex flex-wrap items-end justify-between gap-space-sm rounded-2xl border border-outline-variant/40 border-b-2 border-b-secondary bg-surface-container-lowest px-space-lg py-space-md">
+      <div
+        ref={reportRef}
+        className={`flex flex-col rounded-2xl bg-surface-container-low/50 ${
+          isDenseLayout ? "gap-2 p-2" : "gap-space-sm rounded-3xl p-space-md"
+        }`}
+      >
+        <header className={`flex flex-wrap justify-between gap-space-sm border border-outline-variant/40 border-b-2 ${
+          isCompactReport ? "border-b-[#edc400]" : "border-b-secondary"
+        } bg-surface-container-lowest ${
+          isDenseLayout ? "items-center rounded-xl px-space-md py-1.5" : "items-end rounded-2xl px-space-lg py-space-md"
+        }`}>
           <div className="flex min-w-0 items-end gap-3">
-            <span className="hidden text-3xl font-black tracking-tight text-primary sm:block" aria-hidden="true">HR</span>
+            <span className="hidden text-2xl font-black tracking-tight text-primary sm:block" aria-hidden="true">HR</span>
             <div className="min-w-0">
               {dashboard.id && <p className="mb-0.5 text-label-sm font-semibold uppercase tracking-[0.15em] text-on-surface-variant">{dashboard.name}</p>}
-              <h2 className="truncate text-headline-lg font-medium tracking-tight text-on-surface">{currentPage.title}</h2>
+              <h1 className={`truncate font-medium tracking-tight text-on-surface ${
+                isDenseLayout ? "text-headline-sm" : "text-headline-lg"
+              }`}>{currentPage.header?.title || currentPage.title}</h1>
             </div>
           </div>
-          <p className="text-body-xs text-on-surface-variant">
-            Capturado: {new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short" }).format(new Date())}
-          </p>
-          <p className="w-full border-t border-outline-variant/50 pt-1 text-body-xs text-on-surface-variant">{filterSummary.join("  ·  ")}</p>
+          {isCompactReport && onNavigateHome && (
+            <button
+              type="button"
+              onClick={onNavigateHome}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-outline-variant bg-surface-container-low px-space-md py-1.5 text-label-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-high"
+            >
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_back</span>
+              Volver a los módulos
+            </button>
+          )}
+          {!isDenseLayout && (
+            <>
+              <p className="text-body-xs text-on-surface-variant">
+                Capturado: {new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short" }).format(new Date())}
+              </p>
+              <p className="w-full border-t border-outline-variant/50 pt-1 text-body-xs text-on-surface-variant">{filterSummary.join("  ·  ")}</p>
+            </>
+          )}
         </header>
 
       {/* Embedded Slicers Row (if configured on the page) */}
       {slicers.length > 0 && (
-        <section className="flex flex-wrap items-center justify-end gap-4 rounded-2xl border border-outline-variant/50 border-l-4 border-l-secondary bg-surface-container-lowest px-space-md py-space-sm shadow-xs">
+        <section className={`flex flex-wrap items-center justify-end ${
+          isDenseLayout ? "gap-2 rounded-xl px-space-sm py-1.5" : "gap-4 rounded-2xl px-space-md py-space-sm"
+        } border border-outline-variant/50 border-l-4 border-l-secondary bg-surface-container-lowest shadow-xs`}>
           {slicers.map((slicer, idx) => (
             <div key={slicer.id || idx} className="min-w-[140px]">
               <SlicerWidget
@@ -585,6 +656,7 @@ export default function HrPageViewer({
                 filterKey={slicer.filterKey}
                 label={slicer.label}
                 options={slicer.options}
+                layoutConfig={slicer.layoutConfig}
                 min={slicer.min}
                 max={slicer.max}
                 step={slicer.step}
@@ -639,7 +711,7 @@ export default function HrPageViewer({
       )}
 
       {/* Main Report Canvas */}
-      <div className="min-h-[500px]">
+      <div className={currentPage.grid ? "min-h-0" : "min-h-[500px]"}>
         {widgets.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-space-xl text-center text-on-surface-variant">
             <span className="material-symbols-outlined text-[44px] text-primary mb-2">dashboard</span>
@@ -656,24 +728,51 @@ export default function HrPageViewer({
           </div>
         ) : (
           <div
-            className="grid grid-cols-12 items-start gap-3"
-            style={{ gridAutoRows: "112px" }}
+            ref={canvasRef}
+            className="grid items-stretch"
+            style={{
+              gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))`,
+              gridAutoRows: `${gridRowHeight}px`,
+              gap: `${gridGap}px`,
+            }}
           >
+            {!isNarrowCanvas && Array.isArray(currentPage.bands) && currentPage.bands.map((band, index) => {
+              const y = Math.max(0, Number(band.y) || 0);
+              const height = Math.max(1, Number(band.h) || 1);
+              return (
+                <div
+                  key={`band-${index}`}
+                  aria-hidden="true"
+                  className="rounded-xl bg-surface-container-lowest shadow-sm"
+                  style={{
+                    gridColumn: "1 / -1",
+                    gridRow: `${y + 1} / span ${height}`,
+                    zIndex: 0,
+                  }}
+                />
+              );
+            })}
             {widgets.map((widget, index) => {
               const x = Number.isInteger(widget.layout?.x) ? widget.layout.x : null;
               const y = Number.isInteger(widget.layout?.y) ? widget.layout.y : null;
-              const width = Math.min(12, Math.max(1, Number(widget.layout?.w) || 6));
+              const width = Math.min(gridColumns, Math.max(1, Number(widget.layout?.w) || 6));
               const height = Math.min(8, Math.max(1, Number(widget.layout?.h) || 2));
+              const reflowForNarrowCanvas = isNarrowCanvas && configuredColumns > 12;
               const isSelected = selectedWidgetId === widget.id;
 
               return (
                 <div
                   key={widget.id}
                   style={{
-                    gridColumn: x === null ? `span ${width}` : `${x + 1} / span ${width}`,
-                    gridRow: y === null ? `span ${height}` : `${y + 1} / span ${height}`,
+                    gridColumn: reflowForNarrowCanvas
+                      ? `span ${widget.type === "sectionLabel" ? gridColumns : Math.ceil(gridColumns / 2)}`
+                      : x === null ? `span ${width}` : `${x + 1} / span ${width}`,
+                    gridRow: reflowForNarrowCanvas
+                      ? `span ${widget.type === "sectionLabel" ? 1 : 2}`
+                      : y === null ? `span ${height}` : `${y + 1} / span ${height}`,
                     minWidth: 0,
                     minHeight: 0,
+                    zIndex: 1,
                   }}
                   draggable={isEditMode}
                   onClick={() => {
@@ -767,6 +866,7 @@ export default function HrPageViewer({
 
                   <GenericWidgetRenderer
                     widget={widget}
+                    compact={isDenseLayout}
                     employees={employees}
                     extraDatasets={extraDatasets}
                     onDrillThrough={(emp) => setDrillEmployee(emp)}
@@ -783,8 +883,10 @@ export default function HrPageViewer({
       </div>
 
       {/* Bottom Page Navigation Bar: ‹ n de N › */}
-      <footer className="flex flex-wrap items-center justify-between gap-space-sm rounded-2xl border border-outline-variant/50 bg-surface-container-lowest px-space-md py-2 shadow-xs">
-        <div className="flex items-center gap-2">
+      <footer className={`relative flex items-center rounded-2xl border border-outline-variant/50 bg-surface-container-lowest shadow-xs ${
+        isCompactReport ? "min-w-0 justify-center gap-2 px-space-sm py-1" : "justify-between gap-space-sm px-space-md py-2"
+      }`}>
+        <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
             disabled={currentPageIndex <= 0}
@@ -794,9 +896,114 @@ export default function HrPageViewer({
           >
             <span className="material-symbols-outlined text-[20px]">chevron_left</span>
           </button>
-          <span className="text-label-sm font-semibold text-on-surface">
-            {currentPageIndex + 1} de {pages.length}
-          </span>
+          <div className="relative" ref={pageMenuRef}>
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={pageMenuOpen}
+              aria-controls="hr-page-menu"
+              aria-label={`Seleccionar página ${currentPageIndex + 1} de ${pages.length}`}
+              onClick={() => setPageMenuOpen((open) => !open)}
+              className={`inline-flex items-center gap-1 rounded-lg font-semibold text-on-surface transition-colors hover:bg-surface-container ${
+                isCompactReport ? "px-2 py-1 text-xs" : "px-2.5 py-1.5 text-label-sm"
+              }`}
+            >
+              {currentPageIndex + 1} de {pages.length}
+              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                {pageMenuOpen ? "expand_more" : "expand_less"}
+              </span>
+            </button>
+            {pageMenuOpen && (
+              <div
+                id="hr-page-menu"
+                role="menu"
+                aria-label="Seleccionar módulo"
+                className="absolute bottom-full left-1/2 z-[120] mb-2 max-h-[65vh] w-72 -translate-x-1/2 overflow-y-auto rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-1.5 shadow-xl"
+              >
+                <div className="flex flex-col gap-0.5">
+                  {pages.map((page, index) => (
+                    <button
+                      key={page.id || index}
+                      type="button"
+                      role="menuitem"
+                      aria-current={currentPageIndex === index ? "page" : undefined}
+                      onClick={() => {
+                        onSelectPage?.(index);
+                        setPageMenuOpen(false);
+                      }}
+                      className={`w-full rounded-lg px-3 py-2 text-left text-body-sm transition-colors ${
+                        currentPageIndex === index
+                          ? "bg-primary text-on-primary font-semibold"
+                          : "text-on-surface hover:bg-surface-container"
+                      }`}
+                    >
+                      {page.title}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-1 flex flex-col gap-0.5 border-t border-outline-variant/50 pt-1">
+                  {onOpenDashboardManager && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setPageMenuOpen(false);
+                        onOpenDashboardManager();
+                      }}
+                      className="w-full rounded-lg px-3 py-2 text-left text-body-sm text-on-surface hover:bg-surface-container"
+                    >
+                      Administrar tableros
+                    </button>
+                  )}
+                  <Link
+                    to="/analytics/import"
+                    role="menuitem"
+                    onClick={() => setPageMenuOpen(false)}
+                    className="w-full rounded-lg px-3 py-2 text-left text-body-sm text-on-surface hover:bg-surface-container"
+                  >
+                    Importar datos
+                  </Link>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={capturing}
+                    onClick={() => {
+                      setPageMenuOpen(false);
+                      handleExportPng();
+                    }}
+                    className="w-full rounded-lg px-3 py-2 text-left text-body-sm text-on-surface hover:bg-surface-container disabled:opacity-50"
+                  >
+                    Descargar imagen PNG
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={capturing}
+                    onClick={() => {
+                      setPageMenuOpen(false);
+                      handleExportPdf();
+                    }}
+                    className="w-full rounded-lg px-3 py-2 text-left text-body-sm text-on-surface hover:bg-surface-container disabled:opacity-50"
+                  >
+                    Descargar reporte PDF
+                  </button>
+                  {onToggleEditMode && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setPageMenuOpen(false);
+                        onToggleEditMode();
+                      }}
+                      className="w-full rounded-lg px-3 py-2 text-left text-body-sm text-on-surface hover:bg-surface-container"
+                    >
+                      {isEditMode ? "Finalizar edición" : "Activar modo de edición"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           <button
             type="button"
             disabled={currentPageIndex >= pages.length - 1}
@@ -808,8 +1015,7 @@ export default function HrPageViewer({
           </button>
         </div>
 
-        {/* Quick Page Tabs */}
-        <nav className="flex flex-wrap items-center gap-1 max-w-2xl overflow-x-auto py-1" aria-label="Páginas del dashboard">
+        {(!isCompactReport || isEditMode) && <nav className="flex min-w-0 items-center gap-1 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Páginas del tablero">
           {pages.map((p, idx) => (
             <button
               key={p.id || idx}
@@ -847,7 +1053,7 @@ export default function HrPageViewer({
               Nueva Página
             </button>
           )}
-        </nav>
+        </nav>}
       </footer>
 
       {/* Power BI Edit Drawer (Visible in Edit Mode) */}

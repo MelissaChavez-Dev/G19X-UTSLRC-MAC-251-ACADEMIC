@@ -25,6 +25,7 @@ export default function GenericWidgetRenderer({
   onAskGemini,
   geminiExplanation = "",
   loadingGemini = false,
+  compact = false,
 }) {
   const { activeContext, filters, toggleCrossFilter } = useHrFilters();
 
@@ -50,6 +51,19 @@ export default function GenericWidgetRenderer({
       return { error: err.message };
     }
   }, [widget.measure, widget.type, widget.title, employees, effectiveContext, extraDatasets]);
+
+  if (widget.type === "sectionLabel") {
+    return (
+      <div className="flex h-full min-w-0 flex-col items-center justify-center gap-1 px-1 text-center">
+        <span className="material-symbols-outlined text-[34px] leading-none text-on-surface-variant" aria-hidden="true">
+          {widget.options?.icon || "groups"}
+        </span>
+        <span className="line-clamp-2 text-[14px] font-semibold leading-tight tracking-wide text-[#9b7800]">
+          {widget.title}
+        </span>
+      </div>
+    );
+  }
 
   // Handle cross-filter clicks from widgets
   function handleCrossFilter(value) {
@@ -97,6 +111,7 @@ export default function GenericWidgetRenderer({
           <KpiWidget
             title={widget.title}
             value={computedData}
+            compact={compact}
             unit={widget.options?.unit || ""}
             comparisonValue={
               widget.options?.comparisonMeasure
@@ -114,10 +129,17 @@ export default function GenericWidgetRenderer({
         return (
           <BarChartWidget
             data={computedData || []}
-            layout={widget.options?.layout || "horizontal"}
+            layout={
+              widget.options?.orientation === "horizontal"
+                ? "vertical"
+                : widget.options?.layout || "horizontal"
+            }
             categoryKey={widget.options?.categoryKey || "name"}
             valueKey={widget.options?.valueKey || "count"}
             unit={widget.options?.unit || ""}
+            compact={compact}
+            hideAxis={widget.options?.hideAxis || false}
+            showValues={widget.options?.showValues || false}
             activeItem={filters.crossFilter?.value}
             onItemClick={handleCrossFilter}
           />
@@ -131,6 +153,7 @@ export default function GenericWidgetRenderer({
             seriesKeys={widget.options?.seriesKeys || []}
             isPercent={widget.options?.isPercent || false}
             unit={widget.options?.unit || ""}
+            compact={compact}
             onItemClick={handleCrossFilter}
           />
         );
@@ -144,6 +167,7 @@ export default function GenericWidgetRenderer({
             rightKey={widget.options?.rightKey || "Male"}
             leftLabel={widget.options?.leftLabel || "Femenino"}
             rightLabel={widget.options?.rightLabel || "Masculino"}
+            compact={compact}
             onItemClick={handleCrossFilter}
           />
         );
@@ -158,6 +182,7 @@ export default function GenericWidgetRenderer({
             priorKey={widget.options?.priorKey}
             priorLabel={widget.options?.priorLabel || "Año anterior (LY)"}
             unit={widget.options?.unit || ""}
+            compact={compact}
           />
         );
 
@@ -170,6 +195,7 @@ export default function GenericWidgetRenderer({
             barLabel={widget.options?.barLabel || "Dotación"}
             lineKey={widget.options?.lineKey || "rate"}
             lineLabel={widget.options?.lineLabel || "Tasa (%)"}
+            compact={compact}
           />
         );
 
@@ -180,6 +206,9 @@ export default function GenericWidgetRenderer({
             nameKey={widget.options?.nameKey || "name"}
             valueKey={widget.options?.valueKey || "count"}
             unit={widget.options?.unit || ""}
+            compact={compact}
+            labelMode={widget.options?.labelMode}
+            showValues={widget.options?.showValues || false}
             activeItem={filters.crossFilter?.value}
             onItemClick={handleCrossFilter}
           />
@@ -193,11 +222,12 @@ export default function GenericWidgetRenderer({
             valueKey={widget.options?.valueKey || "value"}
             unit={widget.options?.unit || ""}
             color={widget.options?.color || "#355c4b"}
+            compact={compact}
           />
         );
 
       case "waterfall":
-        return <WaterfallWidget data={computedData || []} />;
+        return <WaterfallWidget data={computedData || []} compact={compact} />;
 
       case "table":
         return (
@@ -205,6 +235,7 @@ export default function GenericWidgetRenderer({
             data={computedData || []}
             columns={widget.options?.columns || []}
             pageSize={widget.options?.pageSize || 10}
+            compact={compact}
             onRowClick={onDrillThrough}
           />
         );
@@ -215,6 +246,7 @@ export default function GenericWidgetRenderer({
             matrixData={computedData || []}
             rowLabel={widget.options?.rowLabel || "Categoría"}
             alternatorOptions={widget.options?.alternatorOptions}
+            compact={compact}
           />
         );
 
@@ -223,8 +255,9 @@ export default function GenericWidgetRenderer({
           <SankeyWidget
             nodes={computedData?.nodes || []}
             links={computedData?.links || []}
-            width={widget.options?.width || 560}
-            height={widget.options?.height || 260}
+            width={widget.options?.width || (compact ? 460 : 560)}
+            height={widget.options?.height || (compact ? 140 : 260)}
+            compact={compact}
           />
         );
 
@@ -235,6 +268,7 @@ export default function GenericWidgetRenderer({
             target={widget.options?.target ?? 50}
             title={widget.options?.gaugeTitle || ""}
             unit={widget.options?.unit || "%"}
+            compact={compact}
           />
         );
 
@@ -243,6 +277,8 @@ export default function GenericWidgetRenderer({
           <SummaryBoardWidget
             statements={computedData || []}
             note={widget.options?.note}
+            compact={compact}
+            compact={compact}
             onAskGemini={onAskGemini}
             geminiExplanation={geminiExplanation}
             loadingGemini={loadingGemini}
@@ -264,8 +300,10 @@ export default function GenericWidgetRenderer({
       widget.type === "kpi" || widget.type === "textBoard" ? "border-0 p-0 shadow-none hover:shadow-none" : ""
     }`}>
       {widget.type !== "kpi" && widget.type !== "textBoard" && widget.title && (
-        <header className="mb-1 flex items-center justify-center gap-2 border-b border-outline-variant/30 pb-1">
-          <h4 className="truncate text-center text-sm font-semibold text-on-surface">{widget.title}</h4>
+        <header className={`flex items-center justify-center gap-2 border-b border-outline-variant/30 ${
+          compact ? "mb-0.5 pb-0.5" : "mb-1 pb-1"
+        }`}>
+          <h4 className={`truncate text-center font-semibold text-on-surface ${compact ? "text-xs" : "text-sm"}`}>{widget.title}</h4>
           {widget.options?.subtitle && (
             <span className="text-body-xs text-on-surface-variant truncate">{widget.options.subtitle}</span>
           )}

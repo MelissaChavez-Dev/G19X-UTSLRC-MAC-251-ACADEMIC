@@ -251,7 +251,16 @@ assert.equal(involRate, 22.2);
 // Avg Regular = 4. Terminated Regular = 1 (EMP-006). Rate = (1 / 4) * 100 = 25%
 const regRate = compute("regularEmployeesRate", mockEmployees, { year: 2024 });
 assert.equal(regRate, 25);
+const orgLevelTerminationRates = compute("terminationRate", mockEmployees, {
+  year: 2024,
+  dimension: "orgLevel",
+});
+const operationalTerminationRate = orgLevelTerminationRates.find((group) => group.name === "Operational");
+assert.equal(operationalTerminationRate.terminations, 2);
+assert.equal(operationalTerminationRate.averageHeadcount, 1.5);
+assert.equal(operationalTerminationRate.count, 133.3);
 console.log(`  ✓ Exit rate (${exitRate}%), Vol (${volRate}%), Invol (${involRate}%), Reg (${regRate}%) passed`);
+console.log("  ✓ Termination rate by organizational level passed");
 
 // Test 7: %FemaleLeaders
 console.log("Test 7: %FemaleLeaders...");

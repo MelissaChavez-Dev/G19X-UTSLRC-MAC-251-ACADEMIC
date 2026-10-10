@@ -89,7 +89,7 @@ export default function AttritionPredictionScreen({
       <section className="flex flex-wrap items-center justify-between gap-space-md rounded-3xl border border-outline-variant/60 bg-surface-container-lowest p-space-lg shadow-xs">
         <div>
           <span className="text-label-sm uppercase font-semibold text-secondary">Analítica Predictiva</span>
-          <h2 className="text-headline-sm font-bold text-on-surface">12. Attrition Prediction · Modelo de Riesgo</h2>
+          <h2 className="text-headline-sm font-bold text-on-surface">12. Predicción de rotación · modelo de riesgo</h2>
           <p className="mt-1 text-body-sm text-on-surface-variant">
             Puntajes calculados de propensión a rotación voluntaria por antigüedad, ausentismo, turno y desempeño. Estrictamente sin variables de compensación.
           </p>
@@ -101,7 +101,7 @@ export default function AttritionPredictionScreen({
             onClick={onNavigateToDepartmentProfile}
             className="flex items-center gap-1.5 rounded-full border border-primary bg-primary-container/30 px-space-md py-2 text-label-sm font-semibold text-primary hover:bg-primary-container"
           >
-            Ver Department Profile
+            Ver perfil del departamento
             <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
           </button>
         )}

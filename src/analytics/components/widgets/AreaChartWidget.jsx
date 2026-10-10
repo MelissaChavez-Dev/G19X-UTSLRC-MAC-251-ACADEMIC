@@ -14,10 +14,11 @@ export default function AreaChartWidget({
   valueKey = "value",
   unit = "",
   color = "#4f8070",
+  compact = false,
 }) {
   if (!data || data.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center text-body-sm text-on-surface-variant">
+      <div className={`flex h-full items-center justify-center text-on-surface-variant ${compact ? "min-h-0 text-xs" : "min-h-48 text-body-sm"}`}>
         Sin datos disponibles.
       </div>
     );
@@ -26,9 +27,9 @@ export default function AreaChartWidget({
   const gradientId = `areaGradient_${color.replace("#", "")}`;
 
   return (
-    <div className="h-full min-h-[10rem] w-full">
+    <div className={`h-full w-full ${compact ? "min-h-0" : "min-h-[10rem]"}`}>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: -15 }}>
+        <AreaChart data={data} margin={compact ? { top: 2, right: 4, bottom: 0, left: -8 } : { top: 8, right: 16, bottom: 0, left: -15 }}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor={color} stopOpacity={0.45} />
@@ -36,8 +37,8 @@ export default function AreaChartWidget({
             </linearGradient>
           </defs>
           <CartesianGrid stroke="var(--outline-variant)" strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey={xKey} tick={{ fill: "var(--on-surface-variant)", fontSize: 11 }} />
-          <YAxis tick={{ fill: "var(--on-surface-variant)", fontSize: 11 }} />
+          <XAxis dataKey={xKey} tick={{ fill: "var(--on-surface-variant)", fontSize: compact ? 10 : 11 }} />
+          <YAxis tick={{ fill: "var(--on-surface-variant)", fontSize: compact ? 10 : 11 }} />
           <Tooltip
             formatter={(val) => [`${Number(val).toLocaleString("es-MX", { maximumFractionDigits: 1 })} ${unit}`.trim(), "Valor"]}
             contentStyle={{
@@ -51,10 +52,10 @@ export default function AreaChartWidget({
             type="monotone"
             dataKey={valueKey}
             stroke={color}
-            strokeWidth={3}
+            strokeWidth={compact ? 2 : 3}
             fillOpacity={1}
             fill={`url(#${gradientId})`}
-            dot={{ r: 3, fill: color }}
+            dot={{ r: compact ? 1 : 3, fill: color }}
           />
         </AreaChart>
       </ResponsiveContainer>
