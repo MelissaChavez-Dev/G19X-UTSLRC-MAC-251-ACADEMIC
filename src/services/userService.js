@@ -16,6 +16,12 @@ export async function updateUserAccount(uid, payload) {
   return result.data;
 }
 
+export async function syncUserProfilesFromExcel(employees) {
+  const callable = httpsCallable(functions, "sync_user_profiles_from_excel", { timeout: 300000 });
+  const result = await callable({ employees });
+  return result.data;
+}
+
 export async function resetUserPassword(uid) {
   const callable = httpsCallable(functions, "reset_user_password");
   const result = await callable({ uid });

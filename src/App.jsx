@@ -12,6 +12,8 @@ import ForcePasswordChange from "./pages/ForcePasswordChange";
 import UserManagement from "./pages/admin/UserManagement";
 import TeamDirectory from "./pages/admin/TeamDirectory";
 import CanvasStudio from "./pages/admin/CanvasStudio";
+import HrImportPage from "./pages/analytics/HrImportPage";
+import HrAnalyticsHub from "./pages/analytics/HrAnalyticsHub";
 import MisProyectos from "./pages/MisProyectos";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleBasedRedirect from "./components/RoleBasedRedirect";
@@ -85,6 +87,22 @@ function App() {
               element={
                 <ProtectedRoute roles={["admin"]}>
                   <CanvasStudio />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics/import"
+              element={
+                <ProtectedRoute roles={["admin"]}>
+                  <HrImportPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute roles={["admin"]}>
+                  <HrAnalyticsHub />
                 </ProtectedRoute>
               }
             />

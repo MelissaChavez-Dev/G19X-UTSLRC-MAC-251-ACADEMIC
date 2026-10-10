@@ -26,10 +26,18 @@ Los cambios de validación de reglas para metadatos de transformación deben des
 firebase deploy --only firestore:rules
 ```
 
-La ruta y ambas colecciones requieren rol de administrador en Firestore. Despliega las reglas actualizadas antes de habilitar el módulo en el proyecto Firebase:
+### HR Analytics y perfiles de usuario
+
+La ruta administrativa `/analytics` analiza empleados que ya viven en la colección `users`. No se crean colecciones separadas para empleados, licencias, ausencias, snapshots, importaciones ni dashboards HR.
+
+El Excel se lee en memoria y no se conserva. La hoja `Empleados` actualiza perfiles existentes por ID de empleado o correo; la hoja `Licencias` se agrega como `leaveRecords` dentro del perfil. Si no existe perfil coincidente, se crea solo un documento `users/excel_<ID>` con `authManaged: false`: **no crea usuarios de Firebase Authentication, contraseñas ni acceso de inicio de sesión**. Para conceder acceso se usa el alta manual en Gestión de Usuarios. Las columnas salariales se rechazan. Las capturas de `PANTALLAS DE REFERENCIA/` son guía visual, nunca datos de entrada.
+
+El hub analiza perfiles `users` con `employeeId`. Si no hay perfiles HR, indica que faltan datos; no carga una población sintética. Los dashboards personalizados, si se crean, quedan embebidos en el documento `users/{uid}` del administrador.
+
+La importación necesita desplegar la Cloud Function callable y las reglas existentes de `users`, que bloquean campos salariales:
 
 ```bash
-firebase deploy --only firestore:rules
+firebase deploy --only firestore:rules,functions:sync_user_profiles_from_excel
 ```
 
 ---

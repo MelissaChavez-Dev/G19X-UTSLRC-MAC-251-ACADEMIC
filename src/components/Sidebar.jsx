@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { icon: "grid_view", label: "Resumen", to: "/dashboard" },
   { icon: "assignment_add", label: "Constructor de encuestas", to: "/survey-builder" },
   { icon: "analytics", label: "BI Studio", to: "/admin/canvas-studio" },
+  { icon: "query_stats", label: "HR Analytics", to: "/analytics" },
   { icon: "manage_accounts", label: "Gestión de usuarios", to: "/admin/usuarios" },
   { icon: "groups", label: "Directorio del equipo", to: "/equipos" },
 ];

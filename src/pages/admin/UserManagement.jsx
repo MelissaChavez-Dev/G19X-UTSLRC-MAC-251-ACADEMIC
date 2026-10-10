@@ -13,6 +13,7 @@ import { useSidebarState } from "../../hooks/useSidebarState";
 import { useAuth } from "../../hooks/useAuth";
 import { useDepartments } from "../../hooks/useDepartments";
 import { createDepartment, renameDepartment, setDepartmentActive } from "../../services/departmentService";
+import { computeDerivedEmployeeFields } from "../../analytics/constants";
 
 const DAY_OPTIONS = [
   { id: "mon", label: "L", name: "Lunes" },
@@ -32,6 +33,32 @@ const ROLE_OPTIONS = [
 
 const ROLE_LABELS = Object.fromEntries(ROLE_OPTIONS.map((r) => [r.id, r.label]));
 
+const EMPLOYEE_PROFILE_FIELDS = [
+  { id: "employeeId", label: "ID de empleado", type: "text" },
+  { id: "gender", label: "Género", options: ["Female", "Male", "Other"] },
+  { id: "dob", label: "Fecha de nacimiento", type: "date" },
+  { id: "maritalStatus", label: "Estado civil", type: "text" },
+  { id: "education", label: "Educación", type: "text" },
+  { id: "nativeCountry", label: "País de origen", type: "text" },
+  { id: "region", label: "Región", type: "text" },
+  { id: "location", label: "Ubicación", type: "text" },
+  { id: "businessUnit", label: "Unidad de negocio", type: "text" },
+  { id: "designation", label: "Puesto / cargo", type: "text" },
+  { id: "orgLevel", label: "Nivel organizacional", options: ["Operational", "Mid-Level", "High-Level"] },
+  { id: "hireType", label: "Tipo de contratación", options: ["Regular", "Contract"] },
+  { id: "shift", label: "Turno", options: ["Day", "Evening", "Night"] },
+  { id: "workHours", label: "Horas de jornada", type: "number", step: "0.25", min: "0.25", max: "24" },
+  { id: "hireDate", label: "Fecha de ingreso", type: "date" },
+  { id: "status", label: "Estatus laboral", options: ["Active", "Terminated"] },
+  { id: "terminationDate", label: "Fecha de baja", type: "date" },
+  { id: "terminationCategory", label: "Categoría de baja", options: ["Voluntary", "Involuntary", "Death"] },
+  { id: "terminationReason", label: "Motivo de baja", type: "text" },
+  { id: "performanceRating", label: "Evaluación de desempeño", type: "text" },
+  { id: "riskProbability", label: "Probabilidad de riesgo (0–1)", type: "number", step: "0.01", min: "0", max: "1" },
+];
+
+const EMPTY_PROFILE = Object.fromEntries(EMPLOYEE_PROFILE_FIELDS.map(({ id }) => [id, ""]));
+
 const EMPTY_FORM = {
   displayName: "",
   email: "",
@@ -41,6 +68,7 @@ const EMPTY_FORM = {
   days: ["mon", "tue", "wed", "thu", "fri"],
   startTime: "09:00",
   endTime: "18:00",
+  ...EMPTY_PROFILE,
 };
 
 const inputClass =
@@ -54,6 +82,20 @@ function initials(user) {
   const source = (user.displayName || user.email || "?").trim();
   const parts = source.split(/\s+/);
   return ((parts[0]?.[0] || "") + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
+}
+
+function employeeProfileFromForm(form) {
+  const profile = Object.fromEntries(
+    EMPLOYEE_PROFILE_FIELDS
+      .filter(({ id }) => form[id] !== "")
+      .map(({ id }) => [id, id === "riskProbability" ? Number(form[id]) : form[id]])
+  );
+  profile.workDays = form.days;
+  if (profile.employeeId) profile.source = "manual";
+  if (profile.hireDate) {
+    Object.assign(profile, computeDerivedEmployeeFields(profile));
+  }
+  return profile;
 }
 
 function Icon({ name, size = 18 }) {
@@ -134,7 +176,7 @@ export default function UserManagement() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [editingUser, setEditingUser] = useState(null);
-  const [editForm, setEditForm] = useState({ displayName: "", email: "", departmentId: "" });
+  const [editForm, setEditForm] = useState({ displayName: "", email: "", departmentId: "", role: "employee", ...EMPTY_PROFILE });
   const [savingEdit, setSavingEdit] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
   const [temporaryCredential, setTemporaryCredential] = useState(null);
@@ -229,6 +271,8 @@ export default function UserManagement() {
           endTime: form.endTime,
           timezone: "America/Hermosillo",
         },
+        workDays: form.days,
+        employeeProfile: employeeProfileFromForm(form),
       });
       setCredentials({ email: form.email.trim(), temporaryPassword: result.temporaryPassword });
       setCopied(false);
@@ -257,6 +301,11 @@ export default function UserManagement() {
       displayName: user.displayName || "",
       email: user.email || "",
       departmentId: user.departmentId || "",
+      role: user.role || "employee",
+      ...Object.fromEntries(EMPLOYEE_PROFILE_FIELDS.map(({ id }) => [id, user[id] ?? ""])),
+      scheduleDays: user.workSchedule?.days || ["mon", "tue", "wed", "thu", "fri"],
+      scheduleStart: user.workSchedule?.startTime || "",
+      scheduleEnd: user.workSchedule?.endTime || "",
     });
     setTemporaryCredential(null);
     setDirectoryError("");
@@ -268,10 +317,33 @@ export default function UserManagement() {
     setSavingEdit(true);
     setDirectoryError("");
     try {
+      const employeeProfile = Object.fromEntries(EMPLOYEE_PROFILE_FIELDS.map(({ id }) => [
+        id,
+        id === "riskProbability"
+          ? (editForm[id] === "" ? null : Number(editForm[id]))
+          : (editForm[id] || null),
+      ]));
+      if (employeeProfile.hireDate) {
+        Object.assign(employeeProfile, computeDerivedEmployeeFields({
+          ...employeeProfile,
+          employeeId: employeeProfile.employeeId || editingUser.employeeId || editingUser.id,
+          name: editForm.displayName.trim(),
+          email: editForm.email.trim(),
+          source: editingUser.source || "manual",
+        }));
+      }
       await updateUserAccount(editingUser.id, {
         displayName: editForm.displayName.trim(),
         email: editForm.email.trim(),
         departmentId: editForm.departmentId || null,
+        role: editForm.role,
+        workSchedule: {
+          days: editForm.scheduleDays,
+          startTime: editForm.scheduleStart,
+          endTime: editForm.scheduleEnd,
+          timezone: editingUser.workSchedule?.timezone || "America/Hermosillo",
+        },
+        ...employeeProfile,
       });
       await reload();
       setEditingUser(null);
@@ -284,6 +356,10 @@ export default function UserManagement() {
 
   async function handleResetPassword(user = editingUser) {
     if (!user) return;
+    if (user.authManaged === false) {
+      setDirectoryError("Este perfil importado no tiene cuenta de acceso. Usa «Crear cuenta» para registrar sus credenciales manualmente.");
+      return;
+    }
     setResettingPassword(true);
     setDirectoryError("");
     setTemporaryCredential(null);
@@ -325,7 +401,7 @@ export default function UserManagement() {
   const normalizedSearch = searchTerm.trim().toLocaleLowerCase("es");
   const filteredUsers = users.filter((user) => {
     const matchesSearch = !normalizedSearch ||
-      `${user.displayName || ""} ${user.email || ""}`.toLocaleLowerCase("es").includes(normalizedSearch);
+      `${user.displayName || ""} ${user.email || ""} ${user.employeeId || ""} ${user.designation || ""}`.toLocaleLowerCase("es").includes(normalizedSearch);
     const matchesDepartment = departmentFilter === "all" || user.departmentId === departmentFilter;
     const matchesRole = roleFilter === "all" || user.role === roleFilter;
     const matchesStatus = statusFilter === "all" ||
@@ -356,7 +432,7 @@ export default function UserManagement() {
             <div>
               <h1 className="text-headline-xl text-on-surface tracking-tight">Gestión de usuarios</h1>
               <p className="text-body-md text-on-surface-variant mt-1 max-w-prose">
-                Solo la administración puede crear cuentas. Comparte la contraseña temporal con el colaborador.
+                Registra cuentas manualmente o actualiza perfiles y campos laborales al importar Excel. La importación no crea cuentas de acceso.
               </p>
             </div>
             <div className="flex flex-wrap gap-space-sm">
@@ -539,6 +615,41 @@ export default function UserManagement() {
               </fieldset>
             </div>
 
+            <details className="rounded-xl border border-outline-variant/60 bg-surface-container-low p-space-md">
+              <summary className="cursor-pointer text-label-md font-semibold text-on-surface">
+                Perfil laboral ampliado (opcional)
+              </summary>
+              <p className="mt-1 text-body-sm text-on-surface-variant">
+                Estos campos también se completan al importar la hoja de empleados. No se guardan datos salariales.
+              </p>
+              <div className="mt-space-md grid grid-cols-1 gap-space-md sm:grid-cols-2 lg:grid-cols-3">
+                {EMPLOYEE_PROFILE_FIELDS.map(({ id, label, type = "text", options, ...attributes }) => (
+                  <Field key={id} id={`um-${id}`} label={label}>
+                    {options ? (
+                      <select
+                        id={`um-${id}`}
+                        className={inputClass}
+                        value={form[id]}
+                        onChange={(event) => updateField(id, event.target.value)}
+                      >
+                        <option value="">Sin especificar</option>
+                        {options.map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                    ) : (
+                      <input
+                        id={`um-${id}`}
+                        type={type}
+                        className={inputClass}
+                        value={form[id]}
+                        onChange={(event) => updateField(id, event.target.value)}
+                        {...attributes}
+                      />
+                    )}
+                  </Field>
+                ))}
+              </div>
+            </details>
+
             {error && <p className="rounded-xl bg-error-container px-space-md py-space-sm text-body-sm text-on-error-container animate-pop" role="alert">{error}</p>}
 
             <div className="flex justify-end border-t border-outline-variant pt-space-md">
@@ -595,9 +706,9 @@ export default function UserManagement() {
          {/* Filtros compactos en una sola línea en pantallas grandes */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-sm my-space-md">
             <label className="relative block">
-              <span className="sr-only">Buscar por nombre o correo</span>
+              <span className="sr-only">Buscar por nombre, correo, ID o puesto</span>
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant"><Icon name="search" size={17} /></span>
-              <input type="search" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar nombre o correo" className={`${inputClass} pl-9 py-2 text-body-sm w-full`} />
+              <input type="search" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Nombre, correo, ID o puesto" className={`${inputClass} pl-9 py-2 text-body-sm w-full`} />
             </label>
             <label className="block">
               <span className="sr-only">Filtrar por departamento</span>
@@ -671,6 +782,16 @@ export default function UserManagement() {
                                   {u.displayName || "—"}{isSelf && <span className="ml-2 text-label-sm text-primary">Tú</span>}
                                 </p>
                                 <p className="break-all text-body-sm text-on-surface-variant">{u.email}</p>
+                                {(u.employeeId || u.designation) && (
+                                  <p className="text-xs text-on-surface-variant">
+                                    {u.employeeId ? `ID ${u.employeeId}` : ""}{u.employeeId && u.designation ? " · " : ""}{u.designation || ""}
+                                  </p>
+                                )}
+                                {u.authManaged === false && (
+                                  <span className="mt-1 inline-flex rounded-full bg-surface-container-low px-2 py-0.5 text-[10px] text-on-surface-variant">
+                                    Perfil importado · sin acceso Auth
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -691,21 +812,25 @@ export default function UserManagement() {
                           <td className="px-1 py-space-xs">
                             <div className="flex flex-wrap justify-end gap-0">
                               <IconButton icon="edit" label={`Editar a ${u.displayName || u.email}`} tone="primary" onClick={() => openEditUser(u)} compact />
-                              <IconButton
-                                icon={inactive ? "toggle_off" : "toggle_on"}
-                                label={`${inactive ? "Reactivar" : "Desactivar"} a ${u.displayName || u.email}`}
-                                onClick={() => handleToggleActive(u)}
-                                compact
-                              />
-                              <IconButton
-                                icon="lock_reset"
-                                label={`Restablecer contraseña de ${u.displayName || u.email}`}
-                                onClick={() => {
-                                  openEditUser(u);
-                                  handleResetPassword(u);
-                                }}
-                                compact
-                              />
+                              {u.authManaged !== false && (
+                                <IconButton
+                                  icon={inactive ? "toggle_off" : "toggle_on"}
+                                  label={`${inactive ? "Reactivar" : "Desactivar"} a ${u.displayName || u.email}`}
+                                  onClick={() => handleToggleActive(u)}
+                                  compact
+                                />
+                              )}
+                              {u.authManaged !== false && (
+                                <IconButton
+                                  icon="lock_reset"
+                                  label={`Restablecer contraseña de ${u.displayName || u.email}`}
+                                  onClick={() => {
+                                    openEditUser(u);
+                                    handleResetPassword(u);
+                                  }}
+                                  compact
+                                />
+                              )}
                               <IconButton
                                 icon="delete"
                                 label={isSelf ? "No puedes eliminar tu propia cuenta" : `Eliminar a ${u.displayName || u.email}`}
@@ -760,20 +885,103 @@ export default function UserManagement() {
                     </select>
                   </Field>
 
+                  <details className="rounded-xl border border-outline-variant/60 bg-surface-container-low p-space-md">
+                    <summary className="cursor-pointer text-label-md font-semibold text-on-surface">
+                      Perfil laboral y horario
+                    </summary>
+                    <div className="mt-space-md grid grid-cols-1 gap-space-md sm:grid-cols-2">
+                      <Field id="eu-role" label="Rol de acceso">
+                        <select
+                          id="eu-role"
+                          value={editForm.role}
+                          onChange={(event) => setEditForm((previous) => ({ ...previous, role: event.target.value }))}
+                          className={inputClass}
+                        >
+                          {ROLE_OPTIONS.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}
+                        </select>
+                      </Field>
+                      {EMPLOYEE_PROFILE_FIELDS.map(({ id, label, type = "text", options, ...attributes }) => (
+                        <Field key={id} id={`eu-${id}`} label={label}>
+                          {options ? (
+                            <select
+                              id={`eu-${id}`}
+                              className={inputClass}
+                              value={editForm[id] || ""}
+                              onChange={(event) => setEditForm((previous) => ({ ...previous, [id]: event.target.value }))}
+                            >
+                              <option value="">Sin especificar</option>
+                              {options.map((option) => <option key={option} value={option}>{option}</option>)}
+                            </select>
+                          ) : (
+                            <input
+                              id={`eu-${id}`}
+                              type={type}
+                              className={inputClass}
+                              value={editForm[id] ?? ""}
+                              onChange={(event) => setEditForm((previous) => ({ ...previous, [id]: event.target.value }))}
+                              {...attributes}
+                            />
+                          )}
+                        </Field>
+                      ))}
+                      <Field id="eu-start-time" label="Hora de entrada">
+                        <input id="eu-start-time" type="time" className={inputClass} value={editForm.scheduleStart || ""} onChange={(event) => setEditForm((previous) => ({ ...previous, scheduleStart: event.target.value }))} />
+                      </Field>
+                      <Field id="eu-end-time" label="Hora de salida">
+                        <input id="eu-end-time" type="time" className={inputClass} value={editForm.scheduleEnd || ""} onChange={(event) => setEditForm((previous) => ({ ...previous, scheduleEnd: event.target.value }))} />
+                      </Field>
+                      <div className="flex flex-col gap-space-xs sm:col-span-2">
+                        <span className="text-label-sm text-on-surface">Días laborales</span>
+                        <div className="flex flex-wrap gap-space-xs">
+                          {DAY_OPTIONS.map((day) => {
+                            const selected = (editForm.scheduleDays || []).includes(day.id);
+                            return (
+                              <button
+                                key={day.id}
+                                type="button"
+                                aria-pressed={selected}
+                                onClick={() => setEditForm((previous) => ({
+                                  ...previous,
+                                  scheduleDays: selected
+                                    ? previous.scheduleDays.filter((item) => item !== day.id)
+                                    : [...previous.scheduleDays, day.id],
+                                }))}
+                                className={`h-9 w-9 rounded-full text-xs font-semibold ${selected ? "bg-primary text-on-primary" : "border border-outline-variant bg-white text-on-surface-variant"}`}
+                                title={day.name}
+                              >
+                                {day.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+
                   <div className="rounded-xl border border-outline-variant p-space-md flex flex-col gap-space-sm">
                     <div>
                       <h3 className="text-label-lg font-semibold text-on-surface">Acceso</h3>
-                      <p className="text-body-sm text-on-surface-variant">Genera una nueva contraseña si la persona no puede iniciar sesión.</p>
+                      <p className="text-body-sm text-on-surface-variant">
+                        {editingUser.authManaged === false
+                          ? "Este perfil proviene de una importación y aún no tiene cuenta de inicio de sesión."
+                          : "Genera una nueva contraseña si la persona no puede iniciar sesión."}
+                      </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleResetPassword()}
-                      disabled={resettingPassword}
-                      className="motion-press self-start inline-flex items-center gap-space-xs rounded-full bg-secondary-container px-space-md py-2 text-label-md font-semibold text-on-secondary-container disabled:opacity-50"
-                    >
-                      <Icon name="key" size={17} />
-                      {resettingPassword ? "Generando..." : "Generar contraseña temporal"}
-                    </button>
+                    {editingUser.authManaged === false ? (
+                      <span className="self-start rounded-full bg-surface-container-low px-3 py-1.5 text-xs text-on-surface-variant">
+                        Sin cuenta Auth
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleResetPassword()}
+                        disabled={resettingPassword}
+                        className="motion-press self-start inline-flex items-center gap-space-xs rounded-full bg-secondary-container px-space-md py-2 text-label-md font-semibold text-on-secondary-container disabled:opacity-50"
+                      >
+                        <Icon name="key" size={17} />
+                        {resettingPassword ? "Generando..." : "Generar contraseña temporal"}
+                      </button>
+                    )}
 
                     {temporaryCredential && (
                       <div className="rounded-xl bg-success-container p-space-md text-on-success-container">

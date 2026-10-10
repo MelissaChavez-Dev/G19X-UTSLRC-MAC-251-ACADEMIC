@@ -11,6 +11,7 @@ import secrets
 import string
 import json
 import re
+import unicodedata
 
 GEMINI_API_KEY = SecretParam("GEMINI_API_KEY")
 MODEL_NAME = "gemini-3.5-flash-lite"
@@ -55,6 +56,84 @@ def _require_admin(req: https_fn.CallableRequest):
 def _generate_temp_password(length: int = 10) -> str:
     alphabet = string.ascii_letters + string.digits
     return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+USER_PROFILE_FIELDS = (
+    "employeeId",
+    "gender",
+    "dob",
+    "maritalStatus",
+    "education",
+    "nativeCountry",
+    "region",
+    "location",
+    "businessUnit",
+    "department",
+    "designation",
+    "orgLevel",
+    "hireType",
+    "shift",
+    "hireDate",
+    "status",
+    "terminationDate",
+    "terminationCategory",
+    "terminationReason",
+    "performanceRating",
+    "riskProbability",
+    "riskLevel",
+    "age",
+    "ageBand",
+    "generation",
+    "tenureYears",
+    "tenureBand",
+    "hireYear",
+    "hireMonth",
+    "leaveSummary",
+    "leaveRecords",
+    "workDays",
+    "workHours",
+    "source",
+)
+
+
+def _normalise_label(value: str) -> str:
+    value = unicodedata.normalize("NFKD", (value or "").strip().lower())
+    value = "".join(char for char in value if not unicodedata.combining(char))
+    return re.sub(r"\s+", " ", value)
+
+
+def _load_department_index(db) -> dict:
+    index = {}
+    for snapshot in db.collection("departments").stream():
+        data = snapshot.to_dict() or {}
+        for label in (data.get("name"), data.get("displayName")):
+            normalized = _normalise_label(label or "")
+            if normalized:
+                index[normalized] = snapshot.id
+    return index
+
+
+def _ensure_department(db, department_name: str, department_index: dict) -> str:
+    """Reuses departments; creates a missing department in the existing collection."""
+    normalized = _normalise_label(department_name)
+    if not normalized:
+        raise ValueError("Falta el departamento.")
+    if normalized in department_index:
+        return department_index[normalized]
+
+    slug = re.sub(r"[^a-z0-9]+", "-", normalized).strip("-")
+    if not slug:
+        raise ValueError("El departamento no tiene un nombre válido.")
+    ref = db.collection("departments").document(slug)
+    if not ref.get().exists:
+        ref.set({
+            "name": department_name.strip(),
+            "displayName": department_name.strip(),
+            "active": True,
+            "createdAt": admin_firestore.SERVER_TIMESTAMP,
+        })
+    department_index[normalized] = slug
+    return slug
 
 
 def _generate_join_code() -> str:
@@ -205,6 +284,17 @@ def create_employee_account(req: https_fn.CallableRequest) -> dict:
     department_id = data.get("departmentId")
     team_id = data.get("teamId")
     work_schedule = data.get("workSchedule") or {}
+    employee_profile = data.get("employeeProfile") or {}
+    if not isinstance(employee_profile, dict):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="El perfil laboral no tiene un formato válido.",
+        )
+    profile_fields = {
+        field: employee_profile[field]
+        for field in USER_PROFILE_FIELDS
+        if field in employee_profile
+    }
 
     if not display_name or not email:
         raise https_fn.HttpsError(
@@ -231,6 +321,7 @@ def create_employee_account(req: https_fn.CallableRequest) -> dict:
     admin_auth.set_custom_user_claims(user.uid, {"role": role})
 
     db = _db()
+    profile_active = profile_fields.get("status") != "Terminated"
     db.collection("users").document(user.uid).set({
         "displayName": display_name,
         "email": email,
@@ -239,10 +330,14 @@ def create_employee_account(req: https_fn.CallableRequest) -> dict:
         "teamId": team_id,
         "workSchedule": work_schedule,
         "mustChangePassword": True,
-        "active": True,
+        "active": profile_active,
+        "authManaged": True,
         "createdBy": caller.uid,
         "createdAt": admin_firestore.SERVER_TIMESTAMP,
+        **profile_fields,
     })
+    if not profile_active:
+        admin_auth.update_user(user.uid, disabled=True)
 
     if team_id:
         _add_to_team(db, team_id, user.uid, display_name)
@@ -262,8 +357,13 @@ def update_user_account(req: https_fn.CallableRequest) -> dict:
             message="Falta el uid del usuario.",
         )
 
+    db = _db()
+    user_ref = db.collection("users").document(uid)
+    current_data = user_ref.get().to_dict() or {}
+    auth_managed = bool(current_data.get("authManaged", True))
+
     updates = {}
-    for field in ("displayName", "email", "departmentId", "teamId", "workSchedule"):
+    for field in ("displayName", "email", "departmentId", "teamId", "workSchedule", *USER_PROFILE_FIELDS):
         if field in data:
             updates[field] = data[field]
 
@@ -280,7 +380,7 @@ def update_user_account(req: https_fn.CallableRequest) -> dict:
         updates["email"] = normalized_email
         auth_updates["email"] = normalized_email
 
-    if auth_updates:
+    if auth_updates and auth_managed:
         try:
             admin_auth.update_user(uid, **auth_updates)
         except admin_auth.EmailAlreadyExistsError as e:
@@ -296,16 +396,19 @@ def update_user_account(req: https_fn.CallableRequest) -> dict:
 
     if "active" in data:
         updates["active"] = bool(data["active"])
-        admin_auth.update_user(uid, disabled=not data["active"])
+        if auth_managed:
+            admin_auth.update_user(uid, disabled=not data["active"])
+    elif updates.get("status") in ("Active", "Terminated"):
+        updates["active"] = updates["status"] == "Active"
+        if auth_managed:
+            admin_auth.update_user(uid, disabled=not updates["active"])
 
     role = data.get("role")
     if role in ("employee", "team_lead", "admin"):
         updates["role"] = role
-        admin_auth.set_custom_user_claims(uid, {"role": role})
+        if auth_managed:
+            admin_auth.set_custom_user_claims(uid, {"role": role})
 
-    db = _db()
-    user_ref = db.collection("users").document(uid)
-    current_data = user_ref.get().to_dict() or {}
     old_team = current_data.get("teamId")
     removed_from_team_for_department = False
 
@@ -342,6 +445,169 @@ def update_user_account(req: https_fn.CallableRequest) -> dict:
     return {"ok": True}
 
 
+@https_fn.on_call(region="us-central1", timeout_sec=300)
+def sync_user_profiles_from_excel(req: https_fn.CallableRequest) -> dict:
+    """Synchronizes employee fields and embedded leave rows into existing `users` profiles only."""
+    caller = _require_admin(req)
+    rows = (req.data or {}).get("employees") or []
+    if not isinstance(rows, list) or not rows or len(rows) > 50:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="Cada lote debe contener entre 1 y 50 empleados.",
+        )
+
+    db = _db()
+    department_index = _load_department_index(db)
+    profiles = [
+        snapshot.to_dict() | {"documentId": snapshot.id}
+        for snapshot in db.collection("users").stream()
+    ]
+    profile_by_employee_id = {
+        str(profile["employeeId"]).strip(): profile
+        for profile in profiles
+        if profile.get("employeeId") not in (None, "")
+    }
+    profile_by_email = {
+        str(profile.get("email", "")).strip().lower(): profile
+        for profile in profiles
+        if profile.get("email")
+    }
+
+    created = 0
+    updated = 0
+    errors = []
+    for row in rows:
+        row_number = row.get("sourceRowNumber") if isinstance(row, dict) else None
+        try:
+            if not isinstance(row, dict):
+                raise ValueError("La fila no tiene un formato válido.")
+            employee_id = str(row.get("employeeId", "")).strip()
+            display_name = str(row.get("displayName") or row.get("name") or "").strip()
+            email = str(row.get("email", "")).strip().lower()
+            department_name = str(row.get("department", "")).strip()
+            if not employee_id or not display_name or not email or not department_name:
+                raise ValueError("Faltan ID, nombre, correo o departamento.")
+            if len(employee_id) > 100 or len(display_name) > 160 or len(email) > 254 or len(department_name) > 120:
+                raise ValueError("Un campo de empleado supera el tamaño permitido.")
+            if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
+                raise ValueError("El correo electrónico no tiene un formato válido.")
+
+            id_profile = profile_by_employee_id.get(employee_id)
+            email_profile = profile_by_email.get(email)
+            if id_profile and email_profile and id_profile["documentId"] != email_profile["documentId"]:
+                raise ValueError("El ID y el correo coinciden con dos perfiles diferentes; corrígelos antes de importar.")
+            profile = id_profile or email_profile
+            if profile and profile.get("role") == "admin":
+                raise ValueError("No se sincronizan perfiles administrativos desde el archivo de empleados.")
+            department_id = _ensure_department(db, department_name, department_index)
+            work_schedule = row.get("workSchedule") or {}
+            if not isinstance(work_schedule, dict):
+                raise ValueError("El horario de trabajo no tiene un formato válido.")
+
+            employee_fields = {
+                field: row[field]
+                for field in USER_PROFILE_FIELDS
+                if field in row
+            }
+            employee_fields.update({
+                "employeeId": employee_id,
+                "department": department_name,
+                "source": "import",
+            })
+            leave_records = employee_fields.get("leaveRecords") or []
+            if not isinstance(leave_records, list) or len(leave_records) > 500:
+                raise ValueError("El empleado supera el máximo de 500 licencias incluidas.")
+            for leave in leave_records:
+                if (
+                    not isinstance(leave, dict) or
+                    set(leave.keys()) - {"date", "type", "days"} or
+                    leave.get("type") not in ("Annual", "Sick") or
+                    not isinstance(leave.get("date"), str) or
+                    not isinstance(leave.get("days"), (int, float)) or
+                    leave.get("days") <= 0
+                ):
+                    raise ValueError("Una licencia contiene campos o valores no permitidos.")
+            existing_leave_records = (profile or {}).get("leaveRecords") or []
+            merged_leaves = {}
+            for leave in [*existing_leave_records, *leave_records]:
+                if not isinstance(leave, dict):
+                    continue
+                key = (
+                    str(leave.get("date", "")),
+                    str(leave.get("type", "")),
+                    float(leave.get("days", 0)),
+                )
+                merged_leaves[key] = {
+                    "date": key[0],
+                    "type": key[1],
+                    "days": key[2],
+                }
+            if len(merged_leaves) > 500:
+                raise ValueError("El historial combinado supera el máximo de 500 licencias por empleado.")
+            employee_fields["leaveRecords"] = list(merged_leaves.values())
+            employee_fields["leaveSummary"] = {
+                "annualDays": sum(
+                    leave["days"] for leave in employee_fields["leaveRecords"] if leave["type"] == "Annual"
+                ),
+                "sickDays": sum(
+                    leave["days"] for leave in employee_fields["leaveRecords"] if leave["type"] == "Sick"
+                ),
+            }
+
+            document_id = (
+                profile["documentId"]
+                if profile
+                else f"excel_{re.sub(r'[^A-Za-z0-9_-]', '_', employee_id)}"
+            )
+            if not profile and db.collection("users").document(document_id).get().exists:
+                raise ValueError("El ID de empleado genera un identificador de perfil ya ocupado.")
+            old_team_id = profile.get("teamId") if profile else None
+            team_id = old_team_id
+            old_department_id = profile.get("departmentId") if profile else None
+            if old_team_id and old_department_id and old_department_id != department_id:
+                team = db.collection("teams").document(old_team_id).get()
+                if team.exists and team.get("departmentId") != department_id:
+                    _remove_from_team(db, old_team_id, document_id)
+                    team_id = None
+
+            payload = {
+                **employee_fields,
+                "displayName": display_name,
+                "email": email,
+                "role": (profile or {}).get("role", "employee"),
+                "departmentId": department_id,
+                "teamId": team_id,
+                "workSchedule": work_schedule,
+                "active": employee_fields.get("status") != "Terminated",
+                "authManaged": bool(profile and profile.get("authManaged", True)),
+                "updatedBy": caller.uid,
+                "updatedAt": admin_firestore.SERVER_TIMESTAMP,
+            }
+            if not profile:
+                payload.update({
+                    "authManaged": False,
+                    "mustChangePassword": False,
+                    "createdBy": caller.uid,
+                    "createdAt": admin_firestore.SERVER_TIMESTAMP,
+                })
+            db.collection("users").document(document_id).set(payload, merge=True)
+
+            indexed = {**(profile or {}), **payload, "documentId": document_id}
+            profile_by_employee_id[employee_id] = indexed
+            profile_by_email[email] = indexed
+            if profile:
+                updated += 1
+            else:
+                created += 1
+        except Exception as error:
+            errors.append({
+                "rowNumber": row_number,
+                "message": str(error)[:240],
+            })
+
+    return {"created": created, "updated": updated, "errors": errors}
+
+
 @https_fn.on_call(region="us-central1")
 def reset_user_password(req: https_fn.CallableRequest) -> dict:
     """Genera una contraseña temporal que el usuario deberá cambiar al entrar."""
@@ -351,6 +617,13 @@ def reset_user_password(req: https_fn.CallableRequest) -> dict:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
             message="Falta el uid del usuario.",
+        )
+
+    profile = _db().collection("users").document(uid).get().to_dict() or {}
+    if profile.get("authManaged") is False:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.FAILED_PRECONDITION,
+            message="Este perfil solo existe en Firestore y no tiene cuenta de acceso. Para darle acceso, crea una cuenta manual desde Gestión de Usuarios.",
         )
 
     temporary_password = _generate_temp_password()
@@ -387,15 +660,19 @@ def delete_user_account(req: https_fn.CallableRequest) -> dict:
     profile_snapshot = profile_ref.get()
     profile = profile_snapshot.to_dict() or {}
 
-    try:
-        auth_user = admin_auth.get_user(uid)
-    except admin_auth.UserNotFoundError as e:
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.NOT_FOUND,
-            message="No se encontró la cuenta.",
-        ) from e
+    auth_managed = profile.get("authManaged") is not False
+    auth_user = None
+    if auth_managed:
+        try:
+            auth_user = admin_auth.get_user(uid)
+        except admin_auth.UserNotFoundError as e:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.NOT_FOUND,
+                message="No se encontró la cuenta.",
+            ) from e
 
-    if (profile.get("role") or (auth_user.custom_claims or {}).get("role")) == "admin":
+    auth_role = (auth_user.custom_claims or {}).get("role") if auth_user else None
+    if (profile.get("role") or auth_role) == "admin":
         admins = db.collection("users").where("role", "==", "admin").limit(2).get()
         if len(admins) <= 1:
             raise https_fn.HttpsError(
@@ -420,13 +697,14 @@ def delete_user_account(req: https_fn.CallableRequest) -> dict:
                 })
             batch.commit()
 
-    try:
-        admin_auth.delete_user(uid)
-    except admin_auth.UserNotFoundError as e:
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.NOT_FOUND,
-            message="No se encontró la cuenta de autenticación.",
-        ) from e
+    if auth_managed:
+        try:
+            admin_auth.delete_user(uid)
+        except admin_auth.UserNotFoundError as e:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.NOT_FOUND,
+                message="No se encontró la cuenta de autenticación.",
+            ) from e
 
     _record_departure(db, uid, profile, "deleted")
     profile_ref.delete()

@@ -15,6 +15,12 @@ service cloud.firestore {
       return isSignedIn()
         && request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.memberIds;
     }
+    function hasNoSalaryFields(data) {
+      return !data.keys().hasAny([
+        "salary", "pay", "income", "wage", "compensation", "encashment",
+        "remuneration", "basePay", "grossSalary", "netSalary", "sueldo", "salario"
+      ]);
+    }
 
     match /surveyTemplates/{templateId} {
       allow read: if resource.data.status == "published" || isSignedIn();
@@ -29,10 +35,10 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if isSelf(uid) || isAdmin();
-      allow create: if isAdmin();
+      allow create: if isAdmin() && hasNoSalaryFields(request.resource.data);
       // El usuario solo puede apagar su propia bandera de cambio de contraseña;
       // todo lo demás lo modifica el admin (normalmente vía Cloud Function).
-      allow update: if isAdmin()
+      allow update: if (isAdmin() && hasNoSalaryFields(request.resource.data))
         || (isSelf(uid)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["mustChangePassword"])
             && request.resource.data.mustChangePassword == false);
@@ -211,5 +217,6 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
+
   }
 }
