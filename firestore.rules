@@ -91,5 +91,79 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if false; // exclusivo de las Cloud Functions (Admin SDK)
     }
+
+    match /metricsCatalog/{metricId} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /externalDataImports/{importId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          "sourceFileName", "sourceType", "createdBy", "createdAt", "completedAt",
+          "status", "acceptedRows", "rejectedRows", "inputRows", "smallCohortGroups"
+        ])
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == "uploading"
+        && request.resource.data.sourceType in ["csv", "xlsx"]
+        && request.resource.data.sourceFileName is string
+        && request.resource.data.sourceFileName.size() <= 200
+        && request.resource.data.acceptedRows is int
+        && request.resource.data.rejectedRows is int
+        && request.resource.data.inputRows is int
+        && request.resource.data.smallCohortGroups is int;
+      allow update: if isAdmin()
+        && resource.data.status == "uploading"
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "status", "completedAt", "failureCode"
+        ])
+        && request.resource.data.status in ["complete", "failed"];
+      allow delete: if false;
+
+      match /records/{recordId} {
+        function parentImport() {
+          return get(/databases/$(database)/documents/externalDataImports/$(importId)).data;
+        }
+
+        allow read: if isAdmin() && parentImport().status == "complete";
+        allow create: if isAdmin()
+          && parentImport().status == "uploading"
+          && request.resource.data.keys().hasOnly([
+            "sourceRowNumber", "date", "department", "metrics"
+          ])
+          && request.resource.data.sourceRowNumber is int
+          && request.resource.data.sourceRowNumber >= 2
+          && request.resource.data.sourceRowNumber <= 5001
+          && request.resource.data.date is timestamp
+          && request.resource.data.department is string
+          && request.resource.data.department.size() > 0
+          && request.resource.data.department.size() <= 120
+          && request.resource.data.metrics is map
+          && request.resource.data.metrics.keys().hasOnly([
+            "participationRate", "psychSafety", "attritionRisk"
+          ])
+          && (
+            !("participationRate" in request.resource.data.metrics)
+            || (request.resource.data.metrics.participationRate is number
+              && request.resource.data.metrics.participationRate >= 0
+              && request.resource.data.metrics.participationRate <= 100)
+          )
+          && (
+            !("psychSafety" in request.resource.data.metrics)
+            || (request.resource.data.metrics.psychSafety is number
+              && request.resource.data.metrics.psychSafety >= 1
+              && request.resource.data.metrics.psychSafety <= 5)
+          )
+          && (
+            !("attritionRisk" in request.resource.data.metrics)
+            || (request.resource.data.metrics.attritionRisk is number
+              && request.resource.data.metrics.attritionRisk >= 0
+              && request.resource.data.metrics.attritionRisk <= 100)
+          );
+        allow update, delete: if false;
+      }
+    }
   }
 }

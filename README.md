@@ -12,6 +12,18 @@ Cuenta con una **doble experiencia**:
 - **Experiencia Ejecutiva (Dirección / RH):** Tableros interactivos con KPIs en tiempo real, medidor de eNPS tipo termómetro semicircular con caras expresivas, matriz de riesgo departamental, tendencias históricas, exportación formal a PDF/Excel y un panel de asesoría estratégica impulsado por Inteligencia Artificial (Google Gemini) que convierte diagnósticos cualitativos en tareas de equipo.
 - **Experiencia Colaborativa (Empleados):** Portal de colaboradores (`/mi-espacio`), contestación ágil de encuestas segmentadas, seguimiento de tareas de bienestar en tableros Kanban (`/mis-proyectos`) y resumen transparente de presencia digital para esquemas de trabajo remoto e híbrido.
 
+### Data Hub (entrega inicial)
+
+La ruta administrativa `/admin/data-hub` permite importar archivos CSV y Excel (`.xlsx`) de hasta 10 MB y 5,000 filas. El asistente procesa la primera hoja, muestra una vista previa y permite mapear fecha, departamento y las métricas del catálogo antes de confirmar.
+
+Solo se conservan los campos mapeados; el archivo original y las demás columnas no se suben. Las filas inválidas se excluyen y se reportan. Los grupos con menos de cinco filas se permiten, pero generan una advertencia para que el administrador evalúe su posible identificabilidad. Las importaciones quedan separadas de `responses`, bajo `externalDataImports`; el catálogo inicial se persiste en `metricsCatalog`. En esta etapa, los datos importados se consultan por separado y todavía no alimentan los KPIs del dashboard.
+
+La ruta y ambas colecciones requieren rol de administrador en Firestore. Despliega las reglas actualizadas antes de habilitar el módulo en el proyecto Firebase:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
 ---
 
 ## 2. Requisitos Previos
@@ -116,11 +128,11 @@ El sistema utiliza los roles `admin` y `employee`; no hay autorregistro abierto.
 ├── src/
 │   ├── assets/                # Ilustraciones y recursos gráficos
 │   ├── components/            # Componentes de interfaz (medidor eNPS, AI Strategist, Heatmap, TopBar, Kanban, etc.)
-│   ├── data/                  # Preguntas base, plantillas y temas
+│   ├── data/                  # Preguntas base, plantillas, temas y catálogo de métricas
 │   ├── hooks/                 # Hooks personalizados de React (useOrgHealthMetrics, useAuth, useTheme, etc.)
-│   ├── pages/                 # Páginas (Dashboard, Login, MiEspacio, SurveyBuilder, SurveyRunner, TeamBoard, etc.)
-│   ├── services/              # Servicios de conexión a Firebase, Gemini IA y exportaciones
-│   └── utils/                 # Utilidades de fechas, métricas y estilos de riesgo
+│   ├── pages/                 # Páginas (Dashboard, DataHub, Login, MiEspacio, SurveyBuilder, etc.)
+│   ├── services/              # Servicios de Firebase, Data Hub, Gemini IA y exportaciones
+│   └── utils/                 # Utilidades de fechas, importación, métricas y riesgo
 ├── firestore.rules            # Reglas de seguridad de Firestore
 ├── package.json               # Dependencias y scripts del proyecto
 └── README.md                  # Este documento

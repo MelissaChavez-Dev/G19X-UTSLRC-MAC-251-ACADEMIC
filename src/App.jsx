@@ -11,6 +11,7 @@ import TeamBoard from "./pages/TeamBoard";
 import ForcePasswordChange from "./pages/ForcePasswordChange";
 import UserManagement from "./pages/admin/UserManagement";
 import TeamDirectory from "./pages/admin/TeamDirectory";
+import DataHub from "./pages/admin/DataHub";
 import MisProyectos from "./pages/MisProyectos";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleBasedRedirect from "./components/RoleBasedRedirect";
@@ -68,6 +69,14 @@ function App() {
               element={
                 <ProtectedRoute roles={["admin"]}>
                   <UserManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/data-hub"
+              element={
+                <ProtectedRoute roles={["admin"]}>
+                  <DataHub />
                 </ProtectedRoute>
               }
             />
