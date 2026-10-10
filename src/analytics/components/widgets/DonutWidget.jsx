@@ -20,6 +20,7 @@ export default function DonutWidget({
   compact = false,
   labelMode,
   showValues = false,
+  labelMap = {},
 }) {
   if (!data || data.length === 0) {
     return (
@@ -30,6 +31,7 @@ export default function DonutWidget({
   }
 
   const total = data.reduce((sum, d) => sum + (Number(d[valueKey]) || 0), 0);
+  const displayName = (name) => labelMap[name] || name;
 
   return (
     <div className={`relative h-full w-full ${compact ? "min-h-0" : "min-h-[10rem]"}`}>
@@ -39,13 +41,13 @@ export default function DonutWidget({
             data={data}
             nameKey={nameKey}
             dataKey={valueKey}
-            innerRadius={compact ? "32%" : 55}
-            outerRadius={compact ? "50%" : 80}
+            innerRadius={compact ? "60%" : 55}
+            outerRadius={compact ? "100%" : 80}
             paddingAngle={compact ? 1 : 2}
             label={labelMode === "outside"
               ? (entry) => showValues
-                ? `${entry.name} ${Number(entry.value).toLocaleString("es-MX")}`
-                : entry.name
+                ? `${displayName(entry.name)} ${Number(entry.value).toLocaleString("es-MX")}`
+                : displayName(entry.name)
               : false}
             labelLine={labelMode === "outside"}
             cursor={onItemClick ? "pointer" : "default"}
@@ -71,7 +73,7 @@ export default function DonutWidget({
             formatter={(value, name) => {
               const val = Number(value);
               const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-              return [`${val.toLocaleString("es-MX")} ${unit} (${pct}%)`.trim(), name];
+              return [`${val.toLocaleString("es-MX")} ${unit} (${pct}%)`.trim(), displayName(name)];
             }}
             contentStyle={{
               backgroundColor: "var(--surface-container-lowest)",
@@ -83,8 +85,15 @@ export default function DonutWidget({
           {labelMode !== "outside" && (
             <Legend
               verticalAlign="bottom"
-              height={compact ? 18 : 36}
-              wrapperStyle={{ fontSize: compact ? "10px" : "11px" }}
+              height={compact ? 24 : 36}
+              formatter={(name, entry) => {
+                const value = entry.payload?.[valueKey];
+                const label = displayName(name);
+                return showValues && value !== undefined
+                  ? `${label} ${Number(value).toLocaleString("es-MX")}`
+                  : label;
+              }}
+              wrapperStyle={{ fontSize: compact ? "12px" : "11px" }}
             />
           )}
         </PieChart>

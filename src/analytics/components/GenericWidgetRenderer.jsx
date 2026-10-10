@@ -209,6 +209,7 @@ export default function GenericWidgetRenderer({
             compact={compact}
             labelMode={widget.options?.labelMode}
             showValues={widget.options?.showValues || false}
+            labelMap={widget.options?.labelMap || {}}
             activeItem={filters.crossFilter?.value}
             onItemClick={handleCrossFilter}
           />

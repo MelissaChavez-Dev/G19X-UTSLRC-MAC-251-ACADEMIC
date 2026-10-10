@@ -59,7 +59,7 @@ export const HR_TEMPLATES = [
     },
 
     // Esta página usa una cuadrícula de 24 columnas (el resto de páginas sigue en 12).
-    grid: { columns: 24, rowHeight: 32, gap: 8 },
+    grid: { columns: 24, rowHeight: 40, gap: 8 },
 
     // Una banda blanca con sombra por sección (Colaboradores / Diversidad / Contratación / Bajas).
     bands: [
@@ -107,34 +107,39 @@ export const HR_TEMPLATES = [
         title: "Tipo de contratación",
         measure: "distribution",
         dimension: "hireType",
-        options: { unit: "colab.", labelMode: "outside", showValues: true },
+        options: {
+          unit: "colab.",
+          labelMode: "legend",
+          showValues: true,
+          labelMap: { Contract: "Contrato", Regular: "Regular" },
+        },
         layout: { x: 8, y: 0, w: 5, h: 3 },
       },
       {
         id: "w1-17",
         type: "bar",
-        title: "Colaboradores por nivel organizacional",
+        title: "Plantilla por nivel",
         measure: "distribution",
         dimension: "orgLevel",
         options: { unit: "colab.", orientation: "vertical", showValues: "top", sort: "valueDesc", hideAxis: true },
-        layout: { x: 13, y: 0, w: 5, h: 3 },
+        layout: { x: 13, y: 0, w: 4, h: 3 },
       },
       {
         id: "w1-2",
         type: "kpi",
-        title: "Colaboradores regulares",
+        title: "Plantilla regular",
         measure: "headCount",
         filters: { hireType: "Regular" },
         options: { variant: "plain", unit: "reg." },
-        layout: { x: 18, y: 0, w: 3, h: 3 },
+        layout: { x: 17, y: 0, w: 3, h: 3 },
       },
       {
         id: "w1-3",
         type: "kpi",
         title: "Antigüedad promedio (años)",
         measure: "avgTenure",
-        options: { variant: "plain", unit: "años", decimals: 2 },
-        layout: { x: 21, y: 0, w: 3, h: 3 },
+        options: { variant: "plain", decimals: 2 },
+        layout: { x: 20, y: 0, w: 4, h: 3 },
       },
 
       // ───────────── Banda 2: Diversidad ─────────────
@@ -164,7 +169,12 @@ export const HR_TEMPLATES = [
         title: "Colaboradores por género",
         measure: "distribution",
         dimension: "gender",
-        options: { unit: "colab.", labelMode: "outside", showValues: true },
+        options: {
+          unit: "colab.",
+          labelMode: "legend",
+          showValues: true,
+          labelMap: { Female: "Mujer", Male: "Hombre", Other: "Otro" },
+        },
         layout: { x: 8, y: 3, w: 5, h: 3 },
       },
       {
@@ -212,7 +222,13 @@ export const HR_TEMPLATES = [
         title: "Contrataciones por tipo de contrato",
         measure: "distribution",
         dimension: "hireType",
-        options: { unit: "altas", population: "hires", labelMode: "outside", showValues: true },
+        options: {
+          unit: "altas",
+          population: "hires",
+          labelMode: "legend",
+          showValues: true,
+          labelMap: { Contract: "Contrato", Regular: "Regular" },
+        },
         layout: { x: 8, y: 6, w: 5, h: 3 },
       },
       {
@@ -230,7 +246,13 @@ export const HR_TEMPLATES = [
         title: "Contrataciones por género",
         measure: "distribution",
         dimension: "gender",
-        options: { unit: "altas", population: "hires", labelMode: "outside", showValues: true },
+        options: {
+          unit: "altas",
+          population: "hires",
+          labelMode: "legend",
+          showValues: true,
+          labelMap: { Female: "Mujer", Male: "Hombre", Other: "Otro" },
+        },
         layout: { x: 19, y: 6, w: 5, h: 3 },
       },
 
@@ -262,7 +284,13 @@ export const HR_TEMPLATES = [
         title: "Bajas por categoría",
         measure: "distribution",
         dimension: "terminationCategory",
-        options: { unit: "bajas", population: "terminations", labelMode: "outside", showValues: true },
+        options: {
+          unit: "bajas",
+          population: "terminations",
+          labelMode: "legend",
+          showValues: true,
+          labelMap: { Involuntary: "Involuntaria", Voluntary: "Voluntaria", Death: "Defunción" },
+        },
         layout: { x: 8, y: 9, w: 5, h: 3 },
       },
       {

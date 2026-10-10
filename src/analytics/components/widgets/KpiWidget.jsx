@@ -54,7 +54,7 @@ export default function KpiWidget({
         )}
       </div>
 
-      <footer className={`flex items-center gap-1 ${compact ? "text-[12px]" : "text-label-sm"}`}>
+      {(!compact || deltaPct !== null) && <footer className={`flex items-center gap-1 ${compact ? "text-[12px]" : "text-label-sm"}`}>
         {deltaPct !== null ? (
           <span
             className={`inline-flex items-center gap-0.5 rounded-full font-semibold ${
@@ -74,7 +74,7 @@ export default function KpiWidget({
           <span className="text-on-surface-variant/70">Periodo actual</span>
         )}
         <span className="text-on-surface-variant truncate">{comparisonLabel}</span>
-      </footer>
+      </footer>}
     </motion.div>
   );
 }
