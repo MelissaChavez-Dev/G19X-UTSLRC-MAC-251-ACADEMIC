@@ -5,28 +5,353 @@
  */
 
 /**
- * Tema visual compartido (estilo "HR at a Glance": amarillo + grises neutros).
- * Las páginas lo heredan; cada widget puede sobrescribir colores con options.color.
+ * Rediseño de la página 1 "Recursos Humanos de un vistazo".
+ *
+ * Paleta tomada de las capturas del sistema: fondo crema, azul cielo, lavanda,
+ * verde salvia, coral suave para bajas y azul marino en modo oscuro.
+ * Los hex son aproximados: si ya tienes los tokens en index-v2.css, sustitúyelos aquí.
+ *
+ * Uso: reemplaza el HR_THEME anterior y, en HR_TEMPLATES, el objeto de "page-1"
+ * por HR_PAGE_1 (o deja el elemento como `HR_PAGE_1,`).
+ *
+ * Claves que ya leía el renderer: colors.*, band.radius, band.shadow, kpi.*, yearButtons.*
+ * Claves NUEVAS (el renderer debe leerlas, si no se ignoran sin romper nada):
+ *   - colors.series        paleta para donas/barras con 3+ categorías
+ *   - colors.widgetSurface fondo translúcido del widget dentro de la banda
+ *   - bands[i].fill        color de fondo de cada banda
+ *   - grid.bandPadding     aire interno de la banda
  */
+
 export const HR_THEME = {
-  name: "hr-glance-yellow",
-  font: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+  name: "hr-calma-expresiva",
+  font: "'Plus Jakarta Sans', 'Inter', 'Segoe UI', sans-serif",
   colors: {
-    primary: "#F0C419",      // barras, dona (segmento principal), línea de sparkline
-    primaryFill: "#FAE6A0",  // relleno del área bajo el sparkline
-    secondary: "#A6A6A6",    // segundo segmento de dona / series secundarias
-    sectionLabel: "#E8B90E", // texto de la etiqueta de sección
-    text: "#252423",
-    textMuted: "#605E5C",
-    positive: "#2E9E44",
-    negative: "#D13438",
+    primary: "#4A74B0",        // barras, segmento principal de dona, línea del sparkline
+    primaryFill: "#C5D7F0",    // relleno bajo el sparkline
+    secondary: "#B7A4D6",      // segundo segmento / series secundarias
+    sectionLabel: "#3B5E8F",   // texto de la etiqueta de sección
+    text: "#1F2A3D",
+    textMuted: "#5B6678",
+    positive: "#3F8F62",
+    negative: "#C0665E",
     surface: "#FFFFFF",
-    canvas: "#F3F2F1",
-    headerGradient: ["#F7F7F7", "#E4E4E4"],
+    widgetSurface: "rgba(255,255,255,0.55)",
+    canvas: "#FBF8F2",
+    headerGradient: ["#E3ECF8", "#EADFF4"],
+    series: ["#4A74B0", "#8566B5", "#4B8566", "#C0665E", "#6FA8BF"],
   },
-  band: { radius: 2, shadow: "0 2px 6px rgba(0,0,0,.18)" },
-  kpi: { bigNumberSize: 40, plainNumberColor: "#F0C419", deltaPositive: "▲", deltaNegative: "▼" },
-  yearButtons: { activeBg: "#F0C419", border: "#C8C6C4" },
+  // Sin sombras ni bordes: las áreas se separan solo por contraste de color.
+  band: { radius: 28, shadow: "none" },
+  kpi: { bigNumberSize: 44, plainNumberColor: "#4A74B0", deltaPositive: "▲", deltaNegative: "▼" },
+  yearButtons: { activeBg: "#4A74B0", border: "#C9D3E3" },
+};
+
+/** Variante para el modo oscuro del sistema (azul marino). */
+export const HR_THEME_DARK = {
+  ...HR_THEME,
+  name: "hr-calma-expresiva-dark",
+  colors: {
+    ...HR_THEME.colors,
+    primary: "#8FB2E6",
+    primaryFill: "#2E4468",
+    secondary: "#B7A4D6",
+    sectionLabel: "#B9CDEE",
+    text: "#EAF0FA",
+    textMuted: "#9AA8BF",
+    positive: "#6FC495",
+    negative: "#E58F87",
+    surface: "#1E2B45",
+    widgetSurface: "rgba(255,255,255,0.06)",
+    canvas: "#121B2E",
+    headerGradient: ["#1E2B45", "#262A4A"],
+    series: ["#8FB2E6", "#B7A4D6", "#7FCBA2", "#E58F87", "#8CC6D9"],
+  },
+  kpi: { ...HR_THEME.kpi, plainNumberColor: "#8FB2E6" },
+  yearButtons: { activeBg: "#8FB2E6", border: "#3A4A68" },
+};
+
+// Acento por sección: se aplica con options.color en etiqueta, KPIs y barras.
+const ACCENT = {
+  people: "#4A74B0", // Colaboradores (azul)
+  diversity: "#8566B5", // Diversidad (lavanda)
+  hiring: "#4B8566", // Contratación (salvia)
+  exits: "#C0665E", // Bajas (coral)
+};
+
+export const HR_PAGE_1 = {
+  id: "page-1",
+  templateKey: "hr_at_a_glance",
+  title: "1. Recursos Humanos de un vistazo",
+  description: "Visión ejecutiva integral de colaboradores, diversidad, contratación y bajas.",
+
+  header: {
+    title: "Recursos Humanos de un vistazo",
+    logo: "hr-monogram",
+    navigation: { home: true, next: true },
+  },
+
+  // 24 columnas, filas más altas y más aire entre bandas.
+  // Antes: rowHeight 40, gap 8 y bandas de 3 filas (120 px). Ahora: 6 filas de 48 px (288 px).
+  grid: { columns: 24, rowHeight: 48, gap: 16, bandPadding: 20 },
+
+  // Una banda pastel distinta por sección.
+  bands: [
+    { y: 0, h: 6, fill: "#DCE7F6" },  // Colaboradores: azul cielo
+    { y: 6, h: 6, fill: "#E7DDF3" },  // Diversidad: lavanda
+    { y: 12, h: 6, fill: "#DCEBDF" }, // Contratación: salvia
+    { y: 18, h: 6, fill: "#F6E1DC" }, // Bajas: coral suave
+  ],
+
+  slicers: [
+    {
+      type: "yearButtons",
+      filterKey: "year",
+      label: "Año",
+      layoutConfig: { columns: 4, years: [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024], defaultValue: "latest" },
+    },
+    { type: "dropdown", filterKey: "businessUnit", label: "Unidad de Negocio", layoutConfig: { allLabel: "Todas" } },
+  ],
+
+  // Todas las bandas comparten la misma retícula de columnas:
+  // etiqueta 0-3 | widget 3-8 | widget 8-13 | widget 13-18 | columna final 18-24.
+  widgets: [
+    // ───────────── Banda 1: Colaboradores ─────────────
+    {
+      id: "w1-s1",
+      type: "sectionLabel",
+      title: "Colaboradores",
+      options: { icon: "groups", iconStyle: "silhouette", color: ACCENT.people },
+      layout: { x: 0, y: 0, w: 3, h: 6 },
+    },
+    {
+      id: "w1-1",
+      type: "kpi",
+      title: "Total de colaboradores",
+      measure: "headCount",
+      options: {
+        variant: "sparkline",
+        sparkline: { measure: "monthlyTrend", key: "headCount", style: "area" },
+        comparisonMeasure: "yoyHeadcount",
+        unit: "colab.",
+        color: ACCENT.people,
+      },
+      layout: { x: 3, y: 0, w: 5, h: 6 },
+    },
+    {
+      id: "w1-4",
+      type: "donut",
+      title: "Tipo de contratación",
+      measure: "distribution",
+      dimension: "hireType",
+      options: {
+        unit: "colab.",
+        labelMode: "legend",
+        showValues: true,
+        labelMap: { Contract: "Contrato", Regular: "Regular" },
+      },
+      layout: { x: 8, y: 0, w: 5, h: 6 },
+    },
+    {
+      id: "w1-17",
+      type: "bar",
+      title: "Plantilla por nivel",
+      measure: "distribution",
+      dimension: "orgLevel",
+      options: { unit: "colab.", orientation: "vertical", showValues: "top", sort: "valueDesc", hideAxis: true, color: ACCENT.people },
+      layout: { x: 13, y: 0, w: 5, h: 6 },
+    },
+    // Los dos KPIs simples se apilan en la columna final para no quedar angostos.
+    {
+      id: "w1-2",
+      type: "kpi",
+      title: "Plantilla regular",
+      measure: "headCount",
+      filters: { hireType: "Regular" },
+      options: { variant: "plain", unit: "reg.", color: ACCENT.people },
+      layout: { x: 18, y: 0, w: 6, h: 3 },
+    },
+    {
+      id: "w1-3",
+      type: "kpi",
+      title: "Antigüedad promedio (años)",
+      measure: "avgTenure",
+      options: { variant: "plain", decimals: 2, color: ACCENT.people },
+      layout: { x: 18, y: 3, w: 6, h: 3 },
+    },
+
+    // ───────────── Banda 2: Diversidad ─────────────
+    {
+      id: "w1-s2",
+      type: "sectionLabel",
+      title: "Diversidad",
+      options: { icon: "diversity_3", iconStyle: "badge", color: ACCENT.diversity },
+      layout: { x: 0, y: 6, w: 3, h: 6 },
+    },
+    {
+      id: "w1-5",
+      type: "kpi",
+      title: "% Mujeres líderes",
+      measure: "femaleLeadersPct",
+      options: {
+        variant: "sparkline",
+        sparkline: { measure: "monthlyFemaleLeadersTrend", key: "value", style: "area" },
+        unit: "%",
+        decimals: 2,
+        color: ACCENT.diversity,
+      },
+      layout: { x: 3, y: 6, w: 5, h: 6 },
+    },
+    {
+      id: "w1-7",
+      type: "donut",
+      title: "Colaboradores por género",
+      measure: "distribution",
+      dimension: "gender",
+      options: {
+        unit: "colab.",
+        labelMode: "legend",
+        showValues: true,
+        labelMap: { Female: "Mujer", Male: "Hombre", Other: "Otro" },
+      },
+      layout: { x: 8, y: 6, w: 5, h: 6 },
+    },
+    {
+      id: "w1-8",
+      type: "bar",
+      title: "Colaboradores por rango de edad",
+      measure: "distribution",
+      dimension: "ageBand",
+      options: { unit: "colab.", orientation: "vertical", showValues: "top", sort: "valueDesc", hideAxis: true, color: ACCENT.diversity },
+      layout: { x: 13, y: 6, w: 5, h: 6 },
+    },
+    {
+      id: "w1-6",
+      type: "kpi",
+      title: "Edad promedio de colaboradores",
+      measure: "avgAge",
+      options: { variant: "plain", unit: "años", decimals: 2, color: ACCENT.diversity },
+      layout: { x: 18, y: 6, w: 6, h: 6 },
+    },
+
+    // ───────────── Banda 3: Contratación ─────────────
+    {
+      id: "w1-s3",
+      type: "sectionLabel",
+      title: "Contratación",
+      options: { icon: "person_search", iconStyle: "silhouette", color: ACCENT.hiring },
+      layout: { x: 0, y: 12, w: 3, h: 6 },
+    },
+    {
+      id: "w1-9",
+      type: "kpi",
+      title: "Nuevas contrataciones",
+      measure: "hires",
+      options: {
+        variant: "sparkline",
+        sparkline: { measure: "monthlyTrend", key: "hires", style: "area" },
+        comparisonMeasure: "yoyHires",
+        unit: "altas",
+        color: ACCENT.hiring,
+      },
+      layout: { x: 3, y: 12, w: 5, h: 6 },
+    },
+    {
+      id: "w1-11",
+      type: "donut",
+      title: "Contrataciones por tipo de contrato",
+      measure: "distribution",
+      dimension: "hireType",
+      options: {
+        unit: "altas",
+        population: "hires",
+        labelMode: "legend",
+        showValues: true,
+        labelMap: { Contract: "Contrato", Regular: "Regular" },
+      },
+      layout: { x: 8, y: 12, w: 5, h: 6 },
+    },
+    {
+      id: "w1-10",
+      type: "bar",
+      title: "Contrataciones por rango de edad",
+      measure: "distribution",
+      dimension: "ageBand",
+      options: { unit: "altas", population: "hires", orientation: "vertical", showValues: "top", sort: "valueDesc", hideAxis: true, color: ACCENT.hiring },
+      layout: { x: 13, y: 12, w: 5, h: 6 },
+    },
+    {
+      id: "w1-12",
+      type: "donut",
+      title: "Contrataciones por género",
+      measure: "distribution",
+      dimension: "gender",
+      options: {
+        unit: "altas",
+        population: "hires",
+        labelMode: "legend",
+        showValues: true,
+        labelMap: { Female: "Mujer", Male: "Hombre", Other: "Otro" },
+      },
+      layout: { x: 18, y: 12, w: 6, h: 6 },
+    },
+
+    // ───────────── Banda 4: Bajas ─────────────
+    {
+      id: "w1-s4",
+      type: "sectionLabel",
+      title: "Bajas",
+      options: { icon: "person_remove", iconStyle: "silhouette", color: ACCENT.exits },
+      layout: { x: 0, y: 18, w: 3, h: 6 },
+    },
+    {
+      id: "w1-13",
+      type: "kpi",
+      title: "Bajas del ejercicio",
+      measure: "terminations",
+      options: {
+        variant: "sparkline",
+        sparkline: { measure: "monthlyTrend", key: "terminations", style: "area" },
+        comparisonMeasure: "yoyTerminations",
+        unit: "bajas",
+        invertDelta: true,
+        color: ACCENT.exits,
+      },
+      layout: { x: 3, y: 18, w: 5, h: 6 },
+    },
+    {
+      id: "w1-15",
+      type: "donut",
+      title: "Bajas por categoría",
+      measure: "distribution",
+      dimension: "terminationCategory",
+      options: {
+        unit: "bajas",
+        population: "terminations",
+        labelMode: "legend",
+        showValues: true,
+        labelMap: { Involuntary: "Involuntaria", Voluntary: "Voluntaria", Death: "Defunción" },
+      },
+      layout: { x: 8, y: 18, w: 5, h: 6 },
+    },
+    {
+      id: "w1-18",
+      type: "bar",
+      title: "Tasa de baja por nivel organizacional",
+      measure: "terminationRate", // bajas del grupo / plantilla del grupo
+      dimension: "orgLevel",
+      options: { unit: "%", decimals: 2, orientation: "vertical", showValues: "top", sort: "valueDesc", hideAxis: true, color: ACCENT.exits },
+      layout: { x: 13, y: 18, w: 5, h: 6 },
+    },
+    {
+      id: "w1-16",
+      type: "bar",
+      title: "Tasa de baja por antigüedad",
+      measure: "terminationRate",
+      dimension: "tenureBand",
+      options: { unit: "%", decimals: 2, orientation: "vertical", showValues: "top", sort: "natural", hideAxis: true, color: ACCENT.exits },
+      layout: { x: 18, y: 18, w: 6, h: 6 },
+    },
+  ],
 };
 
 export const HR_TEMPLATES = [
@@ -45,274 +370,7 @@ export const HR_TEMPLATES = [
   // ----------------------------------------------------
   // 1. Recursos Humanos de un vistazo
   // ----------------------------------------------------
-  {
-    id: "page-1",
-    templateKey: "hr_at_a_glance",
-    title: "1. Recursos Humanos de un vistazo",
-    description: "Visión ejecutiva integral de colaboradores, diversidad, contratación y bajas.",
-
-    // Cabecera estilo Power BI: logo + título, filtros a la derecha y navegación.
-    header: {
-      title: "Recursos Humanos de un vistazo",
-      logo: "hr-monogram",
-      navigation: { home: true, next: true },
-    },
-
-    // Esta página usa una cuadrícula de 24 columnas (el resto de páginas sigue en 12).
-    grid: { columns: 24, rowHeight: 40, gap: 8 },
-
-    // Una banda blanca con sombra por sección (Colaboradores / Diversidad / Contratación / Bajas).
-    bands: [
-      { y: 0, h: 3 },
-      { y: 3, h: 3 },
-      { y: 6, h: 3 },
-      { y: 9, h: 3 },
-    ],
-
-    slicers: [
-      {
-        type: "yearButtons",
-        filterKey: "year",
-        label: "Año",
-        layoutConfig: { columns: 4, years: [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024], defaultValue: "latest" },
-      },
-      { type: "dropdown", filterKey: "businessUnit", label: "Unidad de Negocio", layoutConfig: { allLabel: "Todas" } },
-    ],
-
-    widgets: [
-      // ───────────── Banda 1: Colaboradores ─────────────
-      {
-        id: "w1-s1",
-        type: "sectionLabel",
-        title: "Colaboradores",
-        options: { icon: "groups", iconStyle: "silhouette" },
-        layout: { x: 0, y: 0, w: 3, h: 3 },
-      },
-      {
-        id: "w1-1",
-        type: "kpi",
-        title: "Total de colaboradores",
-        measure: "headCount",
-        options: {
-          variant: "sparkline",
-          sparkline: { measure: "monthlyTrend", key: "headCount", style: "area" },
-          comparisonMeasure: "yoyHeadcount",
-          unit: "colab.",
-        },
-        layout: { x: 3, y: 0, w: 5, h: 3 },
-      },
-      {
-        id: "w1-4",
-        type: "donut",
-        title: "Tipo de contratación",
-        measure: "distribution",
-        dimension: "hireType",
-        options: {
-          unit: "colab.",
-          labelMode: "legend",
-          showValues: true,
-          labelMap: { Contract: "Contrato", Regular: "Regular" },
-        },
-        layout: { x: 8, y: 0, w: 5, h: 3 },
-      },
-      {
-        id: "w1-17",
-        type: "bar",
-        title: "Plantilla por nivel",
-        measure: "distribution",
-        dimension: "orgLevel",
-        options: { unit: "colab.", orientation: "vertical", showValues: "top", sort: "valueDesc", hideAxis: true },
-        layout: { x: 13, y: 0, w: 4, h: 3 },
-      },
-      {
-        id: "w1-2",
-        type: "kpi",
-        title: "Plantilla regular",
-        measure: "headCount",
-        filters: { hireType: "Regular" },
-        options: { variant: "plain", unit: "reg." },
-        layout: { x: 17, y: 0, w: 3, h: 3 },
-      },
-      {
-        id: "w1-3",
-        type: "kpi",
-        title: "Antigüedad promedio (años)",
-        measure: "avgTenure",
-        options: { variant: "plain", decimals: 2 },
-        layout: { x: 20, y: 0, w: 4, h: 3 },
-      },
-
-      // ───────────── Banda 2: Diversidad ─────────────
-      {
-        id: "w1-s2",
-        type: "sectionLabel",
-        title: "Diversidad",
-        options: { icon: "diversity_3", iconStyle: "badge" },
-        layout: { x: 0, y: 3, w: 3, h: 3 },
-      },
-      {
-        id: "w1-5",
-        type: "kpi",
-        title: "% Mujeres líderes",
-        measure: "femaleLeadersPct",
-        options: {
-          variant: "sparkline",
-          sparkline: { measure: "monthlyFemaleLeadersTrend", key: "value", style: "area" },
-          unit: "%",
-          decimals: 2,
-        },
-        layout: { x: 3, y: 3, w: 5, h: 3 },
-      },
-      {
-        id: "w1-7",
-        type: "donut",
-        title: "Colaboradores por género",
-        measure: "distribution",
-        dimension: "gender",
-        options: {
-          unit: "colab.",
-          labelMode: "legend",
-          showValues: true,
-          labelMap: { Female: "Mujer", Male: "Hombre", Other: "Otro" },
-        },
-        layout: { x: 8, y: 3, w: 5, h: 3 },
-      },
-      {
-        id: "w1-8",
-        type: "bar",
-        title: "Colaboradores por rango de edad",
-        measure: "distribution",
-        dimension: "ageBand",
-        options: { unit: "colab.", orientation: "vertical", showValues: "top", sort: "valueDesc", hideAxis: true },
-        layout: { x: 13, y: 3, w: 5, h: 3 },
-      },
-      {
-        id: "w1-6",
-        type: "kpi",
-        title: "Edad promedio de colaboradores",
-        measure: "avgAge",
-        options: { variant: "plain", unit: "años", decimals: 2 },
-        layout: { x: 18, y: 3, w: 6, h: 3 },
-      },
-
-      // ───────────── Banda 3: Contratación ─────────────
-      {
-        id: "w1-s3",
-        type: "sectionLabel",
-        title: "Contratación",
-        options: { icon: "person_search", iconStyle: "silhouette" },
-        layout: { x: 0, y: 6, w: 3, h: 3 },
-      },
-      {
-        id: "w1-9",
-        type: "kpi",
-        title: "Nuevas contrataciones",
-        measure: "hires",
-        options: {
-          variant: "sparkline",
-          sparkline: { measure: "monthlyTrend", key: "hires", style: "area" },
-          comparisonMeasure: "yoyHires",
-          unit: "altas",
-        },
-        layout: { x: 3, y: 6, w: 5, h: 3 },
-      },
-      {
-        id: "w1-11",
-        type: "donut",
-        title: "Contrataciones por tipo de contrato",
-        measure: "distribution",
-        dimension: "hireType",
-        options: {
-          unit: "altas",
-          population: "hires",
-          labelMode: "legend",
-          showValues: true,
-          labelMap: { Contract: "Contrato", Regular: "Regular" },
-        },
-        layout: { x: 8, y: 6, w: 5, h: 3 },
-      },
-      {
-        id: "w1-10",
-        type: "bar",
-        title: "Contrataciones por rango de edad",
-        measure: "distribution",
-        dimension: "ageBand",
-        options: { unit: "altas", population: "hires", orientation: "vertical", showValues: "top", sort: "valueDesc", hideAxis: true },
-        layout: { x: 13, y: 6, w: 6, h: 3 },
-      },
-      {
-        id: "w1-12",
-        type: "donut",
-        title: "Contrataciones por género",
-        measure: "distribution",
-        dimension: "gender",
-        options: {
-          unit: "altas",
-          population: "hires",
-          labelMode: "legend",
-          showValues: true,
-          labelMap: { Female: "Mujer", Male: "Hombre", Other: "Otro" },
-        },
-        layout: { x: 19, y: 6, w: 5, h: 3 },
-      },
-
-      // ───────────── Banda 4: Bajas ─────────────
-      {
-        id: "w1-s4",
-        type: "sectionLabel",
-        title: "Bajas",
-        options: { icon: "person_remove", iconStyle: "silhouette" },
-        layout: { x: 0, y: 9, w: 3, h: 3 },
-      },
-      {
-        id: "w1-13",
-        type: "kpi",
-        title: "Bajas del ejercicio",
-        measure: "terminations",
-        options: {
-          variant: "sparkline",
-          sparkline: { measure: "monthlyTrend", key: "terminations", style: "area" },
-          comparisonMeasure: "yoyTerminations",
-          unit: "bajas",
-          invertDelta: true,
-        },
-        layout: { x: 3, y: 9, w: 5, h: 3 },
-      },
-      {
-        id: "w1-15",
-        type: "donut",
-        title: "Bajas por categoría",
-        measure: "distribution",
-        dimension: "terminationCategory",
-        options: {
-          unit: "bajas",
-          population: "terminations",
-          labelMode: "legend",
-          showValues: true,
-          labelMap: { Involuntary: "Involuntaria", Voluntary: "Voluntaria", Death: "Defunción" },
-        },
-        layout: { x: 8, y: 9, w: 5, h: 3 },
-      },
-      {
-        id: "w1-18",
-        type: "bar",
-        title: "Tasa de baja por nivel organizacional",
-        measure: "terminationRate", // medida nueva: bajas del grupo / plantilla del grupo
-        dimension: "orgLevel",
-        options: { unit: "%", decimals: 2, orientation: "vertical", showValues: "top", sort: "valueDesc", hideAxis: true },
-        layout: { x: 13, y: 9, w: 5, h: 3 },
-      },
-      {
-        id: "w1-16",
-        type: "bar",
-        title: "Tasa de baja por antigüedad",
-        measure: "terminationRate",
-        dimension: "tenureBand",
-        options: { unit: "%", decimals: 2, orientation: "vertical", showValues: "top", sort: "natural", hideAxis: true },
-        layout: { x: 18, y: 9, w: 6, h: 3 },
-      },
-    ],
-  },
+  HR_PAGE_1,
 
   // ----------------------------------------------------
   // 2. Análisis demográfico

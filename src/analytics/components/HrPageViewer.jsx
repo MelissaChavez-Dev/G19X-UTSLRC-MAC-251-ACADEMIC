@@ -151,6 +151,7 @@ export default function HrPageViewer({
   const gridColumns = isNarrowCanvas && configuredColumns > 12 ? 12 : configuredColumns;
   const gridRowHeight = isNarrowCanvas ? 56 : Number(currentPage.grid?.rowHeight) || 112;
   const gridGap = Number(currentPage.grid?.gap ?? 12);
+  const bandPadding = Math.max(0, Number(currentPage.grid?.bandPadding) || 0);
   const filterSummary = [
     `Año: ${filters.year ?? "—"}`,
     filters.month ? `Mes: ${filters.month}` : null,
@@ -489,7 +490,7 @@ export default function HrPageViewer({
             <button
               type="button"
               onClick={clearAllFilters}
-              className="inline-flex items-center gap-1 rounded border border-[#e0bb00] bg-[#fff6cb] px-2.5 py-1 text-[11px] font-semibold text-[#6f5a00] hover:bg-[#ffefaa]"
+              className="inline-flex items-center gap-1 rounded border border-primary/40 bg-primary-container px-2.5 py-1 text-[11px] font-semibold text-on-primary-container hover:bg-primary-container/70"
             >
               <span className="material-symbols-outlined text-[14px]">filter_alt_off</span>
               {filters.crossFilter
@@ -611,7 +612,7 @@ export default function HrPageViewer({
         }`}
       >
         <header className={`flex flex-wrap justify-between gap-space-sm border border-outline-variant/40 border-b-2 ${
-          isCompactReport ? "border-b-[#edc400]" : "border-b-secondary"
+          isCompactReport ? "border-b-primary" : "border-b-secondary"
         } bg-surface-container-lowest ${
           isDenseLayout ? "items-center rounded-xl px-space-md py-1.5" : "items-end rounded-2xl px-space-lg py-space-md"
         }`}>
@@ -743,11 +744,12 @@ export default function HrPageViewer({
                 <div
                   key={`band-${index}`}
                   aria-hidden="true"
-                  className="rounded-xl bg-surface-container-lowest shadow-sm"
+                  className={band.fill ? "rounded-[28px]" : "rounded-xl bg-surface-container-lowest shadow-sm"}
                   style={{
                     gridColumn: "1 / -1",
                     gridRow: `${y + 1} / span ${height}`,
                     zIndex: 0,
+                    backgroundColor: band.fill || undefined,
                   }}
                 />
               );
@@ -773,6 +775,7 @@ export default function HrPageViewer({
                     minWidth: 0,
                     minHeight: 0,
                     zIndex: 1,
+                    padding: bandPadding && !isNarrowCanvas ? `${bandPadding}px` : undefined,
                   }}
                   draggable={isEditMode}
                   onClick={() => {

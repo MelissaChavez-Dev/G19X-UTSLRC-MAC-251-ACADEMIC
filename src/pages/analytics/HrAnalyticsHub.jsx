@@ -8,6 +8,7 @@ import { listUsers } from "../../services/userService";
 import { HrFilterProvider } from "../../analytics/context/HrFilterContext.jsx";
 import { HR_TEMPLATES } from "../../analytics/templates/hrTemplates";
 import HrPageViewer from "../../analytics/components/HrPageViewer";
+import HrReportFrame from "./screens/HrReportFrame";
 import DashboardManagerModal from "../../analytics/components/editor/DashboardManagerModal";
 import LifeCycleScreen from "./screens/LifeCycleScreen";
 import EmployeeProfileScreen from "./screens/EmployeeProfileScreen";
@@ -576,18 +577,35 @@ export default function HrAnalyticsHub() {
 
                 {/* Screen 4: Interactive Employee Profile */}
                 {!activeCustomDashboard && currentScreenIndex === 4 && (
-                  <EmployeeProfileScreen
-                    employees={employees}
-                    leaves={extraDatasets.leaves}
-                  />
+                  <HrReportFrame
+                    title={currentPage?.title}
+                    pages={activePages}
+                    current={currentScreenIndex}
+                    onChange={setCurrentScreenIndex}
+                  >
+                    <EmployeeProfileScreen
+                      employees={employees}
+                      leaves={extraDatasets.leaves}
+                    />
+                  </HrReportFrame>
                 )}
 
                 {/* Screen 12: Interactive Attrition Prediction */}
                 {!activeCustomDashboard && currentScreenIndex === 12 && (
-                  <AttritionPredictionScreen
-                    employees={employees}
-                    onNavigateToDepartmentProfile={() => setCurrentScreenIndex(13)}
-                  />
+                  <HrReportFrame
+                    title={currentPage?.title}
+                    pages={activePages}
+                    current={currentScreenIndex}
+                    onChange={setCurrentScreenIndex}
+                    actions={
+                      <button type="button" onClick={() => setCurrentScreenIndex(13)} className={BTN_FILLED}>
+                        Predicción por departamento
+                        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_forward</span>
+                      </button>
+                    }
+                  >
+                    <AttritionPredictionScreen employees={employees} />
+                  </HrReportFrame>
                 )}
 
                 {/* Screens 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 13: Rendered by Generic Declarative Engine */}

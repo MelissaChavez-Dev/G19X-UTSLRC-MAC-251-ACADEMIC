@@ -53,12 +53,20 @@ export default function GenericWidgetRenderer({
   }, [widget.measure, widget.type, widget.title, employees, effectiveContext, extraDatasets]);
 
   if (widget.type === "sectionLabel") {
+    const accentColor = widget.options?.color;
     return (
       <div className="flex h-full min-w-0 flex-col items-center justify-center gap-1 px-1 text-center">
-        <span className="material-symbols-outlined text-[34px] leading-none text-on-surface-variant" aria-hidden="true">
+        <span
+          className={`material-symbols-outlined text-[34px] leading-none ${accentColor ? "" : "text-on-surface-variant"}`}
+          aria-hidden="true"
+          style={accentColor ? { color: accentColor } : undefined}
+        >
           {widget.options?.icon || "groups"}
         </span>
-        <span className="line-clamp-2 text-[14px] font-semibold leading-tight tracking-wide text-[#9b7800]">
+        <span
+          className={`line-clamp-2 text-[14px] font-semibold leading-tight tracking-wide ${accentColor ? "" : "text-[#9b7800]"}`}
+          style={accentColor ? { color: accentColor } : undefined}
+        >
           {widget.title}
         </span>
       </div>
@@ -113,6 +121,8 @@ export default function GenericWidgetRenderer({
             value={computedData}
             compact={compact}
             unit={widget.options?.unit || ""}
+            decimals={widget.options?.decimals ?? 1}
+            color={widget.options?.color}
             comparisonValue={
               widget.options?.comparisonMeasure
                 ? compute(widget.options.comparisonMeasure, employees, effectiveContext, extraDatasets)
@@ -138,6 +148,7 @@ export default function GenericWidgetRenderer({
             valueKey={widget.options?.valueKey || "count"}
             unit={widget.options?.unit || ""}
             compact={compact}
+            color={widget.options?.color}
             hideAxis={widget.options?.hideAxis || false}
             showValues={widget.options?.showValues || false}
             activeItem={filters.crossFilter?.value}

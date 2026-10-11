@@ -19,6 +19,7 @@ export default function BarChartWidget({
   valueKey = "count",
   unit = "",
   compact = false,
+  color = null,
   hideAxis = false,
   showValues = false,
   onItemClick,
@@ -92,8 +93,8 @@ export default function BarChartWidget({
             )}
             {data.map((entry, index) => {
               const isSelected = activeItem === entry[categoryKey];
-              const color = isSelected ? "#d1b65c" : compact ? "#edc400" : DEFAULT_COLORS[index % DEFAULT_COLORS.length];
-              return <Cell key={`cell-${index}`} fill={color} opacity={activeItem && !isSelected ? 0.35 : 1} />;
+              const cellColor = isSelected ? "#d1b65c" : color || (compact ? "#edc400" : DEFAULT_COLORS[index % DEFAULT_COLORS.length]);
+              return <Cell key={`cell-${index}`} fill={cellColor} opacity={activeItem && !isSelected ? 0.35 : 1} />;
             })}
           </Bar>
         </BarChart>

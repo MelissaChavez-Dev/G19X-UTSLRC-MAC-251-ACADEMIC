@@ -1,10 +1,7 @@
 import { useState, useMemo } from "react";
 import TableWidget from "../../../analytics/components/widgets/TableWidget";
 
-export default function AttritionPredictionScreen({
-  employees = [],
-  onNavigateToDepartmentProfile,
-}) {
+export default function AttritionPredictionScreen({ employees = [] }) {
   const [levelFilter, setLevelFilter] = useState("All"); // "All" | "Low" | "Medium" | "Peak"
   const [minProb, setMinProb] = useState(0);
   const [buFilter, setBuFilter] = useState("");
@@ -85,28 +82,6 @@ export default function AttritionPredictionScreen({
 
   return (
     <div className="flex flex-col gap-space-md w-full">
-      {/* Header & Quick Action */}
-      <section className="flex flex-wrap items-center justify-between gap-space-md rounded-3xl border border-outline-variant/60 bg-surface-container-lowest p-space-lg shadow-xs">
-        <div>
-          <span className="text-label-sm uppercase font-semibold text-secondary">Analítica Predictiva</span>
-          <h2 className="text-headline-sm font-bold text-on-surface">12. Predicción de rotación · modelo de riesgo</h2>
-          <p className="mt-1 text-body-sm text-on-surface-variant">
-            Puntajes calculados de propensión a rotación voluntaria por antigüedad, ausentismo, turno y desempeño. Estrictamente sin variables de compensación.
-          </p>
-        </div>
-
-        {onNavigateToDepartmentProfile && (
-          <button
-            type="button"
-            onClick={onNavigateToDepartmentProfile}
-            className="flex items-center gap-1.5 rounded-full border border-primary bg-primary-container/30 px-space-md py-2 text-label-sm font-semibold text-primary hover:bg-primary-container"
-          >
-            Ver perfil del departamento
-            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-          </button>
-        )}
-      </section>
-
       {/* Summary KPI Cards & Level Selector */}
       <section className="grid gap-space-md sm:grid-cols-4">
         <button
@@ -190,7 +165,7 @@ export default function AttritionPredictionScreen({
             step="0.05"
             value={minProb}
             onChange={(e) => setMinProb(Number(e.target.value))}
-            className="h-2 w-full cursor-pointer accent-[#d19a3a]"
+            className="h-2 w-full cursor-pointer accent-primary"
           />
         </div>
 

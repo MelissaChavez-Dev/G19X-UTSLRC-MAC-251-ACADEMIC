@@ -5,6 +5,8 @@ export default function KpiWidget({
   value,
   compact = false,
   unit = "",
+  decimals = 1,
+  color = null,
   comparisonValue = null,
   comparisonLabel = "vs año anterior",
   invertDelta = false, // true for attrition/absences where decrease is positive
@@ -14,8 +16,8 @@ export default function KpiWidget({
   const numValue = value === null || value === undefined || value === "" ? Number.NaN : Number(value);
   const formattedValue = Number.isFinite(numValue)
     ? unit === "%"
-      ? `${numValue.toLocaleString("es-MX", { maximumFractionDigits: 1 })}%`
-      : `${numValue.toLocaleString("es-MX", { maximumFractionDigits: 1 })} ${unit}`.trim()
+      ? `${numValue.toLocaleString("es-MX", { maximumFractionDigits: decimals })}%`
+      : `${numValue.toLocaleString("es-MX", { maximumFractionDigits: decimals })} ${unit}`.trim()
     : "—";
 
   let deltaPct = null;
@@ -44,7 +46,10 @@ export default function KpiWidget({
       </header>
 
       <div className={`flex items-baseline gap-2 ${compact ? "my-0.5" : "my-space-xs"}`}>
-        <span className={`font-semibold tracking-tight ${compact ? "text-[34px] leading-none text-[#c5a000]" : "text-headline-lg text-primary"}`}>
+        <span
+          className={`font-semibold tracking-tight ${compact ? "text-[34px] leading-none" : "text-headline-lg"} ${color ? "" : compact ? "text-[#c5a000]" : "text-primary"}`}
+          style={color ? { color } : undefined}
+        >
           {formattedValue}
         </span>
         {badgeText && (

@@ -8,7 +8,7 @@ import {
 } from "recharts";
 
 const PALETTE = ["#355c4b", "#74846a", "#4f8070", "#d1b65c", "#8b9a7b", "#9b9a91", "#b5a98b"];
-const COMPACT_PALETTE = ["#edc400", "#a6a6a6", "#d7b31a", "#c8c8c8", "#8f8f8f"];
+const COMPACT_PALETTE = ["#4A74B0", "#B7A4D6", "#4B8566", "#C0665E", "#8566B5", "#6FA8BF"];
 
 export default function DonutWidget({
   data = [],
