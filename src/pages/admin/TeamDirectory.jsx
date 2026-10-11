@@ -109,7 +109,6 @@ export default function TeamDirectory() {
       || (departmentFilter === "interdepartmental" ? !team.departmentId : team.departmentId === departmentFilter);
     return matchesSearch && matchesDepartment;
   });
-  const memberCount = teams.reduce((total, team) => total + (team.memberIds || []).length, 0);
   const crossDepartmentCount = teams.filter((team) => !team.departmentId).length;
 
   const inputClass =
@@ -135,7 +134,6 @@ export default function TeamDirectory() {
             <div className="flex flex-wrap gap-space-sm">
               {[
                 { label: "Equipos", value: teams.length },
-                { label: "Integrantes", value: memberCount },
                 { label: "Interdepartamentales", value: crossDepartmentCount },
               ].map((stat) => (
                 <div key={stat.label} className="rounded-2xl bg-surface-container-low px-space-md py-space-sm">
