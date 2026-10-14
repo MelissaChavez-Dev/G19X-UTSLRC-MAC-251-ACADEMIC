@@ -65,15 +65,8 @@ npm run build
 npm run preview
 ```
 
----
 
-## 5. Datos de Prueba
-
-La aplicación no genera respuestas de prueba automáticamente durante la instalación. El repositorio incluye el script opcional `scripts/seed.js`, que crea ocho semanas de respuestas sintéticas (`source: "synthetic_seed"`) en los departamentos activos. Ejecútalo manualmente con `node scripts/seed.js` desde la raíz, solo después de configurar credenciales seguras de Firebase Admin; cada ejecución agrega nuevos documentos. El Dashboard permite filtrar respuestas reales, sintéticas o ambas.
-
----
-
-## 6. Usuarios y Acceso al Sistema
+## 5. Usuarios y Acceso al Sistema
 
 El sistema utiliza los roles `admin`, `employee` y `team_lead`; no hay autorregistro abierto. `team_lead` tiene acceso a las vistas de su equipo (`/mi-equipo`, `/mis-proyectos` y `/equipos/:teamId`). Las cuentas configuradas en Firebase son cuentas de prueba personales de la propietaria del proyecto, no cuentas de empleados reales.
 
@@ -108,7 +101,7 @@ El sistema utiliza los roles `admin`, `employee` y `team_lead`; no hay autorregi
 
 ---
 
-## 7. Estructura del Repositorio
+## 6. Estructura del Repositorio
 
 ```text
 ├── docs/                      # Documentación oficial (PRD v3.0 y MVP unificado)
@@ -129,7 +122,7 @@ El sistema utiliza los roles `admin`, `employee` y `team_lead`; no hay autorregi
 
 ---
 
-## 8. Stack Tecnológico
+## 7. Stack Tecnológico
 
 - **Frontend:** React 19, Vite 8, Tailwind CSS v4, Framer Motion.
 - **Gráficos e Interactividad:** Recharts, `@dnd-kit/core`, `@dnd-kit/sortable`, Medidores SVG reactivos a la medida.
@@ -139,6 +132,6 @@ El sistema utiliza los roles `admin`, `employee` y `team_lead`; no hay autorregi
 
 ---
 
-## 9. Notas Académicas
+## 8. Notas Académicas
 
 Este repositorio forma parte de la documentación técnica y entregable de la **Memoria de Estadía Profesional** para la obtención del título de TSU en Desarrollo de Software Multiplataforma, desarrollada conforme al Manual Metodológico de la **UTSLRC**.
