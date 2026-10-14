@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   signInWithEmailAndPassword,
@@ -7,6 +7,7 @@ import {
   browserSessionPersistence,
 } from "firebase/auth";
 import { auth } from "../services/firebase";
+import { useAuth } from "../hooks/useAuth";
 import illustrationSign from "../assets/ilustracion_sign.webp";
 import WelfareLogo from "../components/WelfareLogo";
 import "./login.css";
@@ -35,19 +36,27 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+  const { user, loading: authStateLoading } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (redirecting && user && !authStateLoading) {
+      navigate("/", { replace: true });
+    }
+  }, [authStateLoading, navigate, redirecting, user]);
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (loading || redirecting) return;
     setError("");
     setLoading(true);
     try {
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/");
+      setRedirecting(true);
     } catch (err) {
       setError(getAuthErrorMessage(err.code));
-    } finally {
       setLoading(false);
     }
   }
@@ -134,8 +143,8 @@ export default function Login() {
 
               {error && <p className="login-error" role="alert">{error}</p>}
 
-              <button className="login-submit" type="submit" disabled={loading}>
-                {loading ? "Ingresando..." : "Ingresar"}
+              <button className="login-submit" type="submit" disabled={loading || redirecting}>
+                {loading || redirecting ? "Ingresando..." : "Ingresar"}
               </button>
             </form>
 

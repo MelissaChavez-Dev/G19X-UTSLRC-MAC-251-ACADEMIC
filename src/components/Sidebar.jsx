@@ -42,9 +42,7 @@ export default function Sidebar() {
         
         {/* Cabecera de la plataforma y control del menú */}
         <div
-          className={`mx-space-sm mt-space-sm mb-space-sm py-space-sm flex items-center ${
-            collapsed ? "flex-col gap-3 justify-center" : "justify-between px-space-sm"
-          }`}
+          className="mx-1 mt-space-sm mb-space-sm flex min-h-10 items-center justify-center py-space-sm"
         >
           <div className="flex min-w-0 items-center">
             <WelfareLogo
@@ -52,25 +50,26 @@ export default function Sidebar() {
               className={collapsed ? "h-10 w-10 shrink-0 object-contain" : "h-auto w-36 max-w-full object-contain"}
             />
           </div>
-
-          {/* Botón Icono para Mostrar / Ocultar Menú */}
-          <button
-            type="button"
-            onClick={toggleCollapsed}
-            title={collapsed ? "Desplegar menú" : "Plegar menú"}
-            aria-label={collapsed ? "Desplegar menú" : "Plegar menú"}
-            className="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors motion-press shrink-0"
-          >
-            <span className="material-symbols-outlined text-[20px] block">
-              {collapsed ? "side_navigation" : "menu_open"}
-            </span>
-          </button>
         </div>
 
         <hr className="border-outline-variant/40 mx-space-sm mb-space-sm" />
 
         {/* Menú de Navegación */}
         <nav className="px-space-sm flex flex-col gap-1" aria-label="Navegación principal">
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            title={collapsed ? "Desplegar menú" : "Colapsar menú"}
+            aria-label={collapsed ? "Desplegar menú" : "Colapsar menú"}
+            className={`motion-press group flex w-full items-center gap-space-sm rounded-full px-3 py-2.5 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface ${
+              collapsed ? "justify-center" : ""
+            }`}
+          >
+            <span className="material-symbols-outlined block shrink-0 text-[20px]">
+              {collapsed ? "side_navigation" : "menu_open"}
+            </span>
+            {!collapsed && <span className="text-body-md">Colapsar menú</span>}
+          </button>
           {NAV_ITEMS.map((item) => {
             const active = isItemActive(item.to);
 
