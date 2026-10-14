@@ -18,6 +18,7 @@ import { useTurnoverMetrics } from "../hooks/useTurnoverMetrics";
 import { useTeamPerformance } from "../hooks/useTeamPerformance";
 import { useSidebarState } from "../hooks/useSidebarState";
 import { useDepartments } from "../hooks/useDepartments";
+import { getKpiLevel, getKpiLevelForSample, LEVELS, MIN_SAMPLE } from "../data/kpiThresholds"; // KPI-LEVEL
 import { explainMetric } from "../services/aiService";
 import { exportDashboardPdf, exportResponsesExcel } from "../services/exportService";
 import teamIllustration from "../assets/ilust 2.png";
@@ -105,10 +106,12 @@ const PULSE_ROWS = [
     unit: "/ 100",
     deltaUnit: " pts",
     hint: () => "Escala orientativa, no es una probabilidad",
+    level: (m) => getKpiLevelForSample("workPressure", m.attritionRisk, m.sampleSize), // KPI-LEVEL
   },
   {
     id: "kpi-pulse",
     progress: (m) => clamp01(m.activePulseRate / 100),
+    level: (m, headcount) => (headcount > 0 ? getKpiLevel("participation", m.activePulseRate) : LEVELS.noData), // KPI-LEVEL
     color: "var(--success)",
     unit: null,
     deltaUnit: "",
@@ -118,11 +121,16 @@ const PULSE_ROWS = [
   {
     id: "kpi-safety",
     progress: (m) => clamp01(m.psychSafety / 5),
+    level: (m) => getKpiLevelForSample("psychSafety", m.psychSafety, m.sampleSize), // KPI-LEVEL
     color: "var(--secondary)",
     unit: "/ 5,0",
     deltaUnit: "",
     hint: (m) =>
-      !Number.isFinite(m.psychSafety) ? "Sin datos aún" : m.psychSafety >= 3.5 ? "Estable" : "Requiere atención",
+      !Number.isFinite(m.psychSafety)
+        ? "Sin datos aún"
+        : ["low", "controlled"].includes(getKpiLevel("psychSafety", m.psychSafety).tone) // KPI-LEVEL: mismo criterio que el chip
+          ? "Estable"
+          : "Requiere atención",
   },
 ];
 
@@ -246,6 +254,29 @@ function DeltaNote({ diff, unit }) {
   );
 }
 
+/* Chip con el nivel del KPI según src/data/kpiThresholds.js */ // KPI-LEVEL
+const LEVEL_COLORS = {
+  low: "var(--success)",
+  controlled: "var(--primary)",
+  elevated: "var(--warning)",
+  critical: "var(--error)",
+  "no-data": "var(--on-surface-variant)",
+};
+
+function LevelBadge({ level }) {
+  if (!level) return null;
+  const color = LEVEL_COLORS[level.tone] ?? LEVEL_COLORS["no-data"];
+  return (
+    <span
+      className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-label-sm font-semibold text-on-surface"
+      style={{ background: `color-mix(in srgb, ${color} 22%, transparent)` }}
+    >
+      <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ background: color }} />
+      {level.label}
+    </span>
+  );
+}
+
 /* Protagonista del bloque: un medidor eNPS semicircular. */
 const HeroTile = memo(function HeroTile({ def, metrics, previousMetrics, onExpand }) {
   const diff = previousMetrics ? change(metrics.enps, previousMetrics.enps) : null;
@@ -313,7 +344,10 @@ const PulseRow = memo(function PulseRow({ config, metrics, previousMetrics, head
 
       <span className="flex min-w-0 flex-1 flex-col gap-space-xs">
         <span className="flex items-baseline justify-between gap-space-sm">
-          <span className="truncate text-label-md font-semibold text-on-surface">{def.label}</span>
+          <span className="flex min-w-0 items-center gap-space-xs">
+            <span className="truncate text-label-md font-semibold text-on-surface">{def.label}</span>
+            <LevelBadge level={config.level?.(metrics, headcount)} />
+          </span>
           <span className="shrink-0 text-headline-sm text-on-surface">
             {value}
             {config.unit && value !== "—" && (
@@ -405,7 +439,7 @@ function EmptyPulse() {
 }
 
 /* Tarjeta sencilla para lo operativo (no abre modal). */
-function OpsTile({ icon, label, period, value, hint, }) {
+function OpsTile({ icon, label, period, value, hint, level }) {
   return (
     <div style={{ borderRadius: 32 }} className="flex flex-col gap-space-sm bg-surface-container-low p-space-lg">
       <div className="flex items-center justify-between gap-space-sm text-on-surface-variant">
@@ -419,6 +453,7 @@ function OpsTile({ icon, label, period, value, hint, }) {
       </div>
       <div className="flex items-baseline gap-space-sm">
         <span className="text-3xl font-bold leading-none text-on-surface">{value}</span>
+        <LevelBadge level={level} />
       
       </div>
       <p className="text-label-sm text-on-surface-variant">{hint}</p>
@@ -455,7 +490,8 @@ const OperationStrip = memo(function OperationStrip({
           {showAbsence && (
             <OpsTile
               icon="person_off"
-              label="Ausentismo"
+              label="Ausentismo digital"
+              level={absenceLoading ? undefined : hasWorkdayRecords ? getKpiLevel("digitalAbsence", absence?.rate) : LEVELS.noData} // KPI-LEVEL
               period="30 días"
               value={absenceLoading ? "…" : `${absence?.rate ?? 0}%`}
               hint={
@@ -471,6 +507,7 @@ const OperationStrip = memo(function OperationStrip({
             <OpsTile
               icon="logout"
               label="Rotación real"
+              level={turnoverLoading ? undefined : turnover?.headcount >= MIN_SAMPLE.headcount ? getKpiLevel("turnover90d", turnover?.rate) : LEVELS.noData} // KPI-LEVEL
               period="90 días"
               value={turnoverLoading ? "…" : Number.isFinite(turnover?.rate) ? `${turnover.rate}%` : "—"}
               diff={turnoverDiff}
@@ -484,7 +521,8 @@ const OperationStrip = memo(function OperationStrip({
           {showPerformance && (
             <OpsTile
               icon="task_alt"
-              label="Cumplimiento de tareas"
+              label="Tareas al corriente"
+              level={performanceLoading ? undefined : performance?.levels?.onTrack} // KPI-LEVEL
               value={performanceLoading ? "…" : Number.isFinite(performance?.onTimeRate) ? `${performance.onTimeRate}%` : "—"}
               hint={
                 performanceLoading
@@ -538,7 +576,7 @@ function ExportActions({ onExport, exporting, disabled }) {
         <button
           type="button"
           onClick={() => onExport("pdf")}
-          disabled={disabled || exporting !== null}se
+          disabled={disabled || exporting !== null}
           className={`${base} bg-error-container text-on-error-container hover:brightness-95 dark:bg-error-container dark:text-on-error-container dark:hover:brightness-110`}
         >
           <span aria-hidden="true" className="material-symbols-outlined text-[18px]">

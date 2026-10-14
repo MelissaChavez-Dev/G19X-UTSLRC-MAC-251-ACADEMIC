@@ -4,7 +4,7 @@
 **Empresa:** Organización participante (nombre provisional)  
 **Autora:** Melissa Alejandra Chávez  
 **Programa:** Memoria de Estadía de TSU — UTSLRC  
-**Repositorio:** github.com/yamyam1805/dashboard-ejecutivo-salud-organizacional  
+**Repositorio:** github.com/MelissaChavez-Dev/G19X-UTSLRC-MAC-251-ACADEMIC 
 **Versión:** 3.0 (Documento Integral Unificado — Núcleo Ejecutivo y Expansión Colaborativa)  
 **Fecha de actualización:** Octubre 2026  
 
@@ -56,7 +56,7 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
 
 ### 4.2 Flujo de Alta y Autenticación
 1. **Alta centralizada por Administrador:** No existe autorregistro abierto. La administradora crea las cuentas necesarias desde `/admin/usuarios`.
-2. **Control de roles:** El sistema utiliza los roles `admin` y `employee`; no se utiliza el rol `team_lead`.
+2. **Control de roles:** El sistema utiliza los roles `admin` y `employee`; 
 3. **Redirección condicional (`RoleBasedRedirect`):** Según el rol asignado, el sistema conduce al administrador a `/dashboard` y al empleado a `/mi-espacio`.
 
 **Entorno de pruebas actual:** Las cuentas existentes son cuentas de prueba personales de la propietaria, no cuentas de empleados reales. Sus contraseñas se establecieron en `12345678` para pruebas exclusivamente. Esta contraseña no es apropiada para producción y debe cambiarse antes de cualquier despliegue público.
@@ -76,8 +76,7 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
 - **Exportación de Reportes:** `jspdf` + `jspdf-autotable` (reportes PDF ejecutivos) y `xlsx` (libros de cálculo Excel con hojas segregadas).
 
 ### 5.2 Modelo de Colecciones en Firestore
-- **`users/{uid}`**: Perfil del usuario (`displayName`, `email`, `role`, `departmentId`, `teamId`, `workSchedule`, `mustChangePassword`, `active`).
-- **`teams/{teamId}`**: Datos de equipo (`name`, `departmentId`, `leaderId`, `joinCode`, `memberIds`, `createdAt`).
+- **`users/{uid}`**: Perfil del usuario (`displayName`, `email`, `role`, `departmentId`, `teamId`, `workSchedule`, `mustChangePassword`, `active`)..
 - **`teams/{teamId}/tasks/{taskId}`**: Tarjetas de trabajo del Kanban (`title`, `description`, `status`, `origin: "ai_recommendation" | "manual"`, `sourceMetric`, `assignedTo`, `createdAt`, `updatedAt`).
 - **`surveyTemplates/{templateId}`**: Plantillas creadas (`title`, `status`, `targetDepartments`, `cycle`, `questions[]`).
 - **`responses/{responseId}`**: Respuestas individuales procesadas (`enps`, `factors`, `openComments`, `departmentId`, `submittedAt`).
@@ -115,6 +114,10 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
 - **RF-D07: Filtros y Exportaciones:**
   - Filtro global por departamento en cabecera (`TopBar`).
   - Botones de exportación a PDF (informe formal de alta dirección) y Excel (archivo multipestaña con respuestas anonimizadas, matriz y KPIs).
+- **RF-D08: Calidad de Datos (`/admin/calidad`):**
+  - Módulo administrativo de solo lectura con puntaje ponderado y verificaciones de completitud, rangos, muestra mínima por departamento, posibles duplicados y frescura de respuestas.
+  - Filtro para evaluar todas las respuestas, solo las reales o solo las simuladas; muestra también la composición por origen y el estado de las fuentes operativas de ausentismo y rotación.
+  - Explica los hallazgos y cómo corregirlos; no modifica ni elimina respuestas.
 
 ### 6.2 Motor de Encuestas (`SurveyBuilder` y `SurveyRunner`)
 - **RF-E01: Constructor de Encuestas (`SurveyBuilder`):** Creación visual de encuestas con biblioteca de preguntas (Likert 1-5, eNPS 0-10, opción múltiple y texto abierto) con reordenamiento arrastrable (`@dnd-kit`) y configuración de departamentos destino.

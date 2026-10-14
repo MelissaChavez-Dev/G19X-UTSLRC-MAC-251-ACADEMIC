@@ -65,8 +65,14 @@ export async function createTask(teamId, {
 
 export async function updateTaskStatus(teamId, taskId, status, { projectName = "", taskTitle = "", fromStatus = "" } = {}) {
   const labels = { todo: "Por hacer", in_progress: "En progreso", done: "Hecho" };
+  // Fecha de cierre: se guarda al pasar a "Hecho" y se limpia si la tarea se reabre.
+  // Permite medir la puntualidad real (entregada a tiempo o con retraso).
+  const completionFields = status === "done"
+    ? (fromStatus === "done" ? {} : { completedAt: serverTimestamp() })
+    : { completedAt: null };
   await updateDoc(taskDoc(teamId, taskId), {
     status,
+    ...completionFields,
     activity: arrayUnion(activityEvent("status", `Movió la tarea a «${labels[status] || status}»`)),
     updatedAt: serverTimestamp(),
   });

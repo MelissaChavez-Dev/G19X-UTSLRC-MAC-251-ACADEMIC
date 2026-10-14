@@ -2,30 +2,12 @@ import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useHeadcount } from "./useHeadcount";
-import { averageNumeric, toFiniteNumber, workPressureIndex } from "../utils/metricUtils";
+import { averageNumeric, computeWeeklyParticipation, toFiniteNumber, workPressureIndex } from "../utils/metricUtils";
 
 function daysAgo(n) {
   const d = new Date();
   d.setDate(d.getDate() - n);
   return d;
-}
-
-// Participacion semanal promedio: cuantas respuestas llegan en una semana
-// tipica, contra el headcount total. Mas representativo que dividir el
-// total acumulado del mes (que cuenta varias semanas de pulso recurrente).
-function computeWeeklyParticipation(responses, headcount) {
-  if (responses.length === 0 || headcount <= 0) return { rate: 0, avgPerWeek: 0 };
-
-  const byWeek = {};
-  responses.forEach((r) => {
-    byWeek[r.weekId] = (byWeek[r.weekId] || 0) + 1;
-  });
-
-  const weekCounts = Object.values(byWeek);
-  const avgPerWeek = weekCounts.reduce((a, b) => a + b, 0) / weekCounts.length;
-  const rate = Math.min(100, Math.round((avgPerWeek / headcount) * 100));
-
-  return { rate, avgPerWeek: Math.round(avgPerWeek) };
 }
 
 function computeMetrics(responses, headcount) {

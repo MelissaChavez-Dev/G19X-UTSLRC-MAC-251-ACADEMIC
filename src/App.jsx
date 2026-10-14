@@ -10,6 +10,7 @@ import SurveyRunner from "./pages/SurveyRunner";
 import TeamBoard from "./pages/TeamBoard";
 import ForcePasswordChange from "./pages/ForcePasswordChange";
 import UserManagement from "./pages/admin/UserManagement";
+import DataQuality from "./pages/DataQuality";
 import TeamDirectory from "./pages/admin/TeamDirectory";
 import MisProyectos from "./pages/MisProyectos";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -68,6 +69,14 @@ function App() {
               element={
                 <ProtectedRoute roles={["admin"]}>
                   <UserManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/calidad"
+              element={
+                <ProtectedRoute roles={["admin"]}>
+                  <DataQuality />
                 </ProtectedRoute>
               }
             />

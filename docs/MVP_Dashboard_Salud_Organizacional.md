@@ -4,7 +4,7 @@
 **Empresa:** Organización participante (nombre provisional)  
 **Autora:** Melissa Alejandra Chávez  
 **Programa:** Memoria de Estadía de TSU — UTSLRC  
-**Repositorio:** github.com/yamyam1805/dashboard-ejecutivo-salud-organizacional  
+**Repositorio:** github.com/MelissaChavez-Dev/G19X-UTSLRC-MAC-251-ACADEMIC
 **Versión:** 3.0 (Alcance Real Implementado y Consolidado)  
 **Fecha de actualización:** Octubre 2026  
 
@@ -24,6 +24,7 @@ Durante el proceso de desarrollo y validación, el MVP evolucionó de un "visual
 |---|---|:---:|
 | **Medidor eNPS tipo Termómetro** | Medidor semicircular reactivo con aguja animada, escala de −100 a +100 y 4 niveles semánticos con glifos de caras (*Bajo*, *Bueno*, *Muy bueno*, *Excelente*). | **Completado** |
 | **KPIs de Salud Organizacional** | Indicadores consolidados de eNPS, Presión Laboral (/100), Participación de Pulso (%) y Seguridad Psicológica (/5.0) con cálculo dinámico en Firestore. | **Completado** |
+| **Calidad de datos (`/admin/calidad`)** | Puntaje ponderado de confiabilidad de respuestas, con verificaciones de completitud, rangos, muestra mínima, duplicados y frescura; incluye filtros por origen y cobertura de fuentes operativas. Solo lectura. | **Completado** |
 | **Matriz de Riesgo Psicosocial** | Heatmap interactivo Departamentos × Factores con semaforización cromática y alertas tempranas de contingencia. | **Completado** |
 | **Panel de Estrategia con IA (Gemini)** | Síntesis ejecutiva de comentarios abiertos, generación de 3 recomendaciones estructuradas y conversión automática en tareas de equipo. | **Completado** |
 | **Composición Visual y Minimizado** | Panel de IA minimizable/expandible con despliegue de ilustraciones dinámicas (`ilust3.png` al minimizar, `ilust4.png` bajo el heatmap al expandir con análisis). | **Completado** |

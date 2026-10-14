@@ -26,7 +26,6 @@ const DAY_OPTIONS = [
 
 const ROLE_OPTIONS = [
   { id: "employee", label: "Colaborador" },
-  { id: "team_lead", label: "Líder de equipo" },
   { id: "admin", label: "Administrador" },
 ];
 

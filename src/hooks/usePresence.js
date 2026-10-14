@@ -122,7 +122,7 @@ export function useMyPresence() {
  * Ausentismo digital agregado (solo admin): días sin ningún movimiento
  * dentro del horario laboral / días laborales esperados, últimos 30 días.
  */
-export function useAbsenceMetrics(departmentId = null) {
+export function useAbsenceMetrics(departmentId = null, refreshKey = 0) {
   const [absence, setAbsence] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -156,7 +156,7 @@ export function useAbsenceMetrics(departmentId = null) {
       }
     }
     load();
-  }, [departmentId]);
+  }, [departmentId, refreshKey]);
 
   return { absence, loading };
 }

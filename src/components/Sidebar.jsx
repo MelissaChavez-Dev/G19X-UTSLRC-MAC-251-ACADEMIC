@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { icon: "assignment_add", label: "Constructor de encuestas", to: "/survey-builder" },
   { icon: "manage_accounts", label: "Gestión de usuarios", to: "/admin/usuarios" },
   { icon: "groups", label: "Directorio del equipo", to: "/equipos" },
+  { icon: "fact_check", label: "Calidad de datos", to: "/admin/calidad" },
 ];
 
 export default function Sidebar() {

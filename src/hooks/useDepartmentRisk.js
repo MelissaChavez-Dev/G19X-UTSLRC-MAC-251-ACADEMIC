@@ -3,7 +3,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useHeadcount } from "./useHeadcount";
 import { useDepartments } from "./useDepartments";
-import { averageNumeric, toFiniteNumber, workPressureIndex } from "../utils/metricUtils";
+import { averageNumeric, computeWeeklyParticipation, toFiniteNumber, workPressureIndex } from "../utils/metricUtils";
 
 const FACTOR_KEYS = ["cognitiveLoad", "roleAmbiguity", "emotionalLabor", "shiftFatigue", "autonomy", "psychSafety"];
 const PROTECTIVE_FACTORS = ["autonomy", "psychSafety"];
@@ -60,9 +60,8 @@ export function useDepartmentRisk(departmentId = null) {
           // mostrarlo como 0 lo confundiría con "bajo riesgo" real.
           const avgRisk = riskEquivalents.length > 0 ? averageNumeric(riskEquivalents) : null;
           const attritionRisk = workPressureIndex(deptResponses);
-          const pulseRate = deptHeadcount > 0
-            ? Math.min(100, Math.round((deptResponses.length / deptHeadcount) * 100))
-            : 0;
+          // Misma fórmula que el KPI global: promedio semanal de respuestas / headcount.
+          const pulseRate = computeWeeklyParticipation(deptResponses, deptHeadcount).rate;
 
           return {
             id: dept.id,

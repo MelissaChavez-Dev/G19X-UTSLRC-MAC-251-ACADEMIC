@@ -23,3 +23,22 @@ export function workPressureIndex(responses) {
   const averageFactor = factorAverages.reduce((sum, value) => sum + value, 0) / factorAverages.length;
   return Math.round(Math.max(0, Math.min(100, ((averageFactor - 1) / 4) * 100)));
 }
+
+// Participación semanal promedio: cuántas respuestas llegan en una semana típica
+// contra el headcount. Más representativo que dividir el total acumulado, que
+// cuenta varias semanas de pulso recurrente. Compartida por el KPI global y el
+// heatmap por departamento para que ambos usen la misma fórmula.
+export function computeWeeklyParticipation(responses, headcount) {
+  if (responses.length === 0 || headcount <= 0) return { rate: 0, avgPerWeek: 0 };
+
+  const byWeek = {};
+  responses.forEach((r) => {
+    byWeek[r.weekId] = (byWeek[r.weekId] || 0) + 1;
+  });
+
+  const weekCounts = Object.values(byWeek);
+  const avgPerWeek = weekCounts.reduce((a, b) => a + b, 0) / weekCounts.length;
+  const rate = Math.min(100, Math.round((avgPerWeek / headcount) * 100));
+
+  return { rate, avgPerWeek: Math.round(avgPerWeek) };
+}

@@ -1,11 +1,33 @@
 import { useEffect, useState } from "react";
 import { collectionGroup, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
+import { getKpiLevel, hasEnoughTasks, LEVELS } from "../data/kpiThresholds";
+
+// Fecha de cierre de una tarea. Usa completedAt; para tareas anteriores a ese campo
+// toma el último movimiento a «Hecho» del historial (activity).
+function completionDate(task) {
+  const direct = task.completedAt?.toDate?.();
+  if (direct) return direct;
+
+  const events = Array.isArray(task.activity) ? task.activity : [];
+  for (let i = events.length - 1; i >= 0; i -= 1) {
+    const event = events[i];
+    if (event?.type === "status" && typeof event.message === "string" && event.message.includes("«Hecho»")) {
+      return event.createdAt?.toDate?.() ?? null;
+    }
+  }
+  return null;
+}
 
 /**
  * Desempeño operativo agregado desde el activity tracker (Kanban):
  * cuántas tareas se completan y cuántas quedan vencidas en todos los equipos.
  * Es una señal de ejecución, no una evaluación individual de desempeño.
+ *
+ * - onTimeRate ("tareas al corriente"): tareas con fecha límite que no están vencidas hoy.
+ *   Una tarea terminada con retraso cuenta como al corriente (solo se vencen las abiertas).
+ * - punctualityRate: de las tareas terminadas con fecha límite, % entregadas a más tardar
+ *   el día límite (usa la fecha de cierre).
  */
 export function useTeamPerformance() {
   const [metrics, setMetrics] = useState(null);
@@ -33,6 +55,21 @@ export function useTeamPerformance() {
           ? Math.round(((tasksWithDueDate - overdueTasks) / tasksWithDueDate) * 100)
           : null;
 
+        // Puntualidad real: solo tareas terminadas, con fecha límite y fecha de cierre conocida.
+        const measurableDone = tasks
+          .filter((t) => t.status === "done" && t.dueDate)
+          .map((t) => ({ dueDate: t.dueDate, closedAt: completionDate(t) }))
+          .filter((t) => t.closedAt);
+        const doneLateTasks = measurableDone.filter(
+          (t) => t.closedAt.toLocaleDateString("en-CA") > t.dueDate
+        ).length;
+        const punctualityRate = measurableDone.length > 0
+          ? Math.round(((measurableDone.length - doneLateTasks) / measurableDone.length) * 100)
+          : null;
+
+        // Con muestra insuficiente no se asigna nivel (la tarjeta debe mostrar "sin datos suficientes").
+        const enoughSample = hasEnoughTasks(tasks.length, tasksWithDueDate);
+
         setMetrics({
           totalTasks: tasks.length,
           doneTasks,
@@ -40,6 +77,14 @@ export function useTeamPerformance() {
           tasksWithDueDate,
           completionRate,
           onTimeRate,
+          doneLateTasks,
+          punctualityRate,
+          punctualitySample: measurableDone.length,
+          enoughSample,
+          levels: {
+            onTrack: enoughSample ? getKpiLevel("taskOnTrack", onTimeRate) : LEVELS.noData,
+            completion: enoughSample ? getKpiLevel("taskCompletion", completionRate) : LEVELS.noData,
+          },
         });
       } catch (err) {
         console.error("No se pudo calcular el desempeño de equipos:", err);

@@ -11,7 +11,7 @@ function departmentName(id, departments) {
   return departments.find((department) => department.id === id)?.name || id || "—";
 }
 
-/** Tablero de un equipo: vista admin (/equipos/:teamId) y líder (/mi-equipo). */
+/** Tablero de un equipo: vista admin (/equipos/:teamId) */
 export default function TeamBoard() {
   const { teamId } = useParams();
   const { isAdmin } = useAuth();

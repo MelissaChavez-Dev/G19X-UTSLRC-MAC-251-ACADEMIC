@@ -13,7 +13,7 @@ import json
 import re
 
 GEMINI_API_KEY = SecretParam("GEMINI_API_KEY")
-MODEL_NAME = "gemini-3.5-flash-lite"
+MODEL_NAME = "gemini-3.8-flash"
 
 
 def _local_tz():

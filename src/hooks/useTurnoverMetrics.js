@@ -14,7 +14,7 @@ function daysAgo(n) {
  * (cuentas desactivadas o eliminadas) en departureLog, comparadas con
  * el periodo anterior de la misma duración.
  */
-export function useTurnoverMetrics(departmentId = null) {
+export function useTurnoverMetrics(departmentId = null, refreshKey = 0) {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -63,7 +63,7 @@ export function useTurnoverMetrics(departmentId = null) {
       }
     }
     load();
-  }, [departmentId, totalHeadcount, forDepartment]);
+  }, [departmentId, totalHeadcount, forDepartment, refreshKey]);
 
   return { metrics, loading, error };
 }
