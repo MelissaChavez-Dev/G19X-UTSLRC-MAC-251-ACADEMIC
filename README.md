@@ -65,8 +65,26 @@ npm run build
 npm run preview
 ```
 
+## 5. Despliegue en Netlify
 
-## 5. Usuarios y Acceso al Sistema
+El repositorio incluye `netlify.toml`: Netlify ejecutará `npm run build`, publicará `dist` y redirigirá las rutas de la SPA a `index.html`.
+
+1. Importa este repositorio en Netlify y selecciona la rama que deseas desplegar.
+2. En **Site configuration → Environment variables**, configura las variables `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID` y `VITE_FIREBASE_APP_ID` con los valores de la aplicación web de Firebase. No uses los valores de `.env.local` como archivo; carga las variables directamente en Netlify.
+3. Agrega el dominio asignado al sitio (por ejemplo, `mi-sitio.netlify.app`) y cualquier dominio personalizado en **Firebase Authentication → Settings → Authorized domains**.
+4. Despliega. Netlify aloja el frontend; las Cloud Functions y Firestore permanecen en Firebase.
+
+No subas `.env.local` ni `serviceAccountKey.json`. Ambos están ignorados por Git y no se necesitan para compilar el frontend.
+
+---
+
+## 6. Datos de Prueba
+
+La aplicación no genera respuestas de prueba automáticamente durante la instalación. El repositorio incluye el script opcional `scripts/seed.js`, que crea ocho semanas de respuestas sintéticas (`source: "synthetic_seed"`) en los departamentos activos. Ejecútalo manualmente con `node scripts/seed.js` desde la raíz, solo después de configurar credenciales seguras de Firebase Admin; cada ejecución agrega nuevos documentos. El Dashboard permite filtrar respuestas reales, sintéticas o ambas.
+
+---
+
+## 7. Usuarios y Acceso al Sistema
 
 El sistema utiliza los roles `admin`, `employee` y `team_lead`; no hay autorregistro abierto. `team_lead` tiene acceso a las vistas de su equipo (`/mi-equipo`, `/mis-proyectos` y `/equipos/:teamId`). Las cuentas configuradas en Firebase son cuentas de prueba personales de la propietaria del proyecto, no cuentas de empleados reales.
 
@@ -101,7 +119,7 @@ El sistema utiliza los roles `admin`, `employee` y `team_lead`; no hay autorregi
 
 ---
 
-## 6. Estructura del Repositorio
+## 8. Estructura del Repositorio
 
 ```text
 ├── docs/                      # Documentación oficial (PRD v3.0 y MVP unificado)
@@ -122,7 +140,7 @@ El sistema utiliza los roles `admin`, `employee` y `team_lead`; no hay autorregi
 
 ---
 
-## 7. Stack Tecnológico
+## 9. Stack Tecnológico
 
 - **Frontend:** React 19, Vite 8, Tailwind CSS v4, Framer Motion.
 - **Gráficos e Interactividad:** Recharts, `@dnd-kit/core`, `@dnd-kit/sortable`, Medidores SVG reactivos a la medida.
@@ -132,6 +150,6 @@ El sistema utiliza los roles `admin`, `employee` y `team_lead`; no hay autorregi
 
 ---
 
-## 8. Notas Académicas
+## 10. Notas Académicas
 
 Este repositorio forma parte de la documentación técnica y entregable de la **Memoria de Estadía Profesional** para la obtención del título de TSU en Desarrollo de Software Multiplataforma, desarrollada conforme al Manual Metodológico de la **UTSLRC**.
