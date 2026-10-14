@@ -69,13 +69,13 @@ npm run preview
 
 ## 5. Datos de Prueba
 
-La aplicación **no carga respuestas de prueba automáticamente** ni incluye un comando de seed como parte del flujo de instalación. Las respuestas de encuestas y demás datos de prueba que utiliza el Dashboard son ingresados manualmente por la propietaria del proyecto en la base de datos de Firebase. Al clonar e iniciar la aplicación, Firebase debe contener los datos que se desean visualizar.
+La aplicación no genera respuestas de prueba automáticamente durante la instalación. El repositorio incluye el script opcional `scripts/seed.js`, que crea ocho semanas de respuestas sintéticas (`source: "synthetic_seed"`) en los departamentos activos. Ejecútalo manualmente con `node scripts/seed.js` desde la raíz, solo después de configurar credenciales seguras de Firebase Admin; cada ejecución agrega nuevos documentos. El Dashboard permite filtrar respuestas reales, sintéticas o ambas.
 
 ---
 
 ## 6. Usuarios y Acceso al Sistema
 
-El sistema utiliza los roles `admin` y `employee`; no hay autorregistro abierto. Las cuentas configuradas en Firebase son cuentas de prueba personales de la propietaria del proyecto, no cuentas de empleados reales.
+El sistema utiliza los roles `admin`, `employee` y `team_lead`; no hay autorregistro abierto. `team_lead` tiene acceso a las vistas de su equipo (`/mi-equipo`, `/mis-proyectos` y `/equipos/:teamId`). Las cuentas configuradas en Firebase son cuentas de prueba personales de la propietaria del proyecto, no cuentas de empleados reales.
 
 ### Credenciales de Acceso
 
@@ -85,6 +85,7 @@ El sistema utiliza los roles `admin` y `employee`; no hay autorregistro abierto.
 - **Pantalla a la que entra automáticamente:** `/dashboard` (Dashboard Ejecutivo principal).
 - **Funcionalidades exclusivas:**
   - Visualización y filtrado del Dashboard Ejecutivo.
+  - Revisión de la calidad de datos (`/admin/calidad`).
   - Exportación de reportes formales en **PDF** y **Excel** multipestaña.
   - Generación de diagnósticos con IA (Gemini) y conversión a tareas.
   - **Gestión de Usuarios** (`/admin/usuarios`): Alta de colaboradores, asignación de roles, edición de horarios de trabajo y reseteo de contraseñas.

@@ -1,5 +1,5 @@
 // src/data/kpiThresholds.js
-// Fuente única de umbrales de los KPIs: tarjetas, banner de alertas, PDF y Excel deben leer de aquí.
+// Fuente única de umbrales de los KPIs: tarjetas, alertas, PDF y Excel deben leer de aquí.
 // Valores iniciales propuestos (ver Fichas_KPIs_Dashboard_Salud_Organizacional.md).
 // No son estándares oficiales: calibrarlos con datos reales de la organización.
 

@@ -3,7 +3,13 @@ import { AdminNotificationBell } from "./NotificationBell";
 import { useSidebarState } from "../hooks/useSidebarState";
 import { useDepartments } from "../hooks/useDepartments";
 
-export default function TopBar({ departmentId, onDepartmentChange }) {
+export default function TopBar({
+  departmentId,
+  onDepartmentChange,
+  periodLabel = "Últimos 30 días",
+  responseSourceMode = "all",
+  alerts,
+}) {
   const { collapsed } = useSidebarState();
   const { departments } = useDepartments();
 
@@ -28,9 +34,9 @@ export default function TopBar({ departmentId, onDepartmentChange }) {
         )}
         <div className="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1.5 rounded-full text-on-surface-variant">
           <span className="material-symbols-outlined text-[18px]">calendar_today</span>
-          <span className="text-label-md text-on-surface">Últimos 30 días</span>
+          <span className="text-label-md text-on-surface">{periodLabel}</span>
         </div>
-        <AdminNotificationBell />
+        <AdminNotificationBell responseSourceMode={responseSourceMode} alerts={alerts} />
         <ThemeToggle />
       </div>
     </header>

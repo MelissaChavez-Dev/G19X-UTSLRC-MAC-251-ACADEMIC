@@ -4,9 +4,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "../components/Sidebar";
 import TopBar from "../components/TopBar";
 import RiskHeatmap from "../components/RiskHeatmap";
-import RiskAlertBanner from "../components/RiskAlertBanner";
 import AIStrategistPanel from "../components/AIStrategistPanel";
-import WeeklySentimentTrend from "../components/WeeklySentimentTrend";
+import DepartmentSentimentTrend from "../components/DepartmentSentimentTrend";
 import FrictionHotspots from "../components/FrictionHotspots";
 import MetricDetailModal from "../components/MetricDetailModal";
 import { useOrgHealthMetrics } from "../hooks/useOrgHealthMetrics";
@@ -19,6 +18,7 @@ import { useTeamPerformance } from "../hooks/useTeamPerformance";
 import { useSidebarState } from "../hooks/useSidebarState";
 import { useDepartments } from "../hooks/useDepartments";
 import { getKpiLevel, getKpiLevelForSample, LEVELS, MIN_SAMPLE } from "../data/kpiThresholds"; // KPI-LEVEL
+import { buildDashboardAlerts } from "../utils/dashboardAlerts";
 import { explainMetric } from "../services/aiService";
 import { exportDashboardPdf, exportResponsesExcel } from "../services/exportService";
 import teamIllustration from "../assets/ilust 2.png";
@@ -33,9 +33,8 @@ import riskIllustration from "../assets/ilust4.png";
 const MemoSidebar = memo(Sidebar);
 const MemoTopBar = memo(TopBar);
 const MemoRiskHeatmap = memo(RiskHeatmap);
-const MemoRiskAlertBanner = memo(RiskAlertBanner);
 const MemoAIStrategistPanel = memo(AIStrategistPanel);
-const MemoWeeklySentimentTrend = memo(WeeklySentimentTrend);
+const MemoDepartmentSentimentTrend = memo(DepartmentSentimentTrend);
 const MemoFrictionHotspots = memo(FrictionHotspots);
 
 const RATE_LIMIT_MESSAGE =
@@ -242,7 +241,10 @@ function SectionHeading({ id, title, subtitle }) {
   );
 }
 
-function DeltaNote({ diff, unit }) {
+function DeltaNote({ diff, unit, hasPrevious = true }) {
+  if (!hasPrevious) {
+    return <span className="text-label-sm text-on-surface-variant">Sin periodo previo</span>;
+  }
   if (diff === null) return null;
   return (
     <span className="inline-flex items-center gap-1 text-label-sm text-on-surface-variant">
@@ -304,7 +306,7 @@ const HeroTile = memo(function HeroTile({ def, metrics, previousMetrics, onExpan
         <span className="block text-body-sm text-on-surface-variant">
           Escala de −100 a +100, sobre {metrics.sampleSize} respuestas
         </span>
-        <DeltaNote diff={diff} unit="" />
+        <DeltaNote diff={diff} unit="" hasPrevious={Boolean(previousMetrics)} />
         <span className="mt-space-sm inline-flex items-center gap-2 rounded-full bg-surface-container-low px-space-md py-2 text-label-md text-on-surface">
           <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
             auto_awesome
@@ -368,9 +370,11 @@ const PulseRow = memo(function PulseRow({ config, metrics, previousMetrics, head
 
         <span className="flex items-center justify-between gap-space-sm">
           <span className="truncate text-label-sm text-on-surface-variant">{config.hint(metrics, headcount)}</span>
-          {diff !== null && (
-            <span className="shrink-0 text-label-sm text-on-surface-variant">{formatDelta(diff, config.deltaUnit)}</span>
-          )}
+          {previousMetrics
+            ? diff !== null && (
+              <span className="shrink-0 text-label-sm text-on-surface-variant">{formatDelta(diff, config.deltaUnit)}</span>
+            )
+            : <span className="shrink-0 text-label-sm text-on-surface-variant">Sin periodo previo</span>}
         </span>
       </span>
 
@@ -481,6 +485,14 @@ const OperationStrip = memo(function OperationStrip({
     turnover && Number.isFinite(turnover.rate) && Number.isFinite(turnover.previousRate)
       ? Math.round((turnover.rate - turnover.previousRate) * 10) / 10
       : null;
+  const punctualityHint = Number.isFinite(performance?.punctualityRate)
+    ? `Puntualidad: ${performance.punctualityRate}% (${performance.punctualitySample} ${
+      performance.punctualitySample === 1 ? "tarea terminada" : "tareas terminadas"
+    } con fecha límite).`
+    : "Puntualidad: sin tareas terminadas con fecha límite y fecha de cierre medible.";
+  const performanceHint = performance?.totalTasks
+    ? `${performance.doneTasks}/${performance.totalTasks} hechas, ${performance.overdueTasks} vencidas. ${punctualityHint}`
+    : `Sin tareas registradas aún. ${punctualityHint}`;
 
   return (
     <section aria-labelledby="ops-heading" className="flex flex-col gap-space-sm">
@@ -527,9 +539,7 @@ const OperationStrip = memo(function OperationStrip({
               hint={
                 performanceLoading
                   ? "Calculando..."
-                  : performance?.totalTasks
-                    ? `${performance.doneTasks}/${performance.totalTasks} hechas, ${performance.overdueTasks} vencidas`
-                    : "Sin tareas registradas aún"
+                  : performanceHint
               }
             />
           )}
@@ -602,15 +612,32 @@ function ExportActions({ onExport, exporting, disabled }) {
 
 export default function Dashboard() {
   const [departmentId, setDepartmentId] = useState(null);
+  const [sourceMode, setSourceMode] = useState("all");
   const { collapsed } = useSidebarState();
   const { departments } = useDepartments();
-  const { metrics, previousMetrics, loading, headcount } = useOrgHealthMetrics(departmentId);
-  const { rows: deptRows, loading: deptLoading } = useDepartmentRisk(departmentId);
-  const { trend, hotspots, comments, loading: sentimentLoading } = useWeeklySentiment(departmentId);
-  const { trends: weeklyTrends } = useWeeklyTrends(departmentId);
+  const { metrics, previousMetrics, periodLabel, loading, headcount } = useOrgHealthMetrics(departmentId, sourceMode);
+  const { rows: deptRows, loading: deptLoading } = useDepartmentRisk(departmentId, sourceMode);
+  const {
+    trend,
+    hotspots,
+    comments,
+    loading: sentimentLoading,
+    error: sentimentError,
+  } = useWeeklySentiment(departmentId, sourceMode);
+  const { trends: weeklyTrends } = useWeeklyTrends(departmentId, sourceMode);
   const { absence, loading: absenceLoading } = useAbsenceMetrics(departmentId);
   const { metrics: turnover, loading: turnoverLoading } = useTurnoverMetrics(departmentId);
-  const { metrics: performance, loading: performanceLoading } = useTeamPerformance();
+  const { metrics: performance, loading: performanceLoading } = useTeamPerformance(departmentId);
+  const alerts = buildDashboardAlerts({
+    metrics,
+    previousMetrics,
+    headcount,
+    departmentRows: deptRows || [],
+    absence,
+    turnover,
+    performance,
+    departments,
+  });
 
   const [expanded, setExpanded] = useState(null); // definición del KPI abierto
   const [explanations, setExplanations] = useState({}); // explicaciones guardadas (incluye límite 429)
@@ -632,9 +659,15 @@ export default function Dashboard() {
     setExportError(null);
     try {
       if (kind === "pdf") {
-        exportDashboardPdf({ metrics, deptRows: deptRows || [], aiMarkdown, departmentId, departments, turnover, performance });
+        exportDashboardPdf({
+          metrics, deptRows: deptRows || [], aiMarkdown, departmentId, departments,
+          turnover, performance, absence, headcount, periodLabel, sourceMode,
+        });
       } else {
-        await exportResponsesExcel({ metrics, deptRows: deptRows || [], departments, turnover, performance });
+        await exportResponsesExcel({
+          metrics, deptRows: deptRows || [], departments, turnover, performance,
+          absence, headcount, departmentId, periodLabel, sourceMode,
+        });
       }
     } catch {
       setExportError(EXPORT_ERROR_MESSAGE);
@@ -690,7 +723,13 @@ export default function Dashboard() {
   return (
     <div className="app-canvas zone-dashboard min-h-screen">
       <MemoSidebar />
-      <MemoTopBar departmentId={departmentId} onDepartmentChange={setDepartmentId} />
+      <MemoTopBar
+        departmentId={departmentId}
+        onDepartmentChange={setDepartmentId}
+        periodLabel={periodLabel}
+        responseSourceMode={sourceMode}
+        alerts={alerts}
+      />
       <main className={`${collapsed ? "pl-20" : "pl-64"} pt-16 relative z-10 transition-[padding] duration-300 ease-out`}>
         <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-space-lg px-space-xl py-space-lg">
           {/* 1. Encabezado: título a la izquierda, exportar discreto a la derecha */}
@@ -698,8 +737,22 @@ export default function Dashboard() {
             <div className="flex flex-col gap-space-sm">
               <span className="inline-flex items-center gap-2 self-start rounded-full bg-surface-container-low px-3 py-1 text-label-md text-on-surface-variant">
                 <span aria-hidden="true" className="h-2 w-2 rounded-full bg-secondary" />
-                {metrics ? metrics.sampleSize : "…"} respuestas en los últimos 30 días
+                {metrics ? metrics.sampleSize : "…"} respuestas · {periodLabel}
               </span>
+              <label className="inline-flex items-center gap-space-xs self-start rounded-full bg-surface-container-low px-3 py-1 text-label-md text-on-surface-variant">
+                <span aria-hidden="true" className="material-symbols-outlined text-[16px]">filter_alt</span>
+                <span>Origen</span>
+                <select
+                  value={sourceMode}
+                  onChange={(event) => setSourceMode(event.target.value)}
+                  className="theme-select bg-transparent border-none outline-none text-label-md text-on-surface cursor-pointer"
+                  aria-label="Filtrar indicadores por origen de respuestas"
+                >
+                  <option value="all">Todos</option>
+                  <option value="live">Reales</option>
+                  <option value="simulated">Simulados</option>
+                </select>
+              </label>
               <h1 className="text-headline-xl text-on-surface">Diagnóstico Psicosocial y Salud Estratégica</h1>
             </div>
             <div className="flex flex-col items-end gap-space-xs">
@@ -744,7 +797,6 @@ export default function Dashboard() {
           )}
 
           {/* 4. Dónde está el riesgo */}
-          {deptRows && <MemoRiskAlertBanner rows={deptRows} />}
           {deptRows && (
             <div className="grid grid-cols-1 items-start gap-space-md xl:grid-cols-[minmax(0,65fr)_minmax(0,35fr)]">
               <div className="flex min-w-0 self-stretch flex-col">
@@ -779,13 +831,18 @@ export default function Dashboard() {
           {/* 5. Qué dicen los comentarios */}
           {trend && hotspots && (
             <div className="grid grid-cols-1 gap-space-md lg:grid-cols-2">
-              <MemoWeeklySentimentTrend rows={trend} />
+              <MemoDepartmentSentimentTrend rows={trend} />
               <MemoFrictionHotspots items={hotspots} />
             </div>
           )}
           {sentimentLoading && (
             <p role="status" className="text-body-md text-on-surface-variant">
               Analizando sentimiento de comentarios...
+            </p>
+          )}
+          {sentimentError && (
+            <p role="alert" className="rounded-2xl bg-error-container px-space-md py-space-sm text-body-sm text-on-error-container">
+              No se pudo analizar el sentimiento de los comentarios. Revisa la conexión y los permisos para volver a intentarlo.
             </p>
           )}
         </div>

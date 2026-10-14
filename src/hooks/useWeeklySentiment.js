@@ -3,12 +3,14 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { classifySentiment } from "../services/aiService";
 import { useDepartments } from "./useDepartments";
+import { filterResponsesBySource } from "../utils/responseSources";
 
-export function useWeeklySentiment(departmentId = null) {
+export function useWeeklySentiment(departmentId = null, sourceMode = "all") {
   const [trend, setTrend] = useState(null);
   const [hotspots, setHotspots] = useState(null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { departments, loading: departmentsLoading } = useDepartments();
 
   useEffect(() => {
@@ -16,11 +18,17 @@ export function useWeeklySentiment(departmentId = null) {
 
     async function load() {
       setLoading(true);
+      setError(null);
+      setTrend(null);
+      setHotspots(null);
+      setComments([]);
       try {
         const q = query(collection(db, "responses"), where("openText", "!=", ""));
         const snapshot = await getDocs(q);
-        const withText = snapshot.docs
-          .map((d) => ({ id: d.id, ...d.data() }))
+        const withText = filterResponsesBySource(
+          snapshot.docs.map((d) => ({ id: d.id, ...d.data() })),
+          sourceMode
+        )
           .filter((r) => r.openText && r.openText.trim().length > 0)
           .filter((r) => !departmentId || r.departmentId === departmentId);
 
@@ -73,12 +81,13 @@ export function useWeeklySentiment(departmentId = null) {
         setHotspots(negativeComments);
       } catch (err) {
         console.error(err);
+        setError(err);
       } finally {
         setLoading(false);
       }
     }
     load();
-  }, [departmentId, departments, departmentsLoading]);
+  }, [departmentId, sourceMode, departments, departmentsLoading]);
 
-  return { trend, hotspots, comments, loading };
+  return { trend, hotspots, comments, loading, error };
 }

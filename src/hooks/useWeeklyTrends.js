@@ -3,8 +3,9 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useHeadcount } from "./useHeadcount";
 import { averageNumeric, toFiniteNumber, workPressureIndex } from "../utils/metricUtils";
+import { filterResponsesBySource } from "../utils/responseSources";
 
-export function useWeeklyTrends(departmentId = null) {
+export function useWeeklyTrends(departmentId = null, sourceMode = "all") {
   const [trends, setTrends] = useState(null);
   const [loading, setLoading] = useState(true);
   const { total: totalHeadcount, forDepartment } = useHeadcount();
@@ -15,8 +16,7 @@ export function useWeeklyTrends(departmentId = null) {
       try {
         const headcount = departmentId ? forDepartment(departmentId) : totalHeadcount;
         const snapshot = await getDocs(collection(db, "responses"));
-        const all = snapshot.docs
-          .map((d) => d.data())
+        const all = filterResponsesBySource(snapshot.docs.map((d) => d.data()), sourceMode)
           .filter((r) => !departmentId || r.departmentId === departmentId);
 
         const byWeek = {};
@@ -54,7 +54,7 @@ export function useWeeklyTrends(departmentId = null) {
       }
     }
     load();
-  }, [departmentId, totalHeadcount, forDepartment]);
+  }, [departmentId, sourceMode, totalHeadcount, forDepartment]);
 
   return { trends, loading };
 }

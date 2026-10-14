@@ -1,18 +1,22 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { collection, doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import { db } from "../services/firebase";
 import { useDepartmentRisk } from "../hooks/useDepartmentRisk";
 import { useTurnoverMetrics } from "../hooks/useTurnoverMetrics";
 import { usePendingSurveys } from "../hooks/usePendingSurveys";
 import { useMyTeam } from "../hooks/useTeams";
 import { useTeamTasks } from "../hooks/useTeamTasks";
+import { useAuth } from "../hooks/useAuth";
+import { getKpiLevelForSample, MIN_SAMPLE } from "../data/kpiThresholds";
 
-function Bell({ count, open, onToggle, children }) {
+function Bell({ count, open, onToggle, children, label = "Notificaciones" }) {
   return (
     <div className="relative">
       <button
         type="button"
         onClick={onToggle}
-        aria-label={`Notificaciones (${count} sin leer)`}
+        aria-label={`${label} (${count})`}
         className="motion-press relative flex items-center justify-center w-9 h-9 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
       >
         <span className="material-symbols-outlined text-[20px]">notifications</span>
@@ -52,63 +56,132 @@ function EmptyState({ text }) {
   );
 }
 
+function alertFingerprint(alert) {
+  return `${alert.severity}|${alert.title}|${alert.detail}`;
+}
+
 /** Campana del admin: departamentos que entran en nivel de riesgo alto y rotación real elevada. */
-export function AdminNotificationBell() {
+export function AdminNotificationBell({ responseSourceMode = "all", alerts: dashboardAlerts }) {
   const [open, setOpen] = useState(false);
-  const { rows } = useDepartmentRisk();
+  const [readAlertState, setReadAlertState] = useState({ uid: null, alerts: {} });
+  const [readError, setReadError] = useState("");
+  const { user } = useAuth();
+  const { rows } = useDepartmentRisk(null, responseSourceMode);
   const { metrics: turnover } = useTurnoverMetrics();
   useDismissOnOutsideClick(open, () => setOpen(false));
 
-  const alerts = (rows || []).filter(
+  useEffect(() => {
+    if (!user?.uid) return undefined;
+
+    return onSnapshot(
+      collection(db, "users", user.uid, "readAlerts"),
+      (snapshot) => {
+        setReadAlertState({
+          uid: user.uid,
+          alerts: Object.fromEntries(snapshot.docs.map((item) => [item.id, item.data()])),
+        });
+        setReadError("");
+      },
+      (error) => {
+        console.error("No se pudo cargar el estado de lectura de alertas:", error);
+        setReadError("No se pudo sincronizar el estado de lectura.");
+      }
+    );
+  }, [user?.uid]);
+  const readAlerts = readAlertState.uid === user?.uid ? readAlertState.alerts : {};
+
+  async function markAsRead(alert) {
+    if (!user?.uid) return;
+    const documentId = encodeURIComponent(alert.id);
+    try {
+      await setDoc(
+        doc(db, "users", user.uid, "readAlerts", documentId),
+        { fingerprint: alertFingerprint(alert), readAt: serverTimestamp() },
+        { merge: true }
+      );
+      setReadError("");
+    } catch (error) {
+      console.error("No se pudo marcar la alerta como leída:", error);
+      setReadError("No se pudo guardar el estado de lectura. Revisa tus permisos o conexión.");
+    }
+  }
+
+  const riskAlerts = (rows || []).filter(
     (row) => row.tier?.tone === "critical" || row.tier?.tone === "elevated"
   );
-  const hasTurnoverAlert = Number.isFinite(turnover?.rate) && turnover.rate >= 10;
-  const totalCount = alerts.length + (hasTurnoverAlert ? 1 : 0);
+  const turnoverLevel = getKpiLevelForSample(
+    "turnover90d",
+    turnover?.rate,
+    turnover?.headcount,
+    MIN_SAMPLE.headcount
+  );
+  const hasTurnoverAlert = turnoverLevel.tone === "critical" || turnoverLevel.tone === "elevated";
+  const fallbackAlerts = [
+    ...riskAlerts.map((row) => ({
+      id: row.id,
+      severity: row.tier.tone,
+      title: `${row.name} está en nivel ${row.tier.label.toLowerCase()}`,
+      detail: `Índice de presión laboral: ${Number.isFinite(row.attritionRisk) ? `${row.attritionRisk}/100 puntos` : "—"}`,
+    })),
+    ...(hasTurnoverAlert
+      ? [{
+        id: "turnover",
+        severity: turnoverLevel.tone,
+        title: `Rotación real: ${turnoverLevel.label.toLowerCase()}`,
+        detail: `${turnover.rate}% de bajas en los últimos 90 días (${turnover.departures} de ${turnover.headcount} activos).`,
+      }]
+      : []),
+  ];
+  const alerts = dashboardAlerts ?? fallbackAlerts;
+  const unreadCount = alerts.filter((alert) => (
+    readAlerts[encodeURIComponent(alert.id)]?.fingerprint !== alertFingerprint(alert)
+  )).length;
 
   return (
     <div onClick={(e) => e.stopPropagation()}>
-      <Bell count={totalCount} open={open} onToggle={() => setOpen((v) => !v)}>
+      <Bell count={unreadCount} open={open} onToggle={() => setOpen((v) => !v)} label="Alertas activas">
         <span className="text-label-md uppercase tracking-widest text-on-surface-variant font-semibold block px-space-xs pb-space-xs">
-          Alertas de riesgo
+          Alertas activas
         </span>
-        {totalCount === 0 ? (
-          <EmptyState text="Ningún departamento en riesgo alto por ahora." />
+        {readError && (
+          <p role="alert" className="mb-space-xs rounded-xl bg-error-container px-space-sm py-2 text-label-sm text-on-error-container">
+            {readError}
+          </p>
+        )}
+        {alerts.length === 0 ? (
+          <EmptyState text={dashboardAlerts ? "No hay alertas activas." : "Ningún departamento en riesgo alto por ahora."} />
         ) : (
-          <>
-            {hasTurnoverAlert && (
-              <div className="flex items-start gap-space-sm p-space-sm rounded-lg hover:bg-surface-container-low transition-colors">
-                <span className="material-symbols-outlined text-[20px] text-error">logout</span>
-                <div>
-                  <p className="text-body-sm text-on-surface font-semibold">Rotación real elevada</p>
-                  <p className="text-body-sm text-on-surface-variant">
-                    {turnover.rate}% de bajas en los últimos 90 días ({turnover.departures} de {turnover.headcount} activos).
-                  </p>
-                </div>
-              </div>
-            )}
-            {alerts.map((row) => (
-            <div
-              key={row.id}
-              className="flex items-start gap-space-sm p-space-sm rounded-lg hover:bg-surface-container-low transition-colors"
-            >
-              <span
-                className={`material-symbols-outlined text-[20px] ${
-                  row.tier.tone === "critical" ? "text-error" : "text-warning"
+          alerts.map((alert) => {
+            const isRead = readAlerts[encodeURIComponent(alert.id)]?.fingerprint === alertFingerprint(alert);
+            return (
+              <div
+                key={alert.id}
+                className={`flex items-start gap-space-sm p-space-sm rounded-lg hover:bg-surface-container-low transition-colors ${
+                  isRead ? "opacity-60" : ""
                 }`}
               >
-                {row.tier.tone === "critical" ? "emergency_home" : "warning"}
-              </span>
-              <div>
-                <p className="text-body-sm text-on-surface font-semibold">
-                  {row.name} está en nivel {row.tier.label.toLowerCase()}
-                </p>
-                <p className="text-body-sm text-on-surface-variant">
-                  Índice de presión laboral: {Number.isFinite(row.attritionRisk) ? `${row.attritionRisk}/100 puntos` : "—"}
-                </p>
+                <span
+                  className={`material-symbols-outlined text-[20px] ${
+                    alert.severity === "critical" ? "text-error" : "text-warning"
+                  }`}
+                >
+                  {isRead ? "check_circle" : alert.severity === "critical" ? "emergency_home" : "warning"}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-body-sm text-on-surface font-semibold">{alert.title}</p>
+                  <p className="text-body-sm text-on-surface-variant">{alert.detail}</p>
+                  <button
+                    type="button"
+                    onClick={() => markAsRead(alert)}
+                    disabled={isRead || !user?.uid}
+                    className="mt-1 text-label-sm font-semibold text-primary hover:underline disabled:cursor-default disabled:no-underline disabled:text-on-surface-variant"
+                  >
+                    {isRead ? "Leída" : "Marcar como leída"}
+                  </button>
+                </div>
               </div>
-            </div>
-            ))}
-          </>
+            );
+          })
         )}
       </Bell>
     </div>

@@ -1,4 +1,5 @@
 import { getRiskColorClasses } from "../utils/riskColors";
+import { KPI_THRESHOLDS, MIN_SAMPLE } from "../data/kpiThresholds";
 
 const COLUMNS = [
   { key: "cognitiveLoad", label: "Carga Cognitiva", invert: false },
@@ -27,6 +28,7 @@ const TIER_DOT = {
 
 const INK = "text-on-secondary-container";
 const INK_SOFT = "text-on-secondary-container/75";
+const RISK_THRESHOLDS = KPI_THRESHOLDS.psychosocialRisk.from;
 
 function LegendDot({ colorClass, label, bold }) {
   return (
@@ -59,10 +61,19 @@ export default function RiskHeatmap({ rows }) {
           </p>
         </div>
         <div className="flex items-center gap-2 text-label-sm flex-wrap">
-          <LegendDot colorClass="bg-success" label="1,0-1,9 Bajo" />
-          <LegendDot colorClass="bg-tertiary" label="2,0-2,9 Moderado" />
-          <LegendDot colorClass="bg-warning" label="3,0-3,9 Elevado" />
-          <LegendDot colorClass="bg-error" label="4,0+ Crítico" bold />
+          <LegendDot
+            colorClass="bg-success"
+            label={`1,0–${(RISK_THRESHOLDS.controlled - 0.1).toFixed(1)} Bajo`}
+          />
+          <LegendDot
+            colorClass="bg-tertiary"
+            label={`${RISK_THRESHOLDS.controlled.toFixed(1)}–${(RISK_THRESHOLDS.elevated - 0.1).toFixed(1)} Moderado`}
+          />
+          <LegendDot
+            colorClass="bg-warning"
+            label={`${RISK_THRESHOLDS.elevated.toFixed(1)}–${(RISK_THRESHOLDS.critical - 0.1).toFixed(1)} Elevado`}
+          />
+          <LegendDot colorClass="bg-error" label={`${RISK_THRESHOLDS.critical.toFixed(1)}+ Crítico`} bold />
         </div>
       </div>
 
@@ -84,18 +95,26 @@ export default function RiskHeatmap({ rows }) {
                 className="transition-colors hover:bg-surface-container-high/50"
               >
                 <td className={`py-3.5 px-space-md font-semibold ${INK}`}>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-1">
+                    <span className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${TIER_DOT[row.tier.tone]}`} />
                     {row.name}
+                    </span>
+                    {row.sampleSize < MIN_SAMPLE.responses && (
+                      <span className={`pl-4 text-label-sm font-normal ${INK_SOFT}`}>
+                        {row.sampleSize}/{MIN_SAMPLE.responses} respuestas en 30 días
+                      </span>
+                    )}
                   </div>
                 </td>
                 {COLUMNS.map((col) => (
                   <td key={col.key} className="py-3 px-2 text-center">
                     <span
-                      className={`inline-block px-2.5 py-1 rounded font-mono ${getRiskColorClasses(
-                        row.factors[col.key] || 0,
-                        col.invert
-                      )}`}
+                      className={`inline-block px-2.5 py-1 rounded font-mono ${
+                        Number.isFinite(row.factors[col.key])
+                          ? getRiskColorClasses(row.factors[col.key], col.invert)
+                          : "bg-surface-container text-on-surface-variant"
+                      }`}
                     >
                       {Number.isFinite(row.factors[col.key]) ? row.factors[col.key].toFixed(1) : "–"}
                     </span>

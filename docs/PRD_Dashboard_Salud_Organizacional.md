@@ -52,12 +52,13 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
 | Rol | Usuario | Propósito y Alcance de Acceso |
 |---|---|---|
 | **`admin`** | Dirección / propietaria del entorno | Acceso al Dashboard Ejecutivo (`/dashboard`), Gestión de Usuarios (`/admin/usuarios`), Directorio de Equipos (`/equipos`), tableros de equipo, Form Builder de Encuestas (`/survey-builder`), reportes y descargas PDF/Excel. |
+| **`team_lead`** | Líder de equipo | Acceso a su espacio de equipo (`/mi-equipo`), proyectos (`/mis-proyectos`) y tableros autorizados (`/equipos/:teamId`). |
 | **`employee`** | Colaborador | Portal personal (`/mi-espacio`), contestación de encuestas pendientes dirigidas a su área (`/encuesta/:templateId`), unión a equipo mediante código (`JoinTeamCard`), tablero de equipo (`/mis-proyectos`) y resumen de presencia digital. |
 
 ### 4.2 Flujo de Alta y Autenticación
 1. **Alta centralizada por Administrador:** No existe autorregistro abierto. La administradora crea las cuentas necesarias desde `/admin/usuarios`.
-2. **Control de roles:** El sistema utiliza los roles `admin` y `employee`; 
-3. **Redirección condicional (`RoleBasedRedirect`):** Según el rol asignado, el sistema conduce al administrador a `/dashboard` y al empleado a `/mi-espacio`.
+2. **Control de roles:** El sistema utiliza `admin`, `team_lead` y `employee`, con rutas protegidas según cada rol.
+3. **Redirección condicional (`RoleBasedRedirect`):** Según el rol asignado, el sistema conduce al administrador a `/dashboard`, al líder a `/mi-equipo` y al empleado a `/mi-espacio`.
 
 **Entorno de pruebas actual:** Las cuentas existentes son cuentas de prueba personales de la propietaria, no cuentas de empleados reales. Sus contraseñas se establecieron en `12345678` para pruebas exclusivamente. Esta contraseña no es apropiada para producción y debe cambiarse antes de cualquier despliegue público.
 
@@ -101,7 +102,7 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
   - Modal de análisis micro con Gemini al interactuar con cualquier tarjeta.
 - **RF-D03: Matriz de Riesgo Psicosocial (`RiskHeatmap`):**
   - Malla bidimensional Departamentos × Factores con código de color semántico (Riesgo Bajo, Moderado, Alto, Crítico).
-  - Banners de alerta temprana ante variaciones críticas.
+  - Alertas tempranas de todos los KPIs en la campana del TopBar.
 - **RF-D04: Tendencias Históricas y Focos de Fricción:**
   - Gráfica de evolución semanal de bienestar y listado de focos urgentes de atención.
 - **RF-D05: Panel de Estrategia con Inteligencia Artificial (`AIStrategistPanel`):**
@@ -110,10 +111,10 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
   - Botón integrado **"Convertir en tarea"** para derivar recomendaciones de IA a los tableros de equipo.
   - Modo minimizable/expandible con control condicional y soporte visual adaptativo: despliegue de ilustración conceptual (`ilust3.png`) en modo minimizado, e ilustración decorativa (`ilust4.png`) debajo de la matriz de riesgo únicamente cuando existe análisis generado y el panel se encuentra expandido.
 - **RF-D06: Bloque Operativo:**
-  - Métricas de Ausentismo digital, Tasa de rotación proyectada y Desempeño promedio con apoyo visual (`ilust 2.png`).
+  - Métricas de ausentismo digital, rotación real a 90 días y ejecución de tareas Kanban (tareas al corriente, cumplimiento y puntualidad), con filtro departamental y apoyo visual (`ilust 2.png`).
 - **RF-D07: Filtros y Exportaciones:**
-  - Filtro global por departamento en cabecera (`TopBar`).
-  - Botones de exportación a PDF (informe formal de alta dirección) y Excel (archivo multipestaña con respuestas anonimizadas, matriz y KPIs).
+  - Filtro global por departamento y origen de respuestas (todas, reales o sintéticas).
+  - Botones de exportación a PDF (informe formal de alta dirección) y Excel (archivo multipestaña con respuestas anonimizadas, matriz y KPIs con sus niveles).
 - **RF-D08: Calidad de Datos (`/admin/calidad`):**
   - Módulo administrativo de solo lectura con puntaje ponderado y verificaciones de completitud, rangos, muestra mínima por departamento, posibles duplicados y frescura de respuestas.
   - Filtro para evaluar todas las respuestas, solo las reales o solo las simuladas; muestra también la composición por origen y el estado de las fuentes operativas de ausentismo y rotación.
@@ -139,7 +140,7 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
 
 | ID | Dimensión | Criterio de Cumplimiento |
 |---|---|---|
-| **RNF-01** | **Seguridad** | Reglas de seguridad en Firestore por colección; protección de credenciales y APIs en entorno seguro; sanitización de salidas Markdown contra XSS con `DOMPurify`. |
+| **RNF-01** | **Seguridad** | Reglas de seguridad en Firestore por colección; protección de credenciales y APIs en entorno seguro; el Markdown de IA se muestra con `react-markdown` sin habilitar HTML crudo. `DOMPurify` está declarado como dependencia, pero no forma parte del render actual. |
 | **RNF-02** | **Rendimiento** | Build optimizado con Vite; carga reactiva de datos vía hooks desacoplados; componentes pesados memoizados para evitar re-renderizados innecesarios. |
 | **RNF-03** | **Diseño y Accesibilidad** | Sistema de diseño de acentos por zona ("Executive Pulse"): lienzo base `#FFFCF7`, acentos pastel funcionales (azul, salvia, lavanda, durazno y aqua para IA), tipografías legibles y soporte total para modo oscuro (`.dark`). |
 | **RNF-04** | **Usabilidad Móvil** | Interfaz totalmente responsiva en escritorio, tabletas y dispositivos móviles. |

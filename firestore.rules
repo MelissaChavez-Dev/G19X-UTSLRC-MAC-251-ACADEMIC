@@ -37,6 +37,10 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["mustChangePassword"])
             && request.resource.data.mustChangePassword == false);
       allow delete: if isAdmin();
+
+      match /readAlerts/{alertId} {
+        allow read, write: if isSelf(uid) && isAdmin();
+      }
     }
 
     match /teams/{teamId} {

@@ -3,6 +3,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useHeadcount } from "./useHeadcount";
 import { averageNumeric, computeWeeklyParticipation, toFiniteNumber, workPressureIndex } from "../utils/metricUtils";
+import { filterResponsesBySource } from "../utils/responseSources";
 
 function daysAgo(n) {
   const d = new Date();
@@ -29,9 +30,10 @@ function computeMetrics(responses, headcount) {
   return { enps, attritionRisk, activePulseRate, avgPerWeek, psychSafety, sampleSize: responses.length };
 }
 
-export function useOrgHealthMetrics(departmentId = null) {
+export function useOrgHealthMetrics(departmentId = null, sourceMode = "all") {
   const [metrics, setMetrics] = useState(null);
   const [previousMetrics, setPreviousMetrics] = useState(null);
+  const [periodLabel, setPeriodLabel] = useState("Últimos 30 días");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { total: totalHeadcount, forDepartment } = useHeadcount();
@@ -41,8 +43,7 @@ export function useOrgHealthMetrics(departmentId = null) {
       setLoading(true);
       try {
         const snapshot = await getDocs(collection(db, "responses"));
-        const all = snapshot.docs
-          .map((d) => d.data())
+        const all = filterResponsesBySource(snapshot.docs.map((d) => d.data()), sourceMode)
           .filter((r) => !departmentId || r.departmentId === departmentId);
 
         const headcount = departmentId ? forDepartment(departmentId) : totalHeadcount;
@@ -55,8 +56,14 @@ export function useOrgHealthMetrics(departmentId = null) {
           return date >= cutoff60 && date < cutoff30;
         });
 
-        setMetrics(computeMetrics(current.length ? current : all, headcount));
-        setPreviousMetrics(computeMetrics(previous.length ? previous : current, headcount));
+        const useHistorical = current.length === 0 && all.length > 0;
+        setMetrics(computeMetrics(useHistorical ? all : current, headcount));
+        setPeriodLabel(useHistorical ? "Histórico" : "Últimos 30 días");
+        setPreviousMetrics(
+          current.length > 0 && previous.length > 0
+            ? computeMetrics(previous, headcount)
+            : null
+        );
       } catch (err) {
         console.error(err);
         setError(err);
@@ -65,7 +72,14 @@ export function useOrgHealthMetrics(departmentId = null) {
       }
     }
     load();
-  }, [departmentId, totalHeadcount, forDepartment]);
+  }, [departmentId, sourceMode, totalHeadcount, forDepartment]);
 
-  return { metrics, previousMetrics, loading, error, headcount: departmentId ? forDepartment(departmentId) : totalHeadcount };
+  return {
+    metrics,
+    previousMetrics,
+    periodLabel,
+    loading,
+    error,
+    headcount: departmentId ? forDepartment(departmentId) : totalHeadcount,
+  };
 }

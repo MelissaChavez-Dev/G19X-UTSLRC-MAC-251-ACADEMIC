@@ -15,6 +15,7 @@ export async function explainMetric({ label, context }) {
 
 export async function classifySentiment(comments) {
   const callable = httpsCallable(functions, "classify_sentiment");
-  const result = await callable({ comments });
+  const result = await callable({ comments: comments.map(({ id }) => ({ id })) });
+  if (result.data.error) throw new Error("No se pudo clasificar el sentimiento de los comentarios.");
   return result.data.results;
 }

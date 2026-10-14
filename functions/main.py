@@ -11,6 +11,7 @@ import secrets
 import string
 import json
 import re
+import hashlib
 
 GEMINI_API_KEY = SecretParam("GEMINI_API_KEY")
 MODEL_NAME = "gemini-3.8-flash"
@@ -65,7 +66,7 @@ def _generate_join_code() -> str:
 
 
 def _record_departure(db, uid: str, profile: dict, reason: str) -> None:
-    """Registra una baja real (desactivación o eliminación) para medir rotación."""
+    """Registra el evento de cuenta; los reportes excluyen las eliminaciones administrativas."""
     db.collection("departureLog").add({
         "userId": uid,
         "departmentId": profile.get("departmentId"),
@@ -883,14 +884,60 @@ No repitas los numeros tal cual, interpretalos. No agregues titulos ni listas.
 
 @https_fn.on_call(secrets=[GEMINI_API_KEY], region="us-central1")
 def classify_sentiment(req: https_fn.CallableRequest) -> dict:
-    client = genai.Client(api_key=GEMINI_API_KEY.value)
-
-    comments = req.data.get("comments", [])  # [{ "id": "...", "text": "..." }, ...]
+    _require_admin(req)
+    comments = (req.data or {}).get("comments", [])
+    if not isinstance(comments, list):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="La lista de comentarios no es válida.",
+        )
+    comments = comments[:120]
     if not comments:
         return {"results": []}
 
-    numbered = "\n".join(f"{i}: {c['text']}" for i, c in enumerate(comments))
+    db = _db()
+    response_refs = {}
+    for comment in comments:
+        response_id = comment.get("id") if isinstance(comment, dict) else None
+        if isinstance(response_id, str) and response_id.strip():
+            response_refs.setdefault(response_id, db.collection("responses").document(response_id))
 
+    response_snapshots = db.get_all(list(response_refs.values()))
+    sentiments = {}
+    pending = []
+    for snapshot in response_snapshots:
+        if not snapshot.exists:
+            continue
+        response_data = snapshot.to_dict() or {}
+        text = response_data.get("openText")
+        if not isinstance(text, str) or not text.strip():
+            continue
+        text_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
+        cached_sentiment = response_data.get("sentiment")
+        if (
+            response_data.get("sentimentTextHash") == text_hash
+            and cached_sentiment in {"positive", "neutral", "negative"}
+        ):
+            sentiments[snapshot.id] = cached_sentiment
+        else:
+            pending.append({
+                "id": snapshot.id,
+                "text": text,
+                "text_hash": text_hash,
+                "ref": snapshot.reference,
+            })
+
+    if not pending:
+        return {
+            "results": [
+                {"id": response_id, "sentiment": sentiments[response_id]}
+                for response_id in response_refs
+                if response_id in sentiments
+            ]
+        }
+
+    client = genai.Client(api_key=GEMINI_API_KEY.value)
+    numbered = "\n".join(f"{i}: {comment['text']}" for i, comment in enumerate(pending))
     prompt = f"""
 Clasifica el sentimiento de cada comentario de empleados. Responde
 UNICAMENTE con un array JSON valido, sin texto adicional, con este formato:
@@ -909,13 +956,45 @@ COMENTARIOS:
         )
         cleaned = response.text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
         classifications = json.loads(cleaned)
+        if not isinstance(classifications, list):
+            raise ValueError("La respuesta del modelo no es una lista.")
 
-        results = []
+        pending_sentiments = {}
         for c in classifications:
+            if not isinstance(c, dict):
+                continue
             idx = c.get("index")
-            if idx is not None and 0 <= idx < len(comments):
-                results.append({"id": comments[idx]["id"], "sentiment": c.get("sentiment", "neutral")})
-        return {"results": results}
+            sentiment = c.get("sentiment")
+            if (
+                isinstance(idx, int)
+                and not isinstance(idx, bool)
+                and 0 <= idx < len(pending)
+                and sentiment in {"positive", "neutral", "negative"}
+            ):
+                pending_sentiments[idx] = sentiment
+        if len(pending_sentiments) != len(pending):
+            raise ValueError("La respuesta del modelo no clasificó todos los comentarios.")
+
+        cache_batch = db.batch()
+        for idx, sentiment in pending_sentiments.items():
+            comment = pending[idx]
+            sentiments[comment["id"]] = sentiment
+            cache_batch.set(comment["ref"], {
+                "sentiment": sentiment,
+                "sentimentTextHash": comment["text_hash"],
+                "sentimentUpdatedAt": admin_firestore.SERVER_TIMESTAMP,
+            }, merge=True)
+        cache_batch.commit()
+        return {
+            "results": [
+                {"id": response_id, "sentiment": sentiments[response_id]}
+                for response_id in response_refs
+                if response_id in sentiments
+            ]
+        }
     except Exception as e:
-        # Si Gemini no devuelve JSON valido, no tumbamos el dashboard: regresamos neutral por defecto
-        return {"results": [{"id": c["id"], "sentiment": "neutral"} for c in comments], "error": str(e)[:120]}
+        # Los fallbacks no se guardan: un error temporal de Gemini no debe volverse un resultado persistente.
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INTERNAL,
+            message=f"No se pudo clasificar o guardar el sentimiento: {str(e)[:120]}",
+        ) from e

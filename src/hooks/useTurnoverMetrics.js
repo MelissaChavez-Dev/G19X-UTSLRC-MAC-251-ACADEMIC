@@ -9,6 +9,10 @@ function daysAgo(n) {
   return d;
 }
 
+export function isTurnoverDeparture(record) {
+  return record.reason !== "deleted";
+}
+
 /**
  * Rotación real (no modelada): bajas registradas por administración
  * (cuentas desactivadas o eliminadas) en departureLog, comparadas con
@@ -28,7 +32,9 @@ export function useTurnoverMetrics(departmentId = null, refreshKey = 0) {
           ? query(collection(db, "departureLog"), where("departmentId", "==", departmentId))
           : collection(db, "departureLog");
         const snapshot = await getDocs(q);
-        const all = snapshot.docs.map((d) => d.data());
+        const all = snapshot.docs
+          .map((d) => d.data())
+          .filter(isTurnoverDeparture);
 
         const headcount = departmentId ? forDepartment(departmentId) : totalHeadcount;
         const cutoff90 = daysAgo(90);
@@ -38,6 +44,13 @@ export function useTurnoverMetrics(departmentId = null, refreshKey = 0) {
         const previous = all.filter((r) => {
           const date = r.recordedAt?.toDate();
           return date && date >= cutoff180 && date < cutoff90;
+        });
+        const departuresByDepartment = {};
+        current.forEach((record) => {
+          if (record.departmentId) {
+            departuresByDepartment[record.departmentId] =
+              (departuresByDepartment[record.departmentId] || 0) + 1;
+          }
         });
 
         // Proporción de bajas sobre la fuerza laboral aproximada del periodo
@@ -53,6 +66,7 @@ export function useTurnoverMetrics(departmentId = null, refreshKey = 0) {
           rate: rate(current.length),
           previousRate: rate(previous.length),
           headcount,
+          departuresByDepartment,
         });
       } catch (err) {
         console.error("No se pudo calcular la rotación real:", err);

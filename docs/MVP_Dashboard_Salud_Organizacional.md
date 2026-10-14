@@ -25,10 +25,10 @@ Durante el proceso de desarrollo y validación, el MVP evolucionó de un "visual
 | **Medidor eNPS tipo Termómetro** | Medidor semicircular reactivo con aguja animada, escala de −100 a +100 y 4 niveles semánticos con glifos de caras (*Bajo*, *Bueno*, *Muy bueno*, *Excelente*). | **Completado** |
 | **KPIs de Salud Organizacional** | Indicadores consolidados de eNPS, Presión Laboral (/100), Participación de Pulso (%) y Seguridad Psicológica (/5.0) con cálculo dinámico en Firestore. | **Completado** |
 | **Calidad de datos (`/admin/calidad`)** | Puntaje ponderado de confiabilidad de respuestas, con verificaciones de completitud, rangos, muestra mínima, duplicados y frescura; incluye filtros por origen y cobertura de fuentes operativas. Solo lectura. | **Completado** |
-| **Matriz de Riesgo Psicosocial** | Heatmap interactivo Departamentos × Factores con semaforización cromática y alertas tempranas de contingencia. | **Completado** |
+| **Matriz de Riesgo Psicosocial** | Heatmap interactivo Departamentos × Factores con semaforización cromática; alertas tempranas consolidadas en la campana del TopBar. | **Completado** |
 | **Panel de Estrategia con IA (Gemini)** | Síntesis ejecutiva de comentarios abiertos, generación de 3 recomendaciones estructuradas y conversión automática en tareas de equipo. | **Completado** |
 | **Composición Visual y Minimizado** | Panel de IA minimizable/expandible con despliegue de ilustraciones dinámicas (`ilust3.png` al minimizar, `ilust4.png` bajo el heatmap al expandir con análisis). | **Completado** |
-| **Métricas Operativas** | Indicadores de ausentismo digital, rotación proyectada a 90 días y desempeño promedio, con apoyo visual (`ilust 2.png`). | **Completado** |
+| **Métricas Operativas** | Ausentismo digital a 30 días, rotación real a 90 días y ejecución de tareas Kanban (tareas al corriente, cumplimiento y puntualidad), filtrables por departamento cuando aplica. | **Completado** |
 | **Filtro Departamental y Exportación** | Filtro dinámico en cabecera (`TopBar`), exportación de reporte ejecutivo formal a PDF y exportación de libro de cálculo en Excel (hojas múltiples). | **Completado** |
 | **Constructor de Encuestas (`SurveyBuilder`)** | Editor visual de preguntas con biblioteca de componentes, arrastre interactivo con `@dnd-kit`, ciclos de encuesta y asignación por departamento. | **Completado** |
 | **Ejecutor de Encuestas (`SurveyRunner`)** | Interfaz tipo Typeform (paso a paso), responsiva, con registro directo en Firestore y prevención de respuestas duplicadas. | **Completado** |
@@ -41,8 +41,8 @@ Durante el proceso de desarrollo y validación, el MVP evolucionó de un "visual
 
 ### 2.1 Datos de prueba y cuentas
 
-- La aplicación no carga automáticamente respuestas de encuesta ni otros datos de demostración. La propietaria incorpora manualmente los datos de prueba en Firebase.
-- El entorno contiene únicamente cuentas de prueba personales de la propietaria; no se usan cuentas de empleados reales ni el rol `team_lead`.
+- La aplicación no carga automáticamente respuestas de encuesta ni otros datos de demostración. Existe un script opcional `scripts/seed.js` que agrega respuestas sintéticas al ejecutarlo manualmente.
+- El entorno contiene cuentas de prueba personales de la propietaria; el sistema también contempla el rol `team_lead` para vistas y tableros de equipo.
 - Para las pruebas actuales, las contraseñas de las cuentas existentes se establecieron en `12345678`. Esta clave compartida es solo para pruebas y no debe utilizarse en producción.
 
 ---

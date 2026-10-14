@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { collectionGroup, getDocs } from "firebase/firestore";
+import { collection, collectionGroup, getDocs, query, where } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { getKpiLevel, hasEnoughTasks, LEVELS } from "../data/kpiThresholds";
 
@@ -19,6 +19,10 @@ function completionDate(task) {
   return null;
 }
 
+export function filterTaskDocsByTeamIds(taskDocs, teamIds) {
+  return taskDocs.filter((task) => teamIds.has(task.ref.parent.parent?.id));
+}
+
 /**
  * Desempeño operativo agregado desde el activity tracker (Kanban):
  * cuántas tareas se completan y cuántas quedan vencidas en todos los equipos.
@@ -29,7 +33,7 @@ function completionDate(task) {
  * - punctualityRate: de las tareas terminadas con fecha límite, % entregadas a más tardar
  *   el día límite (usa la fecha de cierre).
  */
-export function useTeamPerformance() {
+export function useTeamPerformance(departmentId = null) {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,7 +43,15 @@ export function useTeamPerformance() {
       setLoading(true);
       try {
         const snapshot = await getDocs(collectionGroup(db, "tasks"));
-        const tasks = snapshot.docs.map((d) => d.data());
+        let taskDocs = snapshot.docs;
+        if (departmentId) {
+          const teamsSnapshot = await getDocs(
+            query(collection(db, "teams"), where("departmentId", "==", departmentId))
+          );
+          const teamIds = new Set(teamsSnapshot.docs.map((team) => team.id));
+          taskDocs = filterTaskDocsByTeamIds(taskDocs, teamIds);
+        }
+        const tasks = taskDocs.map((d) => d.data());
         const today = new Date().toLocaleDateString("en-CA");
 
         const doneTasks = tasks.filter((t) => t.status === "done").length;
@@ -95,7 +107,7 @@ export function useTeamPerformance() {
       }
     }
     load();
-  }, []);
+  }, [departmentId]);
 
   return { metrics, loading, error };
 }

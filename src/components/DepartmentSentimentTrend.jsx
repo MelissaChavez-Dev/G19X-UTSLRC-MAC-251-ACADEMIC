@@ -1,4 +1,4 @@
-export default function WeeklySentimentTrend({ rows }) {
+export default function DepartmentSentimentTrend({ rows }) {
   return (
     <section
       aria-labelledby="sentiment-title"
@@ -15,10 +15,10 @@ export default function WeeklySentimentTrend({ rows }) {
           id="sentiment-title"
           className="mb-1 text-headline-md tracking-tight text-on-primary-container"
         >
-          Tendencia de Sentimiento
+          Sentimiento por departamento
         </h2>
         <p className="mb-space-md text-body-sm text-on-primary-container/75">
-          Progresión neta (positivo - negativo) por área, sobre la muestra reciente
+          Balance neto (comentarios positivos menos negativos) en una muestra reciente; no es una tendencia semanal.
         </p>
       </div>
 

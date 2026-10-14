@@ -3,6 +3,9 @@
 // Son funciones puras: reciben las respuestas y devuelven resultados; no leen ni escriben en Firestore.
 import { LEVELS, MIN_SAMPLE } from "./kpiThresholds";
 import { toFiniteNumber } from "../utils/metricUtils";
+import { filterResponsesBySource, getResponseSource } from "../utils/responseSources";
+
+export { getResponseSource };
 
 // Pesos del puntaje (suman 100). Las verificaciones informativas pesan 0.
 export const QUALITY_WEIGHTS = { completeness: 25, ranges: 25, minSample: 20, duplicates: 15, freshness: 15 };
@@ -74,19 +77,7 @@ export function qualityLevel(score) {
   return LEVELS.critical;
 }
 
-// "live" = respondidas en la app; "simulated" = generadas por scripts/seed.js; "unknown" = sin campo source.
-export function getResponseSource(response) {
-  if (response?.source === "live") return "live";
-  if (typeof response?.source === "string" && response.source.startsWith("synthetic")) return "simulated";
-  return "unknown";
-}
-
-export function filterBySource(responses, mode = "all") {
-  if (mode === "live" || mode === "simulated") {
-    return responses.filter((response) => getResponseSource(response) === mode);
-  }
-  return responses;
-}
+export const filterBySource = filterResponsesBySource;
 
 export function compositionOf(responses) {
   const composition = { live: 0, simulated: 0, unknown: 0, total: responses.length };
