@@ -11,6 +11,7 @@ import { useDepartments } from "../hooks/useDepartments";
 import ScaleQuestion from "../components/ScaleQuestions";
 import ChoiceQuestion from "../components/ChoiceQuestion";
 import OpenTextQuestion from "../components/OpenTextQuestion";
+import WelfareLogo from "../components/WelfareLogo";
 
 /**
  * Flujo de respuesta de encuesta.
@@ -122,6 +123,7 @@ export default function WellnessSurvey({ templateId = null, fixedDepartmentId = 
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface px-4">
         <div className="max-w-md text-center bg-surface-container-lowest rounded-xl shadow-xl p-10 animate-enter">
+          <WelfareLogo className="mx-auto mb-6 h-10 w-36 object-contain" />
           <span className="material-symbols-outlined text-secondary text-[48px]">check_circle</span>
           <h1 className="text-headline-lg text-on-surface mt-4 mb-2">¡Gracias por tu respuesta!</h1>
           <p className="text-body-md text-on-surface-variant">
@@ -148,6 +150,9 @@ export default function WellnessSurvey({ templateId = null, fixedDepartmentId = 
 
       <div className="w-full max-w-2xl relative z-10">
         <div className="w-full bg-surface-container-lowest/90 backdrop-blur-xl rounded-xl shadow-xl p-8 sm:p-12">
+          <div className="mb-6 flex justify-center">
+            <WelfareLogo className="h-10 w-36 object-contain" />
+          </div>
           {/* Header */}
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
             <div className="flex items-center gap-2">

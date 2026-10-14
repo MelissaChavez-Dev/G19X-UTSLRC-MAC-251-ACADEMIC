@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { updatePassword } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../services/firebase";
+import WelfareLogo from "../components/WelfareLogo";
 
 export default function ForcePasswordChange() {
   const [password, setPassword] = useState("");
@@ -43,6 +44,7 @@ export default function ForcePasswordChange() {
     <main className="min-h-screen flex items-center justify-center bg-surface px-space-md">
       <div className="motion-card animate-enter bg-surface-container-lowest max-w-md w-full p-space-xl">
         <div className="flex flex-col items-center text-center gap-space-xs mb-space-lg">
+          <WelfareLogo className="mb-space-sm h-10 w-36 object-contain" />
           <span className="material-symbols-outlined text-[40px] text-primary">password</span>
           <h1 className="text-headline-lg text-on-surface">Crea tu nueva contraseña</h1>
           <p className="text-body-md text-on-surface-variant">
