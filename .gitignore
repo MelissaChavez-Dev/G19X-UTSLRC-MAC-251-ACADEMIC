@@ -12,7 +12,7 @@ node_modules
 dist
 dist-ssr
 *.local
-
+KEYS.txt
 # Variables de entorno y credenciales
 .env
 .env.local
