@@ -16,6 +16,12 @@ export async function updateUserAccount(uid, payload) {
   return result.data;
 }
 
+export async function updateEmployeeProfile(payload) {
+  const callable = httpsCallable(functions, "update_employee_profile");
+  const result = await callable(payload);
+  return result.data;
+}
+
 export async function resetUserPassword(uid) {
   const callable = httpsCallable(functions, "reset_user_password");
   const result = await callable({ uid });
@@ -34,6 +40,12 @@ export async function deleteUserAccount(uid) {
  */
 export async function bootstrapAdmin() {
   const callable = httpsCallable(functions, "bootstrap_admin");
+  const result = await callable();
+  return result.data;
+}
+
+export async function syncAdminClaim() {
+  const callable = httpsCallable(functions, "sync_admin_claim");
   const result = await callable();
   return result.data;
 }

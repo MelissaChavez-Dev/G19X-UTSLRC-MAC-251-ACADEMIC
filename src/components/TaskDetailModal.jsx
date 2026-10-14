@@ -1,11 +1,8 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { updateTask, addTaskComment } from "../services/taskService";
-
-function initials(name) {
-  if (!name) return "?";
-  return name.split(" ").map((part) => part[0]).slice(0, 2).join("").toUpperCase();
-}
+import Avatar from "./Avatar";
+import { useProfiles } from "../hooks/useProfiles";
 
 function formatActivityDate(value) {
   const date = value?.toDate ? value.toDate() : value instanceof Date ? value : null;
@@ -16,6 +13,7 @@ function formatActivityDate(value) {
 
 /** Modal de detalle de una tarea del kanban: descripción, responsable y comentarios. */
 export default function TaskDetailModal({ teamId, task, projectName = "", memberNames = {}, onClose }) {
+  const { profiles } = useProfiles((task.comments || []).map((comment) => comment.authorId));
   const [description, setDescription] = useState(task.description || "");
   const [assignedToIds, setAssignedToIds] = useState(
     task.assignedToIds || (task.assignedTo ? [task.assignedTo] : [])
@@ -170,9 +168,12 @@ export default function TaskDetailModal({ teamId, task, projectName = "", member
             ) : (
               task.comments.map((comment, index) => (
                 <div key={index} className="flex gap-space-sm">
-                  <div className="w-7 h-7 rounded-full bg-primary-fixed text-on-primary-fixed-variant flex items-center justify-center text-label-sm font-semibold shrink-0">
-                    {initials(comment.authorName)}
-                  </div>
+                  <Avatar
+                    name={comment.authorName}
+                    photoURL={profiles[comment.authorId]?.photoURL}
+                    size={28}
+                    className="text-label-sm"
+                  />
                   <div className="flex flex-col">
                     <span className="text-label-md text-on-surface font-semibold">{comment.authorName}</span>
                     <span className="text-body-sm text-on-surface-variant">{comment.text}</span>

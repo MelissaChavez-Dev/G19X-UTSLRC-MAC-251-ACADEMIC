@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { collection, getDocs, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useAuth } from "./useAuth";
+import { isCoveredByApprovedLeave, isMexicanPublicHoliday } from "../utils/leaveUtils";
 
 function cutoffDate(days = 30) {
   const d = new Date();
@@ -46,12 +47,24 @@ function isDuringWorkHours(timestamp, schedule, today) {
     && eventTime.minutes <= timeToMinutes(schedule?.endTime, "18:00");
 }
 
-function summarizePresence(records) {
+function summarizePresence(records, leaveRequests = []) {
   const cutoff = cutoffDate(30);
-  const recentRecords = records.filter((record) => record.date >= cutoff && record.workDay);
+  const approvedLeaves = leaveRequests.filter((request) => request.status === "approved");
+  const recentRecords = records.filter((record) =>
+    record.date >= cutoff && record.workDay && !isMexicanPublicHoliday(record.date)
+  );
   const workDays = recentRecords.length;
   const presentDays = recentRecords.filter((record) => record.present).length;
-  return { workDays, presentDays, absentDays: workDays - presentDays };
+  const absentRecords = recentRecords.filter((record) => !record.present);
+  const justifiedDays = absentRecords.filter((record) =>
+    isCoveredByApprovedLeave(record.date, approvedLeaves)
+  ).length;
+  return {
+    workDays,
+    presentDays,
+    justifiedDays,
+    absentDays: absentRecords.length - justifiedDays,
+  };
 }
 
 /**
@@ -63,25 +76,62 @@ export function useMyPresence() {
   const userId = user?.uid ?? null;
   const [state, setState] = useState({
     userId: null,
-    summary: null,
+    summaryRecords: [],
+    leaveRequests: [],
+    leaveRequestsLoaded: false,
     events: [],
     loading: true,
     activityError: "",
+    summaryError: "",
   });
 
   useEffect(() => {
     if (!userId) return undefined;
 
     const summaryQuery = query(collection(db, "presenceSummary"), where("userId", "==", userId));
+    const leaveQuery = query(collection(db, "leaveRequests"), where("userId", "==", userId));
     const activityQuery = query(
       collection(db, "activityLogs"),
       where("userId", "==", userId)
     );
 
-    const unsubscribeSummary = onSnapshot(summaryQuery, (snapshot) => {
-      const summary = summarizePresence(snapshot.docs.map((item) => item.data()));
-      setState((current) => ({ ...current, userId, summary }));
-    });
+    const unsubscribeSummary = onSnapshot(
+      summaryQuery,
+      (snapshot) => {
+        const summaryRecords = snapshot.docs.map((item) => item.data());
+        setState((current) => ({ ...current, userId, summaryRecords, summaryError: "" }));
+      },
+      (error) => {
+        console.error("No se pudo cargar el resumen de presencia digital:", error);
+        setState((current) => ({
+          ...current,
+          userId,
+          summaryError: "No se pudo cargar el resumen de presencia digital.",
+        }));
+      }
+    );
+    const unsubscribeLeaves = onSnapshot(
+      leaveQuery,
+      (snapshot) => {
+        const leaveRequests = snapshot.docs.map((item) => item.data());
+        setState((current) => ({
+          ...current,
+          userId,
+          leaveRequests,
+          leaveRequestsLoaded: true,
+          activityError: "",
+        }));
+      },
+      (error) => {
+        console.error("No se pudieron cargar los permisos para el resumen de asistencia:", error);
+        setState((current) => ({
+          ...current,
+          userId,
+          leaveRequestsLoaded: true,
+          activityError: "No se pudieron distinguir los permisos justificados.",
+        }));
+      }
+    );
     const unsubscribeActivity = onSnapshot(
       activityQuery,
       (snapshot) => {
@@ -103,19 +153,36 @@ export function useMyPresence() {
 
     return () => {
       unsubscribeSummary();
+      unsubscribeLeaves();
       unsubscribeActivity();
     };
   }, [userId]);
 
   const currentState = state.userId === userId
     ? state
-    : { summary: null, events: [], loading: Boolean(userId), activityError: "" };
+    : {
+      summaryRecords: [],
+      leaveRequests: [],
+      leaveRequestsLoaded: false,
+      events: [],
+      loading: Boolean(userId),
+      activityError: "",
+      summaryError: "",
+    };
+  const summary = userId
+    ? summarizePresence(currentState.summaryRecords, currentState.leaveRequests)
+    : null;
   const today = hermosilloParts(new Date());
   const todayActivityCount = currentState.events.filter((event) =>
     isDuringWorkHours(event.timestamp, profile?.workSchedule || {}, today)
   ).length;
 
-  return { ...currentState, todayActivityCount };
+  return {
+    ...currentState,
+    summary,
+    loading: currentState.loading || !currentState.leaveRequestsLoaded,
+    todayActivityCount,
+  };
 }
 
 /**
@@ -130,7 +197,10 @@ export function useAbsenceMetrics(departmentId = null, refreshKey = 0) {
     async function load() {
       setLoading(true);
       try {
-        const snapshot = await getDocs(collection(db, "presenceSummary"));
+        const [snapshot, leaveSnapshot] = await Promise.all([
+          getDocs(collection(db, "presenceSummary")),
+          getDocs(collection(db, "leaveRequests")),
+        ]);
         const cutoff = cutoffDate(30);
         const records = snapshot.docs
           .map((d) => d.data())
@@ -138,15 +208,34 @@ export function useAbsenceMetrics(departmentId = null, refreshKey = 0) {
             (r) =>
               r.date >= cutoff &&
               r.workDay &&
+              !isMexicanPublicHoliday(r.date) &&
               (!departmentId || r.departmentId === departmentId)
           );
 
+        const approvedLeavesByUser = new Map();
+        leaveSnapshot.docs
+          .map((item) => item.data())
+          .filter((leave) => leave.status === "approved"
+            && (!departmentId || leave.departmentId === departmentId))
+          .forEach((leave) => {
+            const requests = approvedLeavesByUser.get(leave.userId) || [];
+            requests.push(leave);
+            approvedLeavesByUser.set(leave.userId, requests);
+          });
+        const absentRecords = records.filter((record) => !record.present);
+        const justifiedDays = absentRecords.filter((record) =>
+          isCoveredByApprovedLeave(record.date, approvedLeavesByUser.get(record.userId) || [])
+        ).length;
+        const unjustifiedDays = absentRecords.length - justifiedDays;
         const workDays = records.length;
-        const absentDays = records.filter((r) => !r.present).length;
+        const eligibleWorkDays = workDays - justifiedDays;
         setAbsence({
           workDays,
-          absentDays,
-          rate: workDays > 0 ? Math.round((absentDays / workDays) * 100) : 0,
+          absentDays: absentRecords.length,
+          justifiedDays,
+          unjustifiedDays,
+          eligibleWorkDays,
+          rate: eligibleWorkDays > 0 ? Math.round((unjustifiedDays / eligibleWorkDays) * 100) : null,
         });
       } catch (err) {
         console.error("No se pudo calcular el ausentismo digital:", err);

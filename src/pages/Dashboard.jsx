@@ -480,7 +480,7 @@ const OperationStrip = memo(function OperationStrip({
   const showPerformance = Boolean(performance) || performanceLoading;
   if (!showAbsence && !showTurnover && !showPerformance) return null;
 
-  const hasWorkdayRecords = Boolean(absence && absence.workDays > 0);
+  const hasWorkdayRecords = Boolean(absence && absence.eligibleWorkDays > 0);
   const turnoverDiff =
     turnover && Number.isFinite(turnover.rate) && Number.isFinite(turnover.previousRate)
       ? Math.round((turnover.rate - turnover.previousRate) * 10) / 10
@@ -505,13 +505,15 @@ const OperationStrip = memo(function OperationStrip({
               label="Ausentismo digital"
               level={absenceLoading ? undefined : hasWorkdayRecords ? getKpiLevel("digitalAbsence", absence?.rate) : LEVELS.noData} // KPI-LEVEL
               period="30 días"
-              value={absenceLoading ? "…" : `${absence?.rate ?? 0}%`}
+              value={absenceLoading ? "…" : Number.isFinite(absence?.rate) ? `${absence.rate}%` : "—"}
               hint={
                 absenceLoading
                   ? "Calculando..."
                   : hasWorkdayRecords
-                    ? `${absence.absentDays} Faltas registradas, se esperan ${absence.workDays} asistencias hasta el dia de hoy.`
-                    : "Sin registros aún, se calcula cada noche"
+                    ? `${absence.unjustifiedDays} injustificadas, ${absence.justifiedDays} justificadas en ${absence.workDays} jornadas registradas.`
+                    : absence?.workDays > 0
+                      ? "Todas las jornadas registradas tienen permiso aprobado."
+                      : "Sin registros aún, se calcula cada noche"
               }
             />
           )}

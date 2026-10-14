@@ -6,7 +6,7 @@ service cloud.firestore {
       return request.auth != null;
     }
     function isAdmin() {
-      return isSignedIn() && request.auth.token.role == "admin";
+      return isSignedIn() && request.auth.token.get("role", "") == "admin";
     }
     function isSelf(uid) {
       return isSignedIn() && request.auth.uid == uid;
@@ -15,7 +15,20 @@ service cloud.firestore {
       return isSignedIn()
         && request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.memberIds;
     }
-
+    function publicProfileNameMatches(uid) {
+      let privateProfile = get(/databases/$(database)/documents/users/$(uid)).data;
+      return request.resource.data.displayName is string
+        && request.resource.data.displayName == privateProfile.get("displayName", "");
+    }
+    function profilePhotoBelongsTo(uid) {
+      return request.resource.data.photoURL is string
+        && (request.resource.data.photoURL == ""
+          || request.resource.data.photoURL.matches(
+            "^https://firebasestorage\\.googleapis\\.com/v0/b/[^/]+/o/profile-photos%2F"
+            + uid
+            + "%2Favatar\\?alt=media(&token=.*)?$"
+          ));
+    }
     match /surveyTemplates/{templateId} {
       allow read: if resource.data.status == "published" || isSignedIn();
       allow create, update, delete: if isAdmin();
@@ -41,6 +54,46 @@ service cloud.firestore {
       match /readAlerts/{alertId} {
         allow read, write: if isSelf(uid) && isAdmin();
       }
+    }
+
+    match /publicProfiles/{uid} {
+      allow read: if isSignedIn();
+      allow create: if isSelf(uid)
+        && request.auth.token.role in ["employee", "team_lead"]
+        && request.resource.data.keys().hasOnly(["displayName", "photoURL", "updatedAt"])
+        && request.resource.data.displayName.size() <= 100
+        && publicProfileNameMatches(uid)
+        && profilePhotoBelongsTo(uid);
+      allow update: if isSelf(uid)
+        && request.auth.token.role in ["employee", "team_lead"]
+        && request.resource.data.keys().hasOnly(["displayName", "photoURL", "updatedAt"])
+        && request.resource.data.displayName.size() <= 100
+        && request.resource.data.displayName == resource.data.displayName
+        && publicProfileNameMatches(uid)
+        && profilePhotoBelongsTo(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["photoURL", "updatedAt"]);
+      allow delete: if isAdmin();
+    }
+
+    match /leaveRequests/{requestId} {
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if false; // Las solicitudes se validan y crean mediante Cloud Function.
+      allow update: if isAdmin()
+          && resource.data.status == "pending"
+          && request.resource.data.status in ["approved", "rejected"]
+          && request.resource.data.reviewedBy == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "status", "reviewedBy", "reviewedAt", "reviewNote", "updatedAt"
+          ])
+        || (isSignedIn()
+            && resource.data.userId == request.auth.uid
+            && resource.data.status == "pending"
+            && request.resource.data.status == "cancelled"
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "status", "cancelledAt", "updatedAt"
+            ]));
+      allow delete: if false;
     }
 
     match /teams/{teamId} {
@@ -72,8 +125,8 @@ service cloud.firestore {
     }
 
     match /presenceSummary/{docId} {
-      allow read: if isAdmin()
-        || (isSignedIn() && docId.matches("^" + request.auth.uid + "_.*"));
+      allow read: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
       allow write: if false; // exclusivo de la Cloud Function programada
     }
 

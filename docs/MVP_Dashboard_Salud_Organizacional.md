@@ -28,15 +28,17 @@ Durante el proceso de desarrollo y validación, el MVP evolucionó de un "visual
 | **Matriz de Riesgo Psicosocial** | Heatmap interactivo Departamentos × Factores con semaforización cromática; alertas tempranas consolidadas en la campana del TopBar. | **Completado** |
 | **Panel de Estrategia con IA (Gemini)** | Síntesis ejecutiva de comentarios abiertos, generación de 3 recomendaciones estructuradas y conversión automática en tareas de equipo. | **Completado** |
 | **Composición Visual y Minimizado** | Panel de IA minimizable/expandible con despliegue de ilustraciones dinámicas (`ilust3.png` al minimizar, `ilust4.png` bajo el heatmap al expandir con análisis). | **Completado** |
-| **Métricas Operativas** | Ausentismo digital a 30 días, rotación real a 90 días y ejecución de tareas Kanban (tareas al corriente, cumplimiento y puntualidad), filtrables por departamento cuando aplica. | **Completado** |
+| **Métricas Operativas** | Ausentismo digital injustificado a 30 días (permisos aprobados y feriados excluidos), rotación real a 90 días y ejecución de tareas Kanban, filtrables por departamento cuando aplica. | **Completado** |
+| **Asistencia digital (`/admin/asistencia`)** | Resumen por fecha y departamento con presentes, permisos aprobados y ausencias injustificadas, calculadas desde la actividad digital en horario y excluyendo feriados federales. No es un checador ni registra horas de entrada/salida. | **Completado** |
+| **Gestión de permisos (`/admin/permisos`)** | Revisión administrativa de vacaciones, incapacidades y otros permisos; aprobación/rechazo y calendario de permisos. Las solicitudes aprobadas justifican los días cubiertos. | **Completado** |
 | **Filtro Departamental y Exportación** | Filtro dinámico en cabecera (`TopBar`), exportación de reporte ejecutivo formal a PDF y exportación de libro de cálculo en Excel (hojas múltiples). | **Completado** |
 | **Constructor de Encuestas (`SurveyBuilder`)** | Editor visual de preguntas con biblioteca de componentes, arrastre interactivo con `@dnd-kit`, ciclos de encuesta y asignación por departamento. | **Completado** |
 | **Ejecutor de Encuestas (`SurveyRunner`)** | Interfaz tipo Typeform (paso a paso), responsiva, con registro directo en Firestore y prevención de respuestas duplicadas. | **Completado** |
-| **Espacio del Empleado (`/mi-espacio`)** | Portal individual para ver encuestas pendientes, tarjeta de unión a equipo (`JoinTeamCard`) y resumen personal de presencia. | **Completado** |
-| **Tableros Kanban por Equipo** | Tableros colaborativos (`/mis-proyectos` y `/equipos/:teamId`) con 3 columnas (*Por hacer*, *En progreso*, *Completado*) y drag-and-drop. | **Completado** |
+| **Espacio del Empleado (`/mi-espacio`)** | Encuestas pendientes, proyectos, resumen personal de actividad, saldo e historial de permisos, formulario de solicitud, edición de nombre/teléfono y carga de foto. | **Completado** |
+| **Tableros Kanban por Equipo** | Tableros colaborativos (`/mis-proyectos` y `/equipos/:teamId`) con 3 columnas y comentarios con foto pública del autor o iniciales. | **Completado** |
 | **Directorio de Equipos (`TeamDirectory`)** | Administración de equipos, integrantes destacados con badges aqua y códigos únicos de unión (`joinCode`). | **Completado** |
-| **Gestión de Usuarios y Seguridad** | Creación administrativa de cuentas y control de acceso con los roles utilizados actualmente (`admin` y `employee`). | **Completado** |
-| **Monitoreo de Presencia Digital** | Registro no invasivo de actividad (`activityLogs`) contrastado contra horarios de trabajo asignados. | **Completado** |
+| **Gestión de Usuarios y Seguridad** | Directorio con distribución por departamento, identificador, puesto, contratación, fecha de ingreso y foto; creación administrativa y acceso por rol. | **Completado** |
+| **Monitoreo de Presencia Digital** | Registro no invasivo de actividad (`activityLogs`) contrastado contra horario y solicitudes aprobadas para distinguir ausencias justificadas e injustificadas. | **Completado** |
 | **Diseño y Tema Claro/Oscuro** | Sistema de diseño de acentos por zona ("Executive Pulse"): lienzo base `#FFFCF7`, paleta pastel armonizada y soporte completo a modo oscuro (`.dark`). | **Completado** |
 
 ### 2.1 Datos de prueba y cuentas

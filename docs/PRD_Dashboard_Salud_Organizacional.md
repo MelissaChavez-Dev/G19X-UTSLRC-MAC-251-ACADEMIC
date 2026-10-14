@@ -51,9 +51,9 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
 
 | Rol | Usuario | Propósito y Alcance de Acceso |
 |---|---|---|
-| **`admin`** | Dirección / propietaria del entorno | Acceso al Dashboard Ejecutivo (`/dashboard`), Gestión de Usuarios (`/admin/usuarios`), Directorio de Equipos (`/equipos`), tableros de equipo, Form Builder de Encuestas (`/survey-builder`), reportes y descargas PDF/Excel. |
+| **`admin`** | Dirección / propietaria del entorno | Acceso al Dashboard Ejecutivo (`/dashboard`), Gestión de Usuarios (`/admin/usuarios`), Asistencia (`/admin/asistencia`), Gestión de Permisos (`/admin/permisos`), Directorio de Equipos (`/equipos`), tableros, encuestas, reportes y descargas PDF/Excel. |
 | **`team_lead`** | Líder de equipo | Acceso a su espacio de equipo (`/mi-equipo`), proyectos (`/mis-proyectos`) y tableros autorizados (`/equipos/:teamId`). |
-| **`employee`** | Colaborador | Portal personal (`/mi-espacio`), contestación de encuestas pendientes dirigidas a su área (`/encuesta/:templateId`), unión a equipo mediante código (`JoinTeamCard`), tablero de equipo (`/mis-proyectos`) y resumen de presencia digital. |
+| **`employee`** | Colaborador | Portal personal (`/mi-espacio`) para solicitar/cancelar permisos pendientes, consultar saldo e historial, editar nombre y teléfono, subir foto de perfil, contestar encuestas y consultar actividad; puede unirse a equipos y usar sus tableros. |
 
 ### 4.2 Flujo de Alta y Autenticación
 1. **Alta centralizada por Administrador:** No existe autorregistro abierto. La administradora crea las cuentas necesarias desde `/admin/usuarios`.
@@ -77,7 +77,10 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
 - **Exportación de Reportes:** `jspdf` + `jspdf-autotable` (reportes PDF ejecutivos) y `xlsx` (libros de cálculo Excel con hojas segregadas).
 
 ### 5.2 Modelo de Colecciones en Firestore
-- **`users/{uid}`**: Perfil del usuario (`displayName`, `email`, `role`, `departmentId`, `teamId`, `workSchedule`, `mustChangePassword`, `active`)..
+- **`users/{uid}`**: Perfil privado (`displayName`, `email`, `phone`, `employeeId`, `jobTitle`, `employmentType`, `hireDate`, `role`, `departmentId`, `teamId`, `workSchedule`, `mustChangePassword`, `active`).
+- **`publicProfiles/{uid}`**: Nombre visible y URL de foto de perfil; lectura para usuarios autenticados, escritura limitada a la propia persona y a administración.
+- **`leaveRequests/{requestId}`**: Solicitud de permiso con tipo, rango de fechas, días hábiles, motivo, estado, revisión administrativa e identidad del solicitante.
+- **Firebase Storage `profile-photos/{uid}/avatar`**: Foto del perfil, con escritura limitada a su propietario, formatos JPG/PNG/WebP y máximo de 5 MB.
 - **`teams/{teamId}/tasks/{taskId}`**: Tarjetas de trabajo del Kanban (`title`, `description`, `status`, `origin: "ai_recommendation" | "manual"`, `sourceMetric`, `assignedTo`, `createdAt`, `updatedAt`).
 - **`surveyTemplates/{templateId}`**: Plantillas creadas (`title`, `status`, `targetDepartments`, `cycle`, `questions[]`).
 - **`responses/{responseId}`**: Respuestas individuales procesadas (`enps`, `factors`, `openComments`, `departmentId`, `submittedAt`).
@@ -119,6 +122,13 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
   - Módulo administrativo de solo lectura con puntaje ponderado y verificaciones de completitud, rangos, muestra mínima por departamento, posibles duplicados y frescura de respuestas.
   - Filtro para evaluar todas las respuestas, solo las reales o solo las simuladas; muestra también la composición por origen y el estado de las fuentes operativas de ausentismo y rotación.
   - Explica los hallazgos y cómo corregirlos; no modifica ni elimina respuestas.
+- **RF-D09: Asistencia (`/admin/asistencia`):**
+  - Resumen por fecha y departamento con presentes, permisos aprobados, ausencias injustificadas y tendencia de seis meses.
+  - La asistencia reutiliza la actividad digital (`activityLogs`) contrastada contra el horario; actualiza presencia en tiempo real y la concilia diariamente.
+  - No registra checadas ni horas exactas; excluye feriados federales mexicanos y permisos aprobados del porcentaje de ausentismo injustificado.
+- **RF-D10: Gestión de Permisos (`/admin/permisos`):**
+  - Permite a administración revisar, aprobar o rechazar solicitudes de vacaciones, incapacidad y otros permisos.
+  - Muestra calendario y días aprobados por tipo; solo una solicitud aprobada justifica la ausencia.
 
 ### 6.2 Motor de Encuestas (`SurveyBuilder` y `SurveyRunner`)
 - **RF-E01: Constructor de Encuestas (`SurveyBuilder`):** Creación visual de encuestas con biblioteca de preguntas (Likert 1-5, eNPS 0-10, opción múltiple y texto abierto) con reordenamiento arrastrable (`@dnd-kit`) y configuración de departamentos destino.
@@ -126,13 +136,14 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
 - **RF-E03: Datos de prueba:** La aplicación no realiza carga automática de respuestas de muestra. La propietaria ingresa manualmente las respuestas y datos de prueba en Firebase.
 
 ### 6.3 Espacio Colaborativo y Tableros Kanban (`/mi-espacio` y `/mis-proyectos`)
-- **RF-C01: Mi Espacio:** Vista del empleado que reúne encuestas pendientes, tarjeta de autounión a equipo (`JoinTeamCard`) y resumen de actividad.
-- **RF-C02: Tableros Kanban (`TeamKanban` / `TeamBoard`):** Flujo de trabajo en 3 estados (*Por hacer*, *En progreso*, *Completado*) con arrastre interactivo, filtros y soporte para tareas manuales o generadas por IA.
+- **RF-C01: Mi Espacio:** Vista del empleado que reúne encuestas pendientes, actividad y proyectos; incluye saldo e historial de permisos, formulario para solicitar/cancelar permisos pendientes y edición propia de nombre, teléfono y foto.
+- **RF-C02: Tableros Kanban (`TeamKanban` / `TeamBoard`):** Flujo de trabajo en 3 estados (*Por hacer*, *En progreso*, *Completado*) con arrastre interactivo, filtros, soporte para tareas manuales o generadas por IA y fotos de perfil en comentarios.
 - **RF-C03: Directorio de Equipos (`TeamDirectory`):** Módulo administrativo con tarjetas de equipos, integrantes destacados con badges tonales aqua y generación de códigos de invitación.
+- **RF-C04: Perfil laboral:** Administración asigna identificador de empleado, puesto, tipo de contratación y fecha de ingreso; el colaborador no puede editar estos datos organizacionales.
 
 ### 6.4 Presencia Digital y Ausentismo Remoto
 - **RF-P01: Registro No Invasivo:** Captura throttled de eventos relevantes de actividad (login, navegación, envío de encuestas, movimientos en Kanban).
-- **RF-P02: Monitoreo Ético:** El ausentismo se calcula confrontando actividad con el horario asignado, presentándose de forma transparente al usuario y agregada para la dirección.
+- **RF-P02: Monitoreo Ético:** La actividad se contrasta con el horario asignado. Feriados y permisos aprobados se excluyen de ausencias injustificadas; el tablero identifica permisos justificados y ausencias injustificadas por separado.
 
 ---
 

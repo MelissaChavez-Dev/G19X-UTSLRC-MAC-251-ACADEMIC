@@ -61,7 +61,7 @@ Para que una alerta signifique lo mismo en cualquier tarjeta, todos los KPIs con
 
 - **Presión laboral y seguridad psicológica:** derivan de los cortes del heatmap. Un promedio de factores de 2, 3 y 4 equivale a 25, 50 y 75 en la escala de 0 a 100. La seguridad psicológica es un factor protector, así que se invierte (6 − valor): 2.0 o menos coincide con "Crítico". Como se guarda con un decimal, "mayor a 4.0" equivale a "4.1 o más".
 - **Participación:** con poca gente respondiendo, todos los demás KPIs pierden representatividad. Menos de 30% debe leerse como "datos poco confiables" además de "poco interés".
-- **Ausentismo digital:** los cortes son más laxos que los de ausentismo físico, porque vacaciones, permisos e incapacidades hoy cuentan como "sin actividad".
+- **Ausentismo digital:** los niveles se aplican a ausencias injustificadas. Los feriados federales y permisos aprobados se excluyen del denominador; los pendientes no justifican la ausencia hasta que RH los apruebe.
 - **Rotación:** es a 90 días, así que 3% equivale aproximadamente a 12% anual y 8% a cerca de 32%. Son referencias comunes en RH, pero varían por industria y deben ajustarse a la meta de la organización.
 - **Desempeño operativo:** se mide con los datos que el Kanban ya guarda (estado, fecha límite y fecha de cierre de cada tarea). El indicador principal es *tareas al corriente*, que es el que muestra la tarjeta del dashboard, y los cortes son exigentes porque una tarea abierta y vencida es una señal clara. El *cumplimiento* es de apoyo y sus cortes son bajos a propósito: el tablero incluye tareas recién creadas, muchas generadas por IA, que empiezan en "Por hacer", y no se espera 100% en un plan de acción vigente.
 - **Calidad de datos:** 90 o más significa que el dashboard puede leerse con confianza; por debajo de 50 los números no deberían usarse para decidir.
@@ -129,14 +129,14 @@ Las cinco reglas se evalúan al cargar el dashboard; todas las alertas activas a
 
 ### 4.6 Ausentismo digital
 
-- **Qué mide:** días laborales sin actividad en la plataforma dentro del horario asignado. Está pensado para trabajo remoto: la actividad del colaborador en el sitio hace las veces de asistencia.
-- **Fórmula:** (días laborales sin actividad / días laborales esperados) × 100. Un día cuenta como presente si hay al menos un evento en `activityLogs` entre la hora de inicio y la de fin de su `workSchedule` (09:00 a 18:00 si no tiene horario definido). Solo se evalúan los días de la semana incluidos en su horario.
+- **Qué mide:** ausencias digitales injustificadas: días laborables sin actividad en la plataforma dentro del horario asignado y sin permiso aprobado. Está pensado para trabajo remoto; no es un checador ni mide trabajo fuera de la aplicación.
+- **Fórmula:** (días laborales sin actividad ni permiso aprobado / días laborales esperados menos permisos aprobados) × 100. Un día cuenta como presente si hay al menos un evento en `activityLogs` entre la hora de inicio y fin del `workSchedule` (09:00 a 18:00 si no tiene horario definido). Los feriados federales mexicanos no son días esperados.
 - **Eventos que cuentan como actividad:** inicio de sesión, navegación dentro de la app (se registra como máximo una vez cada 5 minutos), envío de encuesta y acciones en el Kanban. La hora la pone el servidor (`serverTimestamp`), no el dispositivo.
-- **Fuente:** `presenceSummary`, generado cada día a las 23:30 (America/Hermosillo) por la Cloud Function `compute_daily_presence` para cada usuario activo.
+- **Fuente:** `presenceSummary`, actualizado al llegar actividad en horario y conciliado cada día a las 23:30 (America/Hermosillo) por las Cloud Functions de presencia; `leaveRequests` determina la justificación.
 - **Frecuencia y ventana:** cálculo diario; el KPI agrega los últimos 30 días y permite filtrar por departamento. El colaborador puede ver su propio resumen de presencia (transparencia).
 - **Umbrales:** Bajo riesgo menor a 5; Controlado 5 a 9.9; Elevado 10 a 14.9; Crítico 15 o más. A mayor valor, peor. Si todavía no hay registros, la tarjeta muestra "Sin datos".
 - **Decisión de diseño:** en un entorno presencial la fuente sería un checador (huella o reconocimiento facial). Este prototipo es de trabajo remoto y no usa datos biométricos.
-- **Limitaciones:** mide presencia digital, no asistencia física. Vacaciones, permisos, incapacidades y días festivos cuentan como "sin actividad". Un solo evento basta para contar el día como presente, y la actividad antes de la hora de inicio no cuenta. La zona horaria es fija (America/Hermosillo) para todos los usuarios. La función programada requiere que el proyecto de Firebase tenga el plan que permite Cloud Scheduler.
+- **Limitaciones:** mide presencia digital, no asistencia física ni duración. Vacaciones, permisos e incapacidades solo se justifican una vez aprobados. Un solo evento dentro del horario basta para contar el día como presente; la zona horaria es fija (America/Hermosillo). La conciliación nocturna requiere que el proyecto Firebase permita Cloud Scheduler.
 
 ### 4.7 Rotación
 
@@ -192,6 +192,15 @@ Las cinco reglas se evalúan al cargar el dashboard; todas las alertas activas a
 - **Limitaciones:** solo valida la colección `responses`; presencia, bajas y tareas se revisan únicamente por cobertura. Las respuestas son anónimas, así que los duplicados se reportan como "posibles". Sin respuestas con fecha, la frescura se califica 0.
 
 ---
+
+### 4.11 Permisos y asistencia digital
+
+- **Solicitudes:** los colaboradores piden vacaciones, incapacidad u otro permiso desde Mi Espacio. Cada solicitud incluye periodo, días hábiles, motivo y estado; solo RH puede aprobar o rechazar y quien la creó puede cancelar mientras esté pendiente.
+- **Días hábiles:** lunes a viernes, excluyendo los días de descanso obligatorio federales de México con fecha fija o móvil contemplados por la regla. No incluye calendarios estatales, el día electoral variable ni días adicionales definidos por la empresa.
+- **Saldo de vacaciones:** días anuales según años completos de antigüedad (12 días al cumplir el primer año, con progresión legal hasta 20 durante los primeros cinco años y aumentos posteriores); descuenta días aprobados y reservados por solicitudes pendientes del periodo de aniversario actual. Se calcula con `hireDate`.
+- **Asistencia:** se reutiliza `activityLogs`; no se marca entrada o salida manual ni se infieren horas trabajadas. Un día sin actividad dentro del horario es **justificado** si existe una solicitud aprobada que cubre la fecha; de lo contrario se muestra como **injustificado**. Días feriados y permisos aprobados se excluyen del porcentaje de ausentismo injustificado.
+- **Perfil del colaborador:** cada persona puede editar su nombre visible y teléfono y subir una foto JPG, PNG o WebP de hasta 5 MB. La administración conserva el control de identificador, puesto, tipo de contratación, fecha de ingreso, rol, departamento y horario.
+- **Fotos en equipos:** los comentarios Kanban muestran la foto del perfil público del autor, o sus iniciales si no hay foto.
 
 ## 5. Pendientes de consistencia
 

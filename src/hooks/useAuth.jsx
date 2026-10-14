@@ -4,6 +4,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "../services/firebase";
 import { logLogin } from "../services/activityService";
+import { syncAdminClaim } from "../services/userService";
 
 const AuthContext = createContext(null);
 
@@ -22,8 +23,12 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let unsubscribeProfile = null;
+    let authGeneration = 0;
+    let syncingAdminClaimFor = null;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      const generation = ++authGeneration;
+      syncingAdminClaimFor = null;
       unsubscribeProfile?.();
       unsubscribeProfile = null;
 
@@ -39,26 +44,65 @@ export function AuthProvider({ children }) {
         logLogin();
       }
 
+      let token;
+      try {
+        token = await firebaseUser.getIdTokenResult(true);
+      } catch (error) {
+        console.error("No se pudo confirmar la sesión autenticada:", error);
+        if (generation === authGeneration) {
+          setState({ user: firebaseUser, claims: null, profile: null, loading: false });
+        }
+        return;
+      }
+      if (generation !== authGeneration) return;
+
       unsubscribeProfile = onSnapshot(
         doc(db, "users", firebaseUser.uid),
-        async (snap) => {
-          const token = await firebaseUser.getIdTokenResult();
+        (snap) => {
+          const profile = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+          if (profile?.role === "admin" && token.claims.role !== "admin") {
+            setState({ user: firebaseUser, claims: token.claims, profile, loading: true });
+            if (syncingAdminClaimFor !== firebaseUser.uid) {
+              syncingAdminClaimFor = firebaseUser.uid;
+              syncAdminClaim()
+                .then(async () => {
+                  const refreshedToken = await firebaseUser.getIdTokenResult(true);
+                  if (generation !== authGeneration) return;
+                  token = refreshedToken;
+                  setState({
+                    user: firebaseUser,
+                    claims: refreshedToken.claims,
+                    profile,
+                    loading: false,
+                  });
+                })
+                .catch((error) => {
+                  console.error("No se pudo sincronizar el rol admin de la cuenta:", error);
+                  if (generation === authGeneration) {
+                    setState({ user: firebaseUser, claims: token.claims, profile, loading: false });
+                  }
+                });
+            }
+            return;
+          }
+
           setState({
             user: firebaseUser,
             claims: token.claims,
-            profile: snap.exists() ? { id: snap.id, ...snap.data() } : null,
+            profile,
             loading: false,
           });
         },
-        async () => {
+        (error) => {
+          console.error("No se pudo cargar el perfil privado del usuario:", error);
           // Si el perfil aún no existe, igual resolvemos con los claims
-          const token = await firebaseUser.getIdTokenResult();
           setState({ user: firebaseUser, claims: token.claims, profile: null, loading: false });
         }
       );
     });
 
     return () => {
+      authGeneration += 1;
       unsubscribeProfile?.();
       unsubscribeAuth();
     };

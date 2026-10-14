@@ -13,7 +13,7 @@ Documentos relacionados: `Fichas_KPIs_Dashboard_Salud_Organizacional.md` (defini
 
 ## 1. Principios de diseño
 
-1. **Una fuente por indicador.** Cada KPI sale de una colección concreta de Firestore; no se mezclan orígenes dentro de una misma fórmula.
+1. **Una fuente por indicador.** Cada KPI sale de una colección concreta de Firestore; la asistencia combina el resumen digital diario con permisos aprobados para distinguir ausencias justificadas.
 2. **Umbrales y reglas fuera de la interfaz.** Los niveles de riesgo están en `src/data/kpiThresholds.js` y las reglas de calidad en `src/data/dataQualityRules.js`. Las tarjetas solo los leen.
 3. **Funciones puras para calcular.** Las fórmulas (`metricUtils.js`, `dataQualityRules.js`) reciben datos y devuelven resultados sin tocar Firestore, lo que permite probarlas por separado.
 4. **Anonimato en la encuesta, transparencia en la presencia.** Las respuestas no guardan quién las envió; la presencia digital sí es por persona, pero el colaborador puede ver su propio historial y el dashboard solo muestra agregados.
@@ -32,9 +32,9 @@ Documentos relacionados: `Fichas_KPIs_Dashboard_Salud_Organizacional.md` (defini
 
 | Capa | Qué hace | Dónde está en el repositorio |
 |---|---|---|
-| 1. Fuentes | Captura eventos del negocio: respuestas, actividad, bajas y tareas. | `src/pages/SurveyRunner.jsx`, `src/pages/WellnessSurvey.jsx`, `src/components/TeamKanban.jsx`, `src/pages/admin/UserManagement.jsx` |
-| 2. Ingesta y transformación | Valida y convierte los eventos al esquema de análisis; resume la presencia por día. | `src/services/surveyService.js`, `src/services/activityService.js`, `src/services/taskService.js`, `functions/main.py` |
-| 3. Almacén | Guarda los datos en colecciones de Cloud Firestore con reglas de acceso por rol. | `firestore.rules`, `firestore.indexes.json` |
+| 1. Fuentes | Captura respuestas, actividad, permisos, perfiles públicos y tareas. | `src/pages/SurveyRunner.jsx`, `src/pages/MiEspacio.jsx`, `src/components/TeamKanban.jsx`, `src/pages/admin/UserManagement.jsx` |
+| 2. Ingesta y transformación | Valida solicitudes en el navegador y en Cloud Functions, asigna datos laborales, resume presencia digital y sube fotos con acceso controlado. | `src/services/leaveService.js`, `src/services/profileService.js`, `src/services/activityService.js`, `functions/main.py` |
+| 3. Almacén | Guarda datos de negocio en Firestore y fotos de perfil en Firebase Storage con reglas por usuario y rol. | `firestore.rules`, `storage.rules`, `firebase.json` |
 | 4. Capa analítica | Calcula KPIs, asigna niveles y evalúa la calidad. | `src/hooks/`, `src/utils/metricUtils.js`, `src/data/kpiThresholds.js`, `src/data/dataQualityRules.js` |
 | 5. IA | Clasifica sentimiento, explica métricas y propone acciones, solo con datos agregados. | `functions/main.py`, `src/services/aiService.js` |
 | 6. Presentación | Muestra tableros, alertas, calidad y reportes; permite actuar sobre los hallazgos. | `src/pages/Dashboard.jsx`, `src/pages/DataQuality.jsx`, `src/components/`, `src/services/exportService.js` |
@@ -47,10 +47,13 @@ Documentos relacionados: `Fichas_KPIs_Dashboard_Salud_Organizacional.md` (defini
 | `responses` | Una respuesta anónima por encuesta: `enps`, `workLifeBalance`, `psychosocialFactors`, `openText`, `departmentId`, `weekId`, `source` | `submitSurveyResponse` (cliente) o `scripts/seed.js` (simuladas) | eNPS, presión laboral, participación, seguridad psicológica, heatmap, sentimiento, calidad |
 | `surveyCompletions` | Control de quién ya contestó cada ciclo, sin vincularlo a su respuesta | Cliente, al terminar la encuesta | Encuestas pendientes (no entra a los KPIs) |
 | `activityLogs` | Eventos de actividad por persona: `userId`, `type`, `timestamp` | `logActivity` (cliente) | Materia prima del ausentismo |
-| `presenceSummary` | Un documento por persona y día laboral: `present`, `workDay`, `departmentId` | `compute_daily_presence` (programada) | Ausentismo digital |
+| `presenceSummary` | Un documento por persona y día programado: `present`, `workDay`, `departmentId` | `publish_digital_attendance` (en tiempo real) y `compute_daily_presence` (programada) | Asistencia y ausentismo injustificado |
+| `leaveRequests` | Tipo, rango de fechas, días hábiles calculados en servidor, motivo, estado y revisión | `submit_leave_request` (Cloud Function); colaborador cancela pendientes y administración las resuelve | Permisos justificados y saldo de vacaciones |
 | `departureLog` | Una baja: `departmentId`, `reason`, `recordedAt` | Cloud Functions de usuarios | Rotación |
-| `teams/{id}/tasks` | Tarjetas Kanban: estado, fecha límite, `completedAt`, origen | Cliente y Cloud Functions | Desempeño operativo |
-| `users` | Perfil, rol, departamento, horario de trabajo, estado activo | Cloud Functions de usuarios | Headcount (denominador de participación y rotación) y horario del ausentismo |
+| `teams/{id}/tasks` | Tarjetas Kanban: estado, fecha límite, `completedAt`, origen y comentarios con `authorId` | Cliente y Cloud Functions | Desempeño operativo y avatares de comentarios |
+| `users` | Perfil privado, `employeeId`, puesto, contratación, ingreso, rol, departamento, horario y estado | Cloud Functions de usuarios; el colaborador solo puede cambiar nombre/teléfono mediante callable | Headcount, horario y saldo de vacaciones |
+| `publicProfiles` | Solo nombre visible y `photoURL`; no contiene correo ni departamento y requiere sesión para leerse | Cloud Functions de usuarios y propietario del perfil para la foto | Avatares del directorio y comentarios Kanban |
+| Firebase Storage | Foto en `profile-photos/{uid}/avatar` | El propio usuario, con límite de tamaño y MIME; lectura autenticada | Foto del perfil |
 | `departments` | Catálogo de áreas | Administración | Agrupación de todos los KPIs por departamento |
 | `surveyTemplates` | Plantillas de encuesta y su mapeo a indicadores (`mapsTo`) | Constructor de encuestas | Define qué campos llegan a `responses` |
 
@@ -63,7 +66,8 @@ Cada fila responde a la pregunta *¿de dónde sale este número?*
 | eNPS, presión laboral, participación, seguridad | `useOrgHealthMetrics` | `responses` + headcount de `users` | `metricUtils.js` y fórmula de eNPS | `kpiThresholds.js` |
 | Riesgo psicosocial por departamento | `useDepartmentRisk` | `responses` + `departments` | Promedio por factor; autonomía y seguridad invertidas | Cortes de riesgo 2, 3 y 4 |
 | Tendencia semanal | `useWeeklyTrends` | `responses` | Misma fórmula, agrupada por `weekId` | — |
-| Ausentismo digital | `useAbsenceMetrics` | `presenceSummary` | Días sin actividad / días laborales esperados | `digitalAbsence` |
+| Ausentismo injustificado | `useAbsenceMetrics` | `presenceSummary` + `leaveRequests` | Días sin actividad ni permiso aprobado / días esperados menos permisos y feriados | `digitalAbsence` |
+| Solicitudes de permiso | `useLeaves` | `leaveRequests` + `users.hireDate` | Días hábiles y saldo por aniversario de ingreso | — |
 | Rotación | `useTurnoverMetrics` | `departureLog` + headcount | Bajas / (activos + bajas) | `turnover90d` |
 | Desempeño operativo | `useTeamPerformance` | `tasks` (todos los equipos) | Tareas al corriente, cumplimiento y puntualidad | `taskOnTrack`, `taskCompletion` |
 | Sentimiento | `useWeeklySentiment` | `responses.openText` | Clasificación con Gemini y balance neto por departamento | — |
@@ -76,10 +80,12 @@ Cada fila responde a la pregunta *¿de dónde sale este número?*
 1. La persona contesta una encuesta. `submitSurveyResponse` lee la plantilla, mapea cada pregunta a un campo del esquema (`mapsTo`), normaliza las escalas y guarda la respuesta **sin identificar a quien la envió**. Aparte se registra en `surveyCompletions` que esa persona ya contestó.
 2. Cada inicio de sesión, envío de encuesta o acción en el Kanban genera un evento en `activityLogs`. La navegación se registra como máximo una vez cada 5 minutos para no saturar la base.
 3. Cuando la administración desactiva o elimina una cuenta, la Cloud Function correspondiente escribe la baja en `departureLog`.
+4. El colaborador envía una solicitud desde Mi Espacio. `leaveService.js` da validación inmediata; `submit_leave_request` vuelve a calcular los días hábiles, revisa saldo y traslapes y crea `leaveRequests`. Firestore bloquea la creación directa desde el cliente y restringe la cancelación a la persona propietaria mientras esté pendiente.
+5. El colaborador sube su foto a su ruta asociada a UID en Storage; `publicProfiles` expone únicamente nombre visible y URL de foto para usuarios autenticados.
 
 ### 6.2 Proceso programado (cada noche)
 
-`compute_daily_presence` corre a las 23:30 (America/Hermosillo). Para cada usuario activo cuyo horario incluya el día de hoy, busca si hubo al menos un evento en `activityLogs` dentro de su ventana de trabajo y escribe `presenceSummary/{usuario}_{fecha}` con `present: true/false`. Así el ausentismo se calcula sobre un resumen diario y no sobre miles de eventos sueltos.
+`publish_digital_attendance` actualiza `presenceSummary` cuando llega actividad dentro del horario. `compute_daily_presence` corre a las 23:30 (America/Hermosillo), excluye feriados federales mexicanos y concilia el resumen diario. Así la dirección ve la presencia durante la jornada y el ausentismo se calcula sobre resúmenes diarios, no sobre miles de eventos sueltos.
 
 ### 6.3 Consulta (cuando se abre el dashboard)
 
@@ -135,10 +141,10 @@ Además, cada tarjeta de KPI aplica una **muestra mínima** (`MIN_SAMPLE`) y mue
 ## 8. Seguridad y privacidad en la arquitectura
 
 - **Roles con claims:** el rol (`admin`, `employee`, `team_lead`) viaja en el token de Firebase Auth y lo usan tanto las reglas de Firestore como las Cloud Functions.
-- **Rutas protegidas:** `ProtectedRoute` limita cada pantalla a sus roles; el dashboard y la calidad de datos son solo para administración.
+- **Rutas protegidas:** `ProtectedRoute` limita cada pantalla a sus roles; dashboard, calidad, asistencia, gestión de permisos y directorio son solo para administración.
 - **Operaciones sensibles en el servidor:** alta de usuarios, contraseñas temporales, bajas y equipos pasan por Cloud Functions con el Admin SDK, no por escrituras directas del navegador.
 - **Secretos fuera del código:** la clave de Gemini es un secreto de Cloud Functions, no se incluye en el cliente.
-- **Privacidad por diseño:** las respuestas de encuesta no guardan identidad, la IA recibe solo agregados y comentarios sin autor, y el detalle de eventos de actividad (`activityLogs`) solo lo lee la propia persona; la administración trabaja con el resumen diario y el dashboard muestra solo agregados.
+- **Privacidad por diseño:** las respuestas de encuesta no guardan identidad; `publicProfiles` contiene solo nombre visible y foto; el colaborador edita sus datos permitidos y el detalle de eventos (`activityLogs`) solo lo lee la propia persona. Administración trabaja con resúmenes diarios y solicitudes necesarias para resolver permisos.
 
 ## 9. Decisiones de diseño y compromisos
 
@@ -146,8 +152,8 @@ Además, cada tarjeta de KPI aplica una **muestra mínima** (`MIN_SAMPLE`) y mue
 |---|---|---|
 | Firebase como único backend | Sin servidores que mantener; despliegue simple para un prototipo | La lógica de negocio está repartida entre navegador y Cloud Functions |
 | KPIs calculados en el navegador | Código sencillo y resultados al instante | En la versión revisada, cada carga del dashboard vuelve a leer colecciones completas (sobre todo `responses`, que se lee varias veces); el costo y el tiempo crecen con los datos |
-| Ausentismo por actividad en el sitio | El prototipo es de trabajo remoto; en un entorno presencial se usaría un checador con huella o reconocimiento facial | Mide presencia digital, no asistencia física; no distingue vacaciones ni permisos |
-| Resumen diario de presencia | Evita recorrer todos los eventos en cada consulta | Hay un desfase de hasta un día |
+| Asistencia por actividad en el sitio | El prototipo es de trabajo remoto y evita biometría | Mide presencia digital, no asistencia física ni horas exactas |
+| Resumen diario más actualización en tiempo real | Reduce lecturas masivas y permite ver actividad durante la jornada | La ausencia injustificada se confirma al cierre diario; permisos aprobados y feriados se descuentan del KPI |
 | Umbrales propuestos, no oficiales | No existe un estándar único aplicable a la organización | Deben calibrarse con datos reales |
 | IA solo sobre datos agregados | Protege la privacidad y reduce el costo | Las recomendaciones dependen de la calidad del agregado |
 

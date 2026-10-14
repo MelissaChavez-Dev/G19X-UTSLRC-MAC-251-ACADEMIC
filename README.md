@@ -65,6 +65,12 @@ npm run build
 npm run preview
 ```
 
+### Pruebas unitarias
+Las reglas de fechas, saldo de vacaciones y clasificación de asistencia usan Node.js nativo:
+```bash
+npm test
+```
+
 ## 5. Despliegue en Netlify
 
 El repositorio incluye `netlify.toml`: Netlify ejecutará `npm run build`, publicará `dist` y redirigirá las rutas de la SPA a `index.html`.
@@ -75,6 +81,8 @@ El repositorio incluye `netlify.toml`: Netlify ejecutará `npm run build`, publi
 4. Despliega. Netlify aloja el frontend; las Cloud Functions y Firestore permanecen en Firebase.
 
 No subas `.env.local` ni `serviceAccountKey.json`. Ambos están ignorados por Git y no se necesitan para compilar el frontend.
+
+Los módulos de permisos y fotos también requieren habilitar Firebase Storage y desplegar los cambios del backend y reglas desde la raíz con `firebase deploy --only functions,firestore:rules,storage`.
 
 ---
 
@@ -91,15 +99,16 @@ El sistema utiliza los roles `admin`, `employee` y `team_lead`; no hay autorregi
 ### Credenciales de Acceso
 
 #### A. Cuenta de Administrador (Dirección / RH)
-- **Correo electrónico:** `admin@develop.com`
+- **Correo electrónico:** `admin@welfare.com`
 - **Contraseña de prueba actual:** `12345678`
 - **Pantalla a la que entra automáticamente:** `/dashboard` (Dashboard Ejecutivo principal).
 - **Funcionalidades exclusivas:**
   - Visualización y filtrado del Dashboard Ejecutivo.
   - Revisión de la calidad de datos (`/admin/calidad`).
+  - Asistencia digital (`/admin/asistencia`) y revisión de permisos (`/admin/permisos`).
   - Exportación de reportes formales en **PDF** y **Excel** multipestaña.
   - Generación de diagnósticos con IA (Gemini) y conversión a tareas.
-  - **Gestión de Usuarios** (`/admin/usuarios`): Alta de colaboradores, asignación de roles, edición de horarios de trabajo y reseteo de contraseñas.
+  - **Gestión de Usuarios** (`/admin/usuarios`): Alta de colaboradores, identificador, puesto, tipo de contratación, fecha de ingreso, gráfica por departamento, horarios y reseteo de contraseñas.
   - **Directorio de Equipos** (`/equipos`): Creación de equipos y visualización de códigos de unión (`joinCode`).
   - **Constructor de Encuestas** (`/survey-builder`): Creación visual y publicación de encuestas segmentadas por departamento con `@dnd-kit`.
 
@@ -113,6 +122,8 @@ El sistema utiliza los roles `admin`, `employee` y `team_lead`; no hay autorregi
   - Ver y responder encuestas pendientes asignadas a su área (`/encuesta/:templateId`).
   - Unirse a un equipo de trabajo mediante código con `JoinTeamCard`.
   - Tablero Kanban colaborativo de su equipo (`/mis-proyectos`).
+  - Solicitud y seguimiento de vacaciones, incapacidades y otros permisos; edición de nombre y teléfono y carga de foto de perfil desde `/mi-espacio`.
+  - Su foto de perfil aparece en los comentarios del Kanban.
   - Resumen de presencia y actividad digital personal.
 
 > **Nota de seguridad:** `12345678` es una contraseña compartida únicamente para el entorno de pruebas actual, cuyas cuentas son personales de la propietaria. No debe usarse en producción ni en cuentas reales. Cambia las credenciales antes de desplegar la aplicación públicamente.

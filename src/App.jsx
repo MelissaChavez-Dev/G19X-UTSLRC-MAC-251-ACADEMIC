@@ -11,6 +11,8 @@ import TeamBoard from "./pages/TeamBoard";
 import ForcePasswordChange from "./pages/ForcePasswordChange";
 import UserManagement from "./pages/admin/UserManagement";
 import DataQuality from "./pages/DataQuality";
+import Attendance from "./pages/admin/Attendance";
+import LeaveManagement from "./pages/admin/LeaveManagement";
 import TeamDirectory from "./pages/admin/TeamDirectory";
 import MisProyectos from "./pages/MisProyectos";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -77,6 +79,22 @@ function App() {
               element={
                 <ProtectedRoute roles={["admin"]}>
                   <DataQuality />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/asistencia"
+              element={
+                <ProtectedRoute roles={["admin"]}>
+                  <Attendance />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/permisos"
+              element={
+                <ProtectedRoute roles={["admin"]}>
+                  <LeaveManagement />
                 </ProtectedRoute>
               }
             />

@@ -8,6 +8,8 @@ const NAV_ITEMS = [
   { icon: "grid_view", label: "Resumen", to: "/dashboard" },
   { icon: "assignment_add", label: "Constructor de encuestas", to: "/survey-builder" },
   { icon: "manage_accounts", label: "Gestión de usuarios", to: "/admin/usuarios" },
+  { icon: "event_available", label: "Asistencia", to: "/admin/asistencia" },
+  { icon: "beach_access", label: "Gestión de permisos", to: "/admin/permisos" },
   { icon: "groups", label: "Directorio del equipo", to: "/equipos" },
   { icon: "fact_check", label: "Calidad de datos", to: "/admin/calidad" },
 ];
@@ -85,6 +87,7 @@ export default function Sidebar() {
               <Link
                 key={item.label}
                 to={item.to}
+                target="_self"
                 title={collapsed ? item.label : undefined}
                 aria-current={active ? "page" : undefined}
                 className={`${baseStyles} ${activeStyles}`}

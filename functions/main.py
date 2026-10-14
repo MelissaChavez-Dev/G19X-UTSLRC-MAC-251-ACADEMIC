@@ -1,12 +1,12 @@
 import firebase_admin
 firebase_admin.initialize_app()
-from firebase_functions import https_fn, options, scheduler_fn
+from firebase_functions import firestore_fn, https_fn, options, scheduler_fn
 from firebase_functions.params import SecretParam
 from firebase_admin import auth as admin_auth
 from firebase_admin import firestore as admin_firestore
 from google import genai
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
-from datetime import datetime, time as dt_time, timezone
+from datetime import date, datetime, time as dt_time, timedelta, timezone
 import secrets
 import string
 import json
@@ -15,6 +15,7 @@ import hashlib
 
 GEMINI_API_KEY = SecretParam("GEMINI_API_KEY")
 MODEL_NAME = "gemini-3.8-flash"
+EMPLOYMENT_TYPES = {"full_time", "part_time", "temporary", "contract", "intern"}
 
 
 def _local_tz():
@@ -24,6 +25,60 @@ def _local_tz():
         return ZoneInfo("America/Hermosillo")
     except ZoneInfoNotFoundError:
         return timezone.utc
+
+
+def _weekday_of_month(year: int, month: int, weekday: int, occurrence: int):
+    first = datetime(year, month, 1).date()
+    offset = (weekday - first.weekday()) % 7
+    return first + timedelta(days=offset + (occurrence - 1) * 7)
+
+
+def _mexican_public_holidays(year: int) -> set:
+    """Días de descanso obligatorio federales con fecha fija o móvil."""
+    holidays = {
+        datetime(year, 1, 1).date(),
+        _weekday_of_month(year, 2, 0, 1),
+        _weekday_of_month(year, 3, 0, 3),
+        datetime(year, 5, 1).date(),
+        datetime(year, 9, 16).date(),
+        _weekday_of_month(year, 11, 0, 3),
+        datetime(year, 12, 25).date(),
+    }
+    if year >= 2024 and (year - 2024) % 6 == 0:
+        holidays.add(datetime(year, 10, 1).date())
+    return holidays
+
+
+def _count_business_days(start: date, end: date) -> int:
+    count = 0
+    current = start
+    while current <= end:
+        if current.weekday() < 5 and current not in _mexican_public_holidays(current.year):
+            count += 1
+        current += timedelta(days=1)
+    return count
+
+
+def _anniversary(hire_date: date, year: int) -> date:
+    try:
+        return hire_date.replace(year=year)
+    except ValueError:
+        return date(year, hire_date.month, 28)
+
+
+def _completed_years(hire_date: date, as_of: date) -> int:
+    years = as_of.year - hire_date.year
+    if as_of < _anniversary(hire_date, as_of.year):
+        years -= 1
+    return max(0, years)
+
+
+def _vacation_entitlement(years: int) -> int:
+    if years <= 0:
+        return 0
+    if years <= 5:
+        return 10 + years * 2
+    return 20 + (1 + (years - 6) // 5) * 2
 
 
 # ============================================================
@@ -74,6 +129,29 @@ def _record_departure(db, uid: str, profile: dict, reason: str) -> None:
         "reason": reason,
         "recordedAt": admin_firestore.SERVER_TIMESTAMP,
     })
+
+
+def _normalize_hire_date(value: str | None) -> str | None:
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date().isoformat()
+    except (TypeError, ValueError) as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="La fecha de ingreso debe tener el formato AAAA-MM-DD.",
+        ) from e
+
+
+def _ensure_employee_id_available(db, employee_id: str, exclude_uid: str | None = None) -> None:
+    if not employee_id:
+        return
+    matches = db.collection("users").where("employeeId", "==", employee_id).limit(1).get()
+    if any(user.id != exclude_uid for user in matches):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.ALREADY_EXISTS,
+            message="El número de empleado ya está asignado.",
+        )
 
 
 def _add_to_team(db, team_id: str, uid: str, display_name: str) -> None:
@@ -195,6 +273,26 @@ def bootstrap_admin(req: https_fn.CallableRequest) -> dict:
 
 
 @https_fn.on_call(region="us-central1")
+def sync_admin_claim(req: https_fn.CallableRequest) -> dict:
+    """Restaura el custom claim solo si el perfil privado ya asigna admin."""
+    auth = _require_auth(req)
+    profile = _db().collection("users").document(auth.uid).get()
+    if not profile.exists or profile.get("role") != "admin" or profile.get("active") is False:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.PERMISSION_DENIED,
+            message="Solo una cuenta admin activa puede sincronizar este rol.",
+        )
+
+    user = admin_auth.get_user(auth.uid)
+    custom_claims = dict(user.custom_claims or {})
+    if custom_claims.get("role") != "admin":
+        custom_claims["role"] = "admin"
+        admin_auth.set_custom_user_claims(auth.uid, custom_claims)
+
+    return {"role": "admin"}
+
+
+@https_fn.on_call(region="us-central1")
 def create_employee_account(req: https_fn.CallableRequest) -> dict:
     """Crea una cuenta de colaborador con contraseña temporal (solo admin)."""
     caller = _require_admin(req)
@@ -206,6 +304,10 @@ def create_employee_account(req: https_fn.CallableRequest) -> dict:
     department_id = data.get("departmentId")
     team_id = data.get("teamId")
     work_schedule = data.get("workSchedule") or {}
+    employee_id = (data.get("employeeId") or "").strip().upper()
+    job_title = (data.get("jobTitle") or "").strip()
+    employment_type = data.get("employmentType") or "full_time"
+    hire_date = _normalize_hire_date(data.get("hireDate"))
 
     if not display_name or not email:
         raise https_fn.HttpsError(
@@ -217,7 +319,24 @@ def create_employee_account(req: https_fn.CallableRequest) -> dict:
             code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
             message="Rol no válido.",
         )
+    if employee_id and (len(employee_id) > 20 or not re.fullmatch(r"[A-Z0-9-]+", employee_id)):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="El número de empleado solo admite letras, números y guiones (máximo 20 caracteres).",
+        )
+    if len(job_title) > 100:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="El puesto no puede superar 100 caracteres.",
+        )
+    if employment_type not in EMPLOYMENT_TYPES:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="El tipo de contratación no es válido.",
+        )
 
+    db = _db()
+    _ensure_employee_id_available(db, employee_id)
     temp_password = _generate_temp_password()
     try:
         user = admin_auth.create_user(
@@ -231,10 +350,15 @@ def create_employee_account(req: https_fn.CallableRequest) -> dict:
 
     admin_auth.set_custom_user_claims(user.uid, {"role": role})
 
-    db = _db()
+    employee_id = employee_id or f"EMP-{user.uid[:8].upper()}"
     db.collection("users").document(user.uid).set({
         "displayName": display_name,
         "email": email,
+        "employeeId": employee_id,
+        "jobTitle": job_title,
+        "employmentType": employment_type,
+        "hireDate": hire_date,
+        "phone": "",
         "role": role,
         "departmentId": department_id,
         "teamId": team_id,
@@ -244,11 +368,16 @@ def create_employee_account(req: https_fn.CallableRequest) -> dict:
         "createdBy": caller.uid,
         "createdAt": admin_firestore.SERVER_TIMESTAMP,
     })
+    db.collection("publicProfiles").document(user.uid).set({
+        "displayName": display_name,
+        "photoURL": "",
+        "updatedAt": admin_firestore.SERVER_TIMESTAMP,
+    })
 
     if team_id:
         _add_to_team(db, team_id, user.uid, display_name)
 
-    return {"uid": user.uid, "temporaryPassword": temp_password}
+    return {"uid": user.uid, "employeeId": employee_id, "temporaryPassword": temp_password}
 
 
 @https_fn.on_call(region="us-central1")
@@ -264,9 +393,37 @@ def update_user_account(req: https_fn.CallableRequest) -> dict:
         )
 
     updates = {}
-    for field in ("displayName", "email", "departmentId", "teamId", "workSchedule"):
+    for field in (
+        "displayName", "email", "departmentId", "teamId", "workSchedule",
+        "employeeId", "jobTitle", "employmentType", "hireDate",
+    ):
         if field in data:
             updates[field] = data[field]
+
+    db = _db()
+    if "employeeId" in updates:
+        updates["employeeId"] = (updates["employeeId"] or "").strip().upper()
+        if not updates["employeeId"] or len(updates["employeeId"]) > 20 \
+                or not re.fullmatch(r"[A-Z0-9-]+", updates["employeeId"]):
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+                message="El número de empleado es obligatorio y solo admite letras, números y guiones (máximo 20 caracteres).",
+            )
+        _ensure_employee_id_available(db, updates["employeeId"], uid)
+    if "jobTitle" in updates:
+        updates["jobTitle"] = (updates["jobTitle"] or "").strip()
+        if len(updates["jobTitle"]) > 100:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+                message="El puesto no puede superar 100 caracteres.",
+            )
+    if "employmentType" in updates and updates["employmentType"] not in EMPLOYMENT_TYPES:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="El tipo de contratación no es válido.",
+        )
+    if "hireDate" in updates:
+        updates["hireDate"] = _normalize_hire_date(updates["hireDate"])
 
     auth_updates = {}
     if "displayName" in updates:
@@ -304,7 +461,6 @@ def update_user_account(req: https_fn.CallableRequest) -> dict:
         updates["role"] = role
         admin_auth.set_custom_user_claims(uid, {"role": role})
 
-    db = _db()
     user_ref = db.collection("users").document(uid)
     current_data = user_ref.get().to_dict() or {}
     old_team = current_data.get("teamId")
@@ -322,6 +478,11 @@ def update_user_account(req: https_fn.CallableRequest) -> dict:
 
     if updates:
         user_ref.set(updates, merge=True)
+    if "displayName" in updates:
+        db.collection("publicProfiles").document(uid).set({
+            "displayName": updates["displayName"],
+            "updatedAt": admin_firestore.SERVER_TIMESTAMP,
+        }, merge=True)
 
     # Reasignación de equipo: saca del anterior y agrega al nuevo
     if "teamId" in data:
@@ -341,6 +502,194 @@ def update_user_account(req: https_fn.CallableRequest) -> dict:
             })
 
     return {"ok": True}
+
+
+@https_fn.on_call(region="us-central1")
+def update_employee_profile(req: https_fn.CallableRequest) -> dict:
+    """Permite que una persona actualice su nombre visible y teléfono, no su rol ni su organización."""
+    caller = _require_auth(req)
+    db = _db()
+    user_ref = db.collection("users").document(caller.uid)
+    profile = user_ref.get().to_dict() or {}
+    if not profile or profile.get("active", True) is False:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.NOT_FOUND,
+            message="No se encontró un perfil activo para tu cuenta.",
+        )
+    if profile.get("role") not in {"employee", "team_lead"}:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.PERMISSION_DENIED,
+            message="Esta función solo está disponible para colaboradores.",
+        )
+    data = req.data or {}
+    if set(data) - {"displayName", "phone"}:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="Solo puedes actualizar tu nombre visible y teléfono.",
+        )
+
+    display_name = (data.get("displayName") or "").strip()
+    phone = (data.get("phone") or "").strip()
+    if not display_name or len(display_name) > 100:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="El nombre es obligatorio y no puede superar 100 caracteres.",
+        )
+    if len(phone) > 30 or (phone and not re.fullmatch(r"[0-9+() .-]+", phone)):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="El teléfono no tiene un formato válido.",
+        )
+
+    admin_auth.update_user(caller.uid, display_name=display_name)
+    updates = {
+        "displayName": display_name,
+        "phone": phone,
+        "updatedAt": admin_firestore.SERVER_TIMESTAMP,
+    }
+    user_ref.set(updates, merge=True)
+    db.collection("publicProfiles").document(caller.uid).set({
+        "displayName": display_name,
+        "updatedAt": admin_firestore.SERVER_TIMESTAMP,
+    }, merge=True)
+    return {"displayName": display_name, "phone": phone}
+
+
+@https_fn.on_call(region="us-central1")
+def submit_leave_request(req: https_fn.CallableRequest) -> dict:
+    """Valida y registra una solicitud de permiso del usuario autenticado."""
+    caller = _require_auth(req)
+    db = _db()
+    profile = db.collection("users").document(caller.uid).get().to_dict() or {}
+    if not profile or profile.get("active", True) is False:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.FAILED_PRECONDITION,
+            message="No se encontró un perfil activo para tu cuenta.",
+        )
+    if profile.get("role") not in {"employee", "team_lead"}:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.PERMISSION_DENIED,
+            message="Solo un colaborador puede solicitar permisos.",
+        )
+    data = req.data or {}
+    leave_type = data.get("type")
+    start_value = data.get("startDate")
+    end_value = data.get("endDate")
+    reason = (data.get("reason") or "").strip()
+    if leave_type not in {"annual", "sick", "other"}:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="El tipo de permiso no es válido.",
+        )
+    if not isinstance(start_value, str) or not isinstance(end_value, str):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="Selecciona el periodo de la solicitud.",
+        )
+    try:
+        start_date = datetime.strptime(start_value, "%Y-%m-%d").date()
+        end_date = datetime.strptime(end_value, "%Y-%m-%d").date()
+    except ValueError as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="Las fechas deben tener el formato AAAA-MM-DD.",
+        ) from e
+    if start_date.isoformat() != start_value or end_date.isoformat() != end_value or start_date > end_date:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="El periodo de la solicitud no es válido.",
+        )
+    if not reason or len(reason) > 500:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="El motivo es obligatorio y no puede superar 500 caracteres.",
+        )
+
+    business_days = _count_business_days(start_date, end_date)
+    if business_days <= 0 or business_days > 90:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="El periodo debe incluir entre 1 y 90 días hábiles.",
+        )
+
+    existing = [
+        item.to_dict() or {}
+        for item in db.collection("leaveRequests").where("userId", "==", caller.uid).get()
+    ]
+    for request in existing:
+        if request.get("status") not in {"pending", "approved"}:
+            continue
+        existing_start = request.get("startDate")
+        existing_end = request.get("endDate")
+        if not isinstance(existing_start, str) or not isinstance(existing_end, str):
+            continue
+        if start_value <= existing_end and end_value >= existing_start:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.ALREADY_EXISTS,
+                message="El periodo se traslapa con otra solicitud pendiente o aprobada.",
+            )
+
+    balance_at_request = None
+    hire_date_value = profile.get("hireDate")
+    if leave_type == "annual" and hire_date_value:
+        try:
+            hire_date = datetime.strptime(hire_date_value, "%Y-%m-%d").date()
+        except (TypeError, ValueError) as e:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.FAILED_PRECONDITION,
+                message="RH debe corregir tu fecha de ingreso antes de calcular el saldo.",
+            ) from e
+        today = datetime.now(_local_tz()).date()
+        years = _completed_years(hire_date, today)
+        entitlement = _vacation_entitlement(years)
+        if years == 0:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.FAILED_PRECONDITION,
+                message="Aún no tienes un saldo anual de vacaciones calculable.",
+            )
+        period_start = _anniversary(hire_date, hire_date.year + years)
+        period_end = _anniversary(hire_date, hire_date.year + years + 1)
+        period_last_day = period_end - timedelta(days=1)
+        requested_balance_days = business_days
+        reserved_days = 0
+        for request in existing:
+            if request.get("status") not in {"pending", "approved"} or request.get("type") not in {"annual", "vacation", "vacaciones"}:
+                continue
+            try:
+                request_start = datetime.strptime(request.get("startDate", ""), "%Y-%m-%d").date()
+                request_end = datetime.strptime(request.get("endDate", ""), "%Y-%m-%d").date()
+            except ValueError:
+                continue
+            reserved_start = max(request_start, period_start)
+            reserved_end = min(request_end, period_last_day)
+            if reserved_start <= reserved_end:
+                reserved_days += _count_business_days(reserved_start, reserved_end)
+
+        balance_at_request = max(0, entitlement - reserved_days)
+        if requested_balance_days > balance_at_request:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.FAILED_PRECONDITION,
+                message=f"La solicitud excede el saldo disponible de {balance_at_request} días.",
+            )
+
+    leave_ref = db.collection("leaveRequests").document()
+    leave_ref.set({
+        "userId": caller.uid,
+        "employeeId": profile.get("employeeId") or "",
+        "employeeName": profile.get("displayName") or "",
+        "departmentId": profile.get("departmentId"),
+        "teamId": profile.get("teamId"),
+        "type": leave_type,
+        "startDate": start_value,
+        "endDate": end_value,
+        "businessDays": business_days,
+        "reason": reason,
+        "status": "pending",
+        "balanceAtRequest": balance_at_request,
+        "createdAt": admin_firestore.SERVER_TIMESTAMP,
+        "updatedAt": admin_firestore.SERVER_TIMESTAMP,
+    })
+    return {"requestId": leave_ref.id, "businessDays": business_days}
 
 
 @https_fn.on_call(region="us-central1")
@@ -430,6 +779,7 @@ def delete_user_account(req: https_fn.CallableRequest) -> dict:
         ) from e
 
     _record_departure(db, uid, profile, "deleted")
+    db.collection("publicProfiles").document(uid).delete()
     profile_ref.delete()
     return {"ok": True}
 
@@ -762,6 +1112,8 @@ def compute_daily_presence(event: scheduler_fn.ScheduledEvent) -> None:
     weekday_keys = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
     today_key = weekday_keys[now.weekday()]
     date_str = now.strftime("%Y-%m-%d")
+    if now.date() in _mexican_public_holidays(now.year):
+        return
 
     users = db.collection("users").where("active", "==", True).get()
 
@@ -799,6 +1151,64 @@ def compute_daily_presence(event: scheduler_fn.ScheduledEvent) -> None:
             "workDay": True,
             "computedAt": admin_firestore.SERVER_TIMESTAMP,
         })
+
+
+@firestore_fn.on_document_created(
+    document="activityLogs/{logId}",
+    region="us-central1",
+)
+def publish_digital_attendance(event) -> None:
+    """Marca en tiempo real la presencia si un movimiento ocurre dentro del horario."""
+    snapshot = event.data
+    if snapshot is None:
+        return
+    activity = snapshot.to_dict() or {}
+    user_id = activity.get("userId")
+    timestamp = activity.get("timestamp")
+    if not user_id or not isinstance(timestamp, datetime):
+        return
+
+    local_tz = _local_tz()
+    event_time = timestamp.replace(tzinfo=timezone.utc) if timestamp.tzinfo is None else timestamp
+    local_event = event_time.astimezone(local_tz)
+    date_str = local_event.strftime("%Y-%m-%d")
+    if local_event.date() in _mexican_public_holidays(local_event.year):
+        return
+
+    db = _db()
+    profile = db.collection("users").document(user_id).get().to_dict() or {}
+    if not profile or profile.get("active", True) is False:
+        return
+
+    schedule = profile.get("workSchedule") or {}
+    weekday_key = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"][local_event.weekday()]
+    if weekday_key not in (schedule.get("days") or []):
+        return
+    try:
+        start_parts = [int(part) for part in schedule.get("startTime", "09:00").split(":")]
+        end_parts = [int(part) for part in schedule.get("endTime", "18:00").split(":")]
+    except (TypeError, ValueError):
+        return
+
+    event_minutes = local_event.hour * 60 + local_event.minute
+    start_minutes = start_parts[0] * 60 + start_parts[1]
+    end_minutes = end_parts[0] * 60 + end_parts[1]
+    if not start_minutes <= event_minutes <= end_minutes:
+        return
+
+    summary_ref = db.collection("presenceSummary").document(f"{user_id}_{date_str}")
+    existing = summary_ref.get()
+    if existing.exists and existing.get("present") is True:
+        return
+    summary_ref.set({
+        "userId": user_id,
+        "departmentId": profile.get("departmentId"),
+        "teamId": profile.get("teamId"),
+        "date": date_str,
+        "present": True,
+        "workDay": True,
+        "computedAt": admin_firestore.SERVER_TIMESTAMP,
+    }, merge=True)
 
 
 @https_fn.on_call(secrets=[GEMINI_API_KEY], region="us-central1")

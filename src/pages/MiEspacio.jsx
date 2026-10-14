@@ -12,6 +12,8 @@ import ThemeToggle from "../components/ThemeToggle";
 import JoinTeamCard from "../components/JoinTeamCard";
 import { EmployeeNotificationBell } from "../components/NotificationBell";
 import WelfareLogo from "../components/WelfareLogo";
+import EmployeeLeavePanel from "../components/EmployeeLeavePanel";
+import EmployeeProfilePanel from "../components/EmployeeProfilePanel";
 
 function Icon({ name, size = 18, className = "" }) {
   return (
@@ -155,6 +157,7 @@ export default function MiEspacio() {
     events: presenceEvents,
     todayActivityCount,
     activityError,
+    summaryError,
     loading: presenceLoading,
   } = useMyPresence();
   const navigate = useNavigate();
@@ -228,6 +231,11 @@ export default function MiEspacio() {
               {streak} {streak === 1 ? "semana" : "semanas"} seguidas participando
             </span>
           )}
+        </div>
+
+        <div className="grid grid-cols-1 items-start gap-space-lg lg:grid-cols-2">
+          <EmployeeLeavePanel />
+          <EmployeeProfilePanel />
         </div>
 
         <div className="grid grid-cols-1 items-start gap-space-lg lg:grid-cols-[1fr_320px]">
@@ -338,7 +346,8 @@ export default function MiEspacio() {
                     <div className="grid grid-cols-3 gap-space-xs">
                       {[
                         [presence.presentDays, "con actividad"],
-                        [presence.absentDays, "sin actividad"],
+                        [presence.justifiedDays, "justificadas"],
+                        [presence.absentDays, "injustificadas"],
                         [presence.workDays, "laborales (30d)"],
                       ].map(([value, label]) => (
                         <div key={label} className="rounded-lg bg-surface-container-low p-space-sm text-center">
@@ -349,6 +358,7 @@ export default function MiEspacio() {
                     </div>
                   )}
                   {activityError && <p role="alert" className="mt-space-sm text-body-sm text-error">No se pudo cargar el historial: {activityError}</p>}
+                  {summaryError && <p role="alert" className="mt-space-sm text-body-sm text-error">{summaryError}</p>}
                   {presenceEvents.length ? (
                     <div className="mt-space-md border-t border-outline-variant/60 pt-space-sm">
                       <h3 className="mb-space-xs text-label-md font-semibold text-on-surface">Movimientos recientes</h3>
