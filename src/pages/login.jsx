@@ -8,6 +8,7 @@ import {
 } from "firebase/auth";
 import { auth } from "../services/firebase";
 import illustrationSign from "../assets/ilustracion_sign.webp";
+import WelfareLogo from "../components/WelfareLogo";
 import "./login.css";
 
 const AUTH_ERROR_MESSAGES = {
@@ -54,28 +55,21 @@ export default function Login() {
   return (
     <main className="login-page">
       <div className="login-shell">
-        <section className="login-story" aria-label="Bienestar organizacional">
+        <section className="login-story" aria-label="Salud organizacional">
           <img
             className="login-story-image"
             src={illustrationSign}
-            alt="Persona trabajando en su laptop junto a un gato, rodeada de gráficos de bienestar organizacional"
+            alt="Persona trabajando en su laptop junto a un gato y gráficos organizacionales"
           />
 
-          <div className="login-story-logo">
-            <span className="login-story-mark" aria-hidden="true">✦</span>
-            <span className="login-story-wordmark">
-              <strong>Bienestar</strong>
-              <span>Organizacional</span>
-            </span>
-          </div>
-
           <footer className="login-story-footer">
-            <strong>Bienestar laboral</strong>&nbsp;con información para decidir mejor
+            <strong>Salud organizacional</strong>&nbsp;con información para decidir mejor
           </footer>
         </section>
 
         <section className="login-form-panel">
           <div className="login-form-content">
+            <WelfareLogo className="login-form-logo" />
             <div className="login-form-heading">
               <h2>Inicia sesión</h2>
               <p>Tu cuenta es creada por la administración de tu organización.</p>
@@ -150,7 +144,7 @@ export default function Login() {
               Acceso protegido para tu organización
             </p>
           </div>
-          <footer className="login-form-footer">Plataforma de bienestar organizacional</footer>
+          <footer className="login-form-footer">Welfare</footer>
         </section>
       </div>
     </main>

@@ -6,6 +6,7 @@ import { useTeam } from "../hooks/useTeams";
 import { useAuth } from "../hooks/useAuth";
 import { useSidebarState } from "../hooks/useSidebarState";
 import { useDepartments } from "../hooks/useDepartments";
+import WelfareLogo from "../components/WelfareLogo";
 
 function departmentName(id, departments) {
   return departments.find((department) => department.id === id)?.name || id || "—";
@@ -59,8 +60,7 @@ export default function TeamBoard() {
       <div className="min-h-screen bg-surface">
         <header className="h-16 px-space-xl flex items-center justify-between bg-surface/80 backdrop-blur-xl sticky top-0 z-40">
           <div className="flex items-center gap-space-sm">
-            <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-on-primary font-bold">P</div>
-            <span className="text-headline-sm text-on-surface">Bienestar organizacional</span>
+            <WelfareLogo className="h-9 w-32 object-contain" />
           </div>
           <Link to="/mi-espacio" className="motion-press text-label-md text-primary hover:underline">
             Ir a mi espacio

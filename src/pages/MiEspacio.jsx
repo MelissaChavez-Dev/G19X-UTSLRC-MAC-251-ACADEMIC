@@ -11,6 +11,7 @@ import { projectTheme, initials } from "../data/projectTheme";
 import ThemeToggle from "../components/ThemeToggle";
 import JoinTeamCard from "../components/JoinTeamCard";
 import { EmployeeNotificationBell } from "../components/NotificationBell";
+import WelfareLogo from "../components/WelfareLogo";
 
 function Icon({ name, size = 18, className = "" }) {
   return (
@@ -169,8 +170,7 @@ export default function MiEspacio() {
     <div className="min-h-screen bg-surface app-canvas">
       <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-outline-variant/40 bg-surface/80 px-space-xl backdrop-blur-xl">
         <div className="flex items-center gap-space-sm">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary font-bold text-on-primary">P</div>
-          <span className="text-headline-sm text-on-surface">Bienestar organizacional</span>
+          <WelfareLogo className="h-9 w-32 object-contain" />
         </div>
         <div className="flex items-center gap-space-sm">
           <details className="relative">

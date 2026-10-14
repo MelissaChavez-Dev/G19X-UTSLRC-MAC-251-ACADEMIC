@@ -79,7 +79,7 @@ export function exportDashboardPdf({
   doc.rect(0, 0, pageWidth, 26, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
-  doc.text("Bienestar organizacional — Reporte ejecutivo", 14, 11);
+  doc.text("Welfare — Reporte ejecutivo", 14, 11);
   doc.setFontSize(9);
   doc.text(`${departmentName(departmentId, departments)} · ${periodLabel} · ${responseSourceLabel(sourceMode)} · Generado el ${todayLabel()}`, 14, 19);
 
@@ -133,7 +133,7 @@ export function exportDashboardPdf({
     doc.text(doc.splitTextToSize(plain, pageWidth - 28), 14, cursorY + 6);
   }
 
-  doc.save(`bienestar-organizacional-reporte-${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`welfare-reporte-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 /**
@@ -197,5 +197,5 @@ export async function exportResponsesExcel({
   }));
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(riskRows), "Riesgo por depto");
 
-  XLSX.writeFile(workbook, `bienestar-organizacional-datos-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  XLSX.writeFile(workbook, `welfare-datos-${new Date().toISOString().slice(0, 10)}.xlsx`);
 }

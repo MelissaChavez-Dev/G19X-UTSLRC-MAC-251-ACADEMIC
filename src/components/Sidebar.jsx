@@ -2,6 +2,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "../services/firebase";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSidebarState } from "../hooks/useSidebarState";
+import WelfareLogo from "./WelfareLogo";
 
 const NAV_ITEMS = [
   { icon: "grid_view", label: "Resumen", to: "/dashboard" },
@@ -45,21 +46,11 @@ export default function Sidebar() {
             collapsed ? "flex-col gap-3 justify-center" : "justify-between px-space-sm"
           }`}
         >
-          {/* Logo y Nombre */}
-          <div className="flex items-center gap-space-sm min-w-0">
-            <div className="h-9 w-9 rounded-full bg-primary-fixed text-on-primary-fixed-variant flex items-center justify-center font-semibold text-lg shrink-0 shadow-xs">
-              P
-            </div>
-            {!collapsed && (
-              <div className="flex flex-col min-w-0 overflow-hidden">
-                <span className="text-headline-sm tracking-tight leading-none text-on-surface font-medium truncate">
-                  Bienestar
-                </span>
-                <span className="text-label-sm text-on-surface-variant tracking-wider uppercase leading-none mt-1">
-                  Health
-                </span>
-              </div>
-            )}
+          <div className="flex min-w-0 items-center">
+            <WelfareLogo
+              compact={collapsed}
+              className={collapsed ? "h-10 w-10 shrink-0 object-contain" : "h-auto w-36 max-w-full object-contain"}
+            />
           </div>
 
           {/* Botón Icono para Mostrar / Ocultar Menú */}

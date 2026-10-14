@@ -9,6 +9,7 @@ import JoinTeamCard from "../components/JoinTeamCard";
 import ThemeToggle from "../components/ThemeToggle";
 import { EmployeeNotificationBell } from "../components/NotificationBell";
 import { useDepartments } from "../hooks/useDepartments";
+import WelfareLogo from "../components/WelfareLogo";
 
 /**
  * Vista del líder de equipo (rol team_lead): kanban y métricas agregadas
@@ -33,8 +34,7 @@ export default function MiEquipo() {
     <div className="min-h-screen bg-surface app-canvas">
       <header className="h-16 px-space-xl flex items-center justify-between bg-surface/80 backdrop-blur-xl sticky top-0 z-40 border-b border-outline-variant/40">
         <div className="flex items-center gap-space-sm">
-          <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-on-primary font-bold">P</div>
-          <span className="text-headline-sm text-on-surface">Bienestar organizacional</span>
+          <WelfareLogo className="h-9 w-32 object-contain" />
           <span className="text-label-md px-space-sm py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant">
             Líder de equipo
           </span>
