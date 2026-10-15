@@ -77,11 +77,6 @@ para correr la base de datos de firebase, es necesario llenar lo que pide .env.e
 No se puede desplegar la base de datos con una cuenta que no sea la del desarrollador del proyecto ya que
 incluye funciones de paga e informacion sensible de otros proyectos personales que llevo a cabo fuera de la capacitación. 
 
-### Pruebas unitarias
-Las reglas de fechas, saldo de vacaciones y clasificación de asistencia usan Node.js nativo:
-```bash
-npm test
-```
 
 ## 5. Datos de encuestas y privacidad
 
