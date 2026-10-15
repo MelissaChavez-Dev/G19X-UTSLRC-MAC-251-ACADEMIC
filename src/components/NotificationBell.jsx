@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useDepartmentRisk } from "../hooks/useDepartmentRisk";
 import { useTurnoverMetrics } from "../hooks/useTurnoverMetrics";
 import { usePendingSurveys } from "../hooks/usePendingSurveys";
-import { useMyTeam } from "../hooks/useTeams";
+import { useMyTeam, useMyTeams } from "../hooks/useTeams";
 import { useTeamTasks } from "../hooks/useTeamTasks";
+import { useTeamActivity } from "../hooks/useTeamActivity";
 import { useAuth } from "../hooks/useAuth";
 import { getKpiLevelForSample, MIN_SAMPLE } from "../data/kpiThresholds";
 
@@ -17,6 +18,8 @@ function Bell({ count, open, onToggle, children, label = "Notificaciones" }) {
         type="button"
         onClick={onToggle}
         aria-label={`${label} (${count})`}
+        aria-expanded={open}
+        aria-haspopup="true"
         className="motion-press relative flex items-center justify-center w-9 h-9 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
       >
         <span className="material-symbols-outlined text-[20px]">notifications</span>
@@ -27,7 +30,7 @@ function Bell({ count, open, onToggle, children, label = "Notificaciones" }) {
         )}
       </button>
       {open && (
-        <div className="animate-pop absolute right-0 top-11 w-80 max-h-96 overflow-y-auto rounded-xl bg-surface-container-lowest shadow-xl border border-outline-variant/40 p-space-sm z-50">
+        <div className="animate-pop fixed inset-x-4 top-[4.5rem] z-50 max-h-[70vh] overflow-y-auto rounded-xl bg-surface-container-lowest shadow-xl border border-outline-variant/40 p-space-sm sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:max-h-[28rem] sm:w-96">
           {children}
         </div>
       )}
@@ -35,15 +38,20 @@ function Bell({ count, open, onToggle, children, label = "Notificaciones" }) {
   );
 }
 
+
 function useDismissOnOutsideClick(open, onClose) {
   useEffect(() => {
-    if (!open) return;
-    function handleClick() {
-      onClose();
+    if (!open) return undefined;
+    function handleKey(event) {
+      if (event.key === "Escape") onClose();
     }
-    // Escucha en captura para no interferir con los enlaces
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
+    // El contenedor de cada campana detiene la propagación de sus propios clics.
+    document.addEventListener("click", onClose);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("click", onClose);
+      document.removeEventListener("keydown", handleKey);
+    };
   }, [open, onClose]);
 }
 
@@ -188,79 +196,241 @@ export function AdminNotificationBell({ responseSourceMode = "all", alerts: dash
   );
 }
 
-/** Campana del colaborador: encuestas nuevas y actividad reciente en su kanban. */
+/* ------------------------------------------------------------------ */
+/* Campana del colaborador                                             */
+/* ------------------------------------------------------------------ */
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const MAX_TEAM_EVENTS = 15;
+
+// La marca de "visto" vive en este dispositivo; evita depender de reglas nuevas en Firestore.
+function seenStorageKey(uid) {
+  return `team-activity-seen:${uid}`;
+}
+
+function readSeen(uid) {
+  if (!uid) return 0;
+  try {
+    return Number(window.localStorage.getItem(seenStorageKey(uid))) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeSeen(uid, value) {
+  if (!uid) return;
+  try {
+    window.localStorage.setItem(seenStorageKey(uid), String(value));
+  } catch {
+    // Sin almacenamiento disponible: la marca solo dura mientras la pestaña esté abierta.
+  }
+}
+
+function eventMillis(event) {
+  return event.createdAt?.toMillis?.() ?? 0;
+}
+
+function timeAgo(millis) {
+  if (!millis) return "Ahora";
+  const minutes = Math.round((Date.now() - millis) / 60000);
+  if (minutes < 1) return "Ahora";
+  const rtf = new Intl.RelativeTimeFormat("es-MX", { numeric: "auto" });
+  if (minutes < 60) return rtf.format(-minutes, "minute");
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return rtf.format(-hours, "hour");
+  return rtf.format(-Math.round(hours / 24), "day");
+}
+
+// Tipos que guarda taskService en el historial de cada tarea.
+const TEAM_EVENT_ICONS = {
+  created: "add_task",
+  status: "swap_horiz",
+  updated: "edit",
+  comment: "chat_bubble",
+};
+
+function lowerFirst(text) {
+  return text ? text.charAt(0).toLowerCase() + text.slice(1) : text;
+}
+
+function describeTeamEvent(event) {
+  const actor = event.actorName || "Alguien";
+  const message = lowerFirst(event.message) || "hizo un cambio en una tarea";
+  return { icon: TEAM_EVENT_ICONS[event.type] || "view_kanban", text: `${actor} ${message}` };
+}
+
+function BellSection({ title, action, children }) {
+  return (
+    <div className="pb-space-xs">
+      <div className="flex items-center justify-between gap-space-sm px-space-xs py-space-xs">
+        <span className="text-label-md font-semibold text-on-surface-variant">{title}</span>
+        {action}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/** Campana del colaborador: encuestas, entregas por vencer y cambios o comentarios en el kanban de su equipo. */
 export function EmployeeNotificationBell() {
   const [open, setOpen] = useState(false);
+  const [seenState, setSeenState] = useState({ uid: null, value: 0 });
+  const { user } = useAuth();
+  const uid = user?.uid;
   const { pending } = usePendingSurveys();
   const { team } = useMyTeam();
   const { tasks } = useTeamTasks(team?.id ?? null);
-  useDismissOnOutsideClick(open, () => setOpen(false));
+  const { teams: myTeams } = useMyTeams();
+  const teamIds = useMemo(() => (myTeams || []).map((item) => item.id), [myTeams]);
+  const { events, error: activityError } = useTeamActivity(teamIds);
+  const teamNameOf = (teamId) => (myTeams || []).find((item) => item.id === teamId)?.name || "";
 
+  // Entregas: vencidas o con vencimiento en los próximos 3 días.
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const dayAgo = now.getTime() - 24 * 60 * 60 * 1000;
   const taskAlerts = tasks.flatMap((task) => {
-    if (task.dueDate && task.status !== "done") {
-      const [year, month, day] = task.dueDate.split("-").map(Number);
-      const [hours = 23, minutes = 59] = (task.dueTime || "23:59").split(":").map(Number);
-      const dueDate = new Date(year, month - 1, day, hours, minutes);
-      const dueDay = new Date(year, month - 1, day);
-      const daysUntilDue = Math.round((dueDay.getTime() - today.getTime()) / 86400000);
+    if (!task.dueDate || task.status === "done") return [];
+    const [year, month, day] = task.dueDate.split("-").map(Number);
+    const [hours = 23, minutes = 59] = (task.dueTime || "23:59").split(":").map(Number);
+    const dueDate = new Date(year, month - 1, day, hours, minutes);
+    const dueDay = new Date(year, month - 1, day);
+    const daysUntilDue = Math.round((dueDay.getTime() - today.getTime()) / 86400000);
 
-      if (dueDate.getTime() < now.getTime()) {
-        return [{ task, label: `Vencida hace ${Math.abs(daysUntilDue)} d`, icon: "event_busy", tone: "text-error" }];
-      }
-      if (daysUntilDue <= 3) {
-        const deadline = task.dueTime ? ` · ${task.dueTime}` : "";
-        return [{ task, label: daysUntilDue === 0 ? `Vence hoy${deadline}` : `Vence en ${daysUntilDue} d${deadline}`, icon: "event", tone: "text-warning" }];
-      }
+    if (dueDate.getTime() < now.getTime()) {
+      return [{ task, label: `Vencida hace ${Math.abs(daysUntilDue)} d`, icon: "event_busy", tone: "text-error" }];
     }
-
-    if ((task.createdAt?.toMillis?.() || 0) > dayAgo) {
-      return [{ task, label: "Tarea nueva en tu equipo", icon: "view_kanban", tone: "text-tertiary" }];
+    if (daysUntilDue <= 3) {
+      const deadline = task.dueTime ? `, ${task.dueTime}` : "";
+      return [{
+        task,
+        label: daysUntilDue === 0 ? `Vence hoy${deadline}` : `Vence en ${daysUntilDue} d${deadline}`,
+        icon: "event",
+        tone: "text-warning",
+      }];
     }
     return [];
   });
 
-  const count = pending.length + taskAlerts.length;
+  // Actividad del equipo hecha por otras personas.
+  const storedSeen = seenState.uid === uid ? seenState.value : readSeen(uid);
+  const seenAt = storedSeen || now.getTime() - DAY_MS;
+  const teamEvents = events.filter((event) => event.actorId !== uid).slice(0, MAX_TEAM_EVENTS);
+  const unreadTeam = teamEvents.filter((event) => eventMillis(event) > seenAt).length;
+
+  function markTeamSeen() {
+    if (!uid) return;
+    const latest = Math.max(0, ...events.map(eventMillis));
+    const value = latest || Date.now();
+    writeSeen(uid, value);
+    setSeenState({ uid, value });
+  }
+
+  function close() {
+    setOpen(false);
+    if (unreadTeam > 0) markTeamSeen();
+  }
+
+  const count = pending.length + taskAlerts.length + unreadTeam;
+  const isEmpty = pending.length === 0 && taskAlerts.length === 0 && teamEvents.length === 0;
+  useDismissOnOutsideClick(open, close);
 
   return (
     <div onClick={(e) => e.stopPropagation()}>
-      <Bell count={count} open={open} onToggle={() => setOpen((v) => !v)}>
-        <span className="text-label-md uppercase tracking-widest text-on-surface-variant font-semibold block px-space-xs pb-space-xs">
-          Novedades
-        </span>
-        {count === 0 ? (
-          <EmptyState text="Sin novedades por ahora." />
+      <Bell count={count} open={open} onToggle={() => (open ? close() : setOpen(true))}>
+        <span className="block px-space-xs pb-space-xs text-label-lg font-semibold text-on-surface">Novedades</span>
+
+        {isEmpty ? (
+          <div className="flex items-center gap-space-sm rounded-lg bg-surface-container-low p-space-md">
+            <span className="material-symbols-outlined text-[24px] text-on-surface-variant">notifications_off</span>
+            <p className="text-body-sm text-on-surface-variant">Sin novedades por ahora.</p>
+          </div>
         ) : (
           <>
-            {pending.map((survey) => (
-              <Link
-                key={survey.id}
-                to={`/encuesta/${survey.id}`}
-                onClick={() => setOpen(false)}
-                className="flex items-start gap-space-sm p-space-sm rounded-lg hover:bg-surface-container-low transition-colors"
+            {pending.length > 0 && (
+              <BellSection title="Encuestas pendientes">
+                {pending.map((survey) => (
+                  <Link
+                    key={survey.id}
+                    to={`/encuesta/${survey.id}`}
+                    onClick={() => setOpen(false)}
+                    className="flex items-start gap-space-sm p-space-sm rounded-lg hover:bg-surface-container-low transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[20px] text-primary">assignment</span>
+                    <div className="min-w-0">
+                      <p className="text-body-sm text-on-surface font-semibold">Encuesta pendiente</p>
+                      <p className="text-body-sm text-on-surface-variant">{survey.title}</p>
+                    </div>
+                  </Link>
+                ))}
+              </BellSection>
+            )}
+
+            {taskAlerts.length > 0 && (
+              <BellSection title="Entregas">
+                {taskAlerts.map(({ task, label, icon, tone }) => (
+                  <div
+                    key={task.id}
+                    className="flex items-start gap-space-sm p-space-sm rounded-lg hover:bg-surface-container-low transition-colors"
+                  >
+                    <span className={`material-symbols-outlined text-[20px] ${tone}`}>{icon}</span>
+                    <div className="min-w-0">
+                      <p className="text-body-sm text-on-surface font-semibold">{label}</p>
+                      <p className="text-body-sm text-on-surface-variant">{task.title}</p>
+                    </div>
+                  </div>
+                ))}
+              </BellSection>
+            )}
+
+            {teamEvents.length > 0 && (
+              <BellSection
+                title="Tu equipo"
+                action={
+                  unreadTeam > 0 && (
+                    <button
+                      type="button"
+                      onClick={markTeamSeen}
+                      className="text-label-sm font-semibold text-primary hover:underline"
+                    >
+                      Marcar como leído
+                    </button>
+                  )
+                }
               >
-                <span className="material-symbols-outlined text-[20px] text-primary">assignment</span>
-                <div>
-                  <p className="text-body-sm text-on-surface font-semibold">Encuesta pendiente</p>
-                  <p className="text-body-sm text-on-surface-variant">{survey.title}</p>
-                </div>
-              </Link>
-            ))}
-            {taskAlerts.map(({ task, label, icon, tone }) => (
-              <div
-                key={task.id}
-                className="flex items-start gap-space-sm p-space-sm rounded-lg hover:bg-surface-container-low transition-colors"
-              >
-                <span className={`material-symbols-outlined text-[20px] ${tone}`}>{icon}</span>
-                <div>
-                  <p className="text-body-sm text-on-surface font-semibold">{label}</p>
-                  <p className="text-body-sm text-on-surface-variant">{task.title}</p>
-                </div>
-              </div>
-            ))}
+                {teamEvents.map((event) => {
+                  const { icon, text } = describeTeamEvent(event);
+                  const unread = eventMillis(event) > seenAt;
+                  return (
+                    <Link
+                      key={`${event.teamId}-${event.id}`}
+                      to={`/mis-proyectos/${event.teamId}`}
+                      onClick={close}
+                      className="flex items-start gap-space-sm rounded-lg p-space-sm transition-colors hover:bg-surface-container-low"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-container text-on-primary-container">
+                        <span className="material-symbols-outlined text-[18px]">{icon}</span>
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-body-sm text-on-surface ${unread ? "font-semibold" : ""}`}>{text}</p>
+                        <p className="truncate text-label-sm text-on-surface-variant">
+                          {event.taskTitle ? `«${event.taskTitle}», ` : ""}
+                          {teamNameOf(event.teamId) ? `${teamNameOf(event.teamId)}, ` : ""}
+                          {timeAgo(eventMillis(event))}
+                        </p>
+                      </div>
+                      {unread && <span role="img" aria-label="Nuevo" className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />}
+                    </Link>
+                  );
+                })}
+              </BellSection>
+            )}
           </>
+        )}
+
+        {activityError && (
+          <p role="alert" className="mt-space-xs rounded-xl bg-error-container px-space-sm py-2 text-label-sm text-on-error-container">
+            {activityError}
+          </p>
         )}
       </Bell>
     </div>

@@ -1,96 +1,87 @@
-import { signOut } from "firebase/auth";
-import { Link, useNavigate } from "react-router-dom";
-import { auth } from "../services/firebase";
-import { useMyTeam } from "../hooks/useTeams";
-import { useDepartmentRisk } from "../hooks/useDepartmentRisk";
-import { useAuth } from "../hooks/useAuth";
+import { Link, useParams } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
+import TopBar from "../components/TopBar";
 import TeamKanban from "../components/TeamKanban";
-import JoinTeamCard from "../components/JoinTeamCard";
-import ThemeToggle from "../components/ThemeToggle";
-import { EmployeeNotificationBell } from "../components/NotificationBell";
+import EmployeeShell from "../components/EmployeeShell";
+import { Icon, SectionHeader } from "../components/EmployeeUi";
+import { useTeam } from "../hooks/useTeams";
+import { useAuth } from "../hooks/useAuth";
+import { useSidebarState } from "../hooks/useSidebarState";
 import { useDepartments } from "../hooks/useDepartments";
-import WelfareLogo from "../components/WelfareLogo";
 
-/**
- * Vista del líder de equipo (rol team_lead): kanban y métricas agregadas
- * SOLO de su propio departamento/equipo — sin acceso al dashboard ejecutivo.
- */
-export default function MiEquipo() {
-  const { profile } = useAuth();
+function departmentName(id, departments) {
+  return departments.find((department) => department.id === id)?.name || id || "—";
+}
+
+/** Tablero de un equipo: vista admin (/equipos/:teamId) y vista de colaborador / líder. */
+export default function TeamBoard() {
+  const { teamId } = useParams();
+  const { isAdmin } = useAuth();
+  const { team, loading } = useTeam(teamId);
+  const { collapsed } = useSidebarState();
   const { departments } = useDepartments();
-  const { team, loading: teamLoading } = useMyTeam();
-  const { rows: deptRows } = useDepartmentRisk();
-  const navigate = useNavigate();
 
-  async function handleLogout() {
-    await signOut(auth);
-    navigate("/login");
-  }
+  const members = Object.values(team?.memberNames || {});
 
-  const deptName = departments.find((d) => d.id === profile?.departmentId)?.name;
-  const myDeptRisk = deptRows?.find((row) => row.id === profile?.departmentId);
+  const content = (
+    <div className="flex flex-col gap-space-lg">
+      <Link
+        to={isAdmin ? "/equipos" : "/mi-espacio"}
+        className="inline-flex w-fit items-center gap-space-xs rounded-full py-1 pr-space-sm text-label-md font-semibold text-primary hover:underline"
+      >
+        <Icon name="arrow_back" size={18} />
+        {isAdmin ? "Equipos" : "Mi espacio"}
+      </Link>
 
-  return (
-    <div className="min-h-screen bg-surface app-canvas">
-      <header className="h-16 px-space-xl flex items-center justify-between bg-surface/80 backdrop-blur-xl sticky top-0 z-40 border-b border-outline-variant/40">
-        <div className="flex items-center gap-space-sm">
-          <WelfareLogo className="h-9 w-32 object-contain" />
-          <span className="text-label-md px-space-sm py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant">
-            Líder de equipo
-          </span>
+      {loading ? (
+        <div className="flex flex-col gap-space-md">
+          <div className="h-16 max-w-md rounded-2xl animate-shimmer" />
+          <div className="h-72 rounded-2xl animate-shimmer" />
         </div>
-        <div className="flex items-center gap-space-sm">
-          <EmployeeNotificationBell />
-          <ThemeToggle />
-          <button
-            onClick={handleLogout}
-            className="motion-press flex items-center gap-space-xs px-space-md py-2 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
-          >
-            <span className="material-symbols-outlined text-[20px]">logout</span>
-            <span className="text-body-md">Cerrar sesión</span>
-          </button>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-space-xl py-space-lg flex flex-col gap-space-lg relative z-10">
-        <div className="animate-enter">
-          <span className="text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">
-            {deptName || "Mi equipo"}
-          </span>
-          <h1 className="text-headline-xl text-on-surface tracking-tight">
-            {teamLoading ? "Cargando..." : team ? team.name : "Salud de mi equipo"}
-          </h1>
-        </div>
-
-        {/* Resumen agregado de su departamento (sin datos individuales) */}
-        {myDeptRisk && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-space-md animate-enter" style={{ animationDelay: "80ms" }}>
-            {[
-              { label: "Fatiga", value: myDeptRisk.factors?.shiftFatigue },
-              { label: "Carga emocional", value: myDeptRisk.factors?.emotionalLabor },
-              { label: "Seguridad psicológica", value: myDeptRisk.factors?.psychSafety },
-              { label: "Balance vida-trabajo", value: myDeptRisk.workLifeBalance },
-            ].map((metric) => (
-              <div key={metric.label} className="motion-card bg-surface-container-lowest p-space-md text-center">
-                <span className="text-metric-val text-on-surface">{metric.value ?? "—"}</span>
-                <span className="text-label-sm text-on-surface-variant block mt-1">{metric.label}</span>
+      ) : !team ? (
+        <p className="text-body-md text-on-surface-variant">Equipo no encontrado.</p>
+      ) : (
+        <>
+          <div>
+            <p className="text-label-md font-semibold text-primary">{departmentName(team.departmentId, departments)}</p>
+            <h1 className="text-headline-xl tracking-tight text-on-surface">{team.name}</h1>
+            {members.length > 0 && (
+              <div className="mt-space-sm flex flex-wrap items-center gap-space-xs">
+                <span className="text-label-md text-on-surface-variant">
+                  {members.length} {members.length === 1 ? "integrante" : "integrantes"}
+                </span>
+                {members.map((memberName) => (
+                  <span
+                    key={memberName}
+                    className="rounded-full bg-primary-fixed px-space-sm py-1 text-label-md text-on-primary-fixed-variant"
+                  >
+                    {memberName}
+                  </span>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        )}
 
-        {teamLoading ? null : team ? (
-          <section className="animate-enter" style={{ animationDelay: "160ms" }}>
-            <h2 className="text-headline-sm text-on-surface mb-space-sm">Kanban del equipo</h2>
+          <section className="flex flex-col gap-space-sm">
+            <SectionHeader title="Kanban del equipo" />
             <TeamKanban teamId={team.id} team={team} />
           </section>
-        ) : (
-          <JoinTeamCard />
-        )}
+        </>
+      )}
+    </div>
+  );
 
-        <p className="text-body-sm text-on-surface-variant">
-          ¿Buscas tu espacio personal? <Link to="/mi-espacio" className="text-primary hover:underline">Ir a mi espacio</Link>
-        </p>
+  if (!isAdmin) {
+    // colaborador / team_lead: cabecera simple, sin el sidebar ejecutivo
+    return <EmployeeShell>{content}</EmployeeShell>;
+  }
+
+  return (
+    <div className="min-h-screen bg-surface">
+      <Sidebar />
+      <TopBar />
+      <main className={`${collapsed ? "pl-20" : "pl-64"} pt-16 transition-[padding] duration-300 ease-out`}>
+        <div className="max-w-6xl px-space-xl py-space-lg">{content}</div>
       </main>
     </div>
   );

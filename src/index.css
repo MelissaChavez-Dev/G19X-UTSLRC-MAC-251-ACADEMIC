@@ -439,8 +439,12 @@ html {
   isolation: isolate;
   min-height: 100vh;
   background-color: var(--surface);
-  overflow-x: hidden;
+  overflow-x: clip;
   transition: background-color var(--dur-long) var(--ease-emphasized);
+}
+.employee-shell-canvas {
+  --canvas-orb-a: color-mix(in srgb, var(--palette-blue) 16%, transparent);
+  --canvas-orb-b: color-mix(in srgb, var(--palette-lavender) 10%, transparent);
 }
 html:not(.dark),
 html:not(.dark) body,

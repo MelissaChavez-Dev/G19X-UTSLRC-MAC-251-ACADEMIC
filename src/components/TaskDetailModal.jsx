@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { updateTask, addTaskComment } from "../services/taskService";
 import Avatar from "./Avatar";
@@ -15,6 +15,7 @@ function formatActivityDate(value) {
 export default function TaskDetailModal({ teamId, task, projectName = "", memberNames = {}, onClose }) {
   const { profiles } = useProfiles((task.comments || []).map((comment) => comment.authorId));
   const [description, setDescription] = useState(task.description || "");
+  const descriptionRef = useRef(null);
   const [assignedToIds, setAssignedToIds] = useState(
     task.assignedToIds || (task.assignedTo ? [task.assignedTo] : [])
   );
@@ -55,13 +56,20 @@ export default function TaskDetailModal({ teamId, task, projectName = "", member
   const inputClass =
     "w-full rounded-lg bg-surface-container-low border border-outline-variant px-space-md py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all";
 
+  useLayoutEffect(() => {
+    const textarea = descriptionRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [description]);
+
   return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-space-md"
       onClick={onClose}
     >
       <div
-        className="motion-card animate-pop bg-surface-container-lowest w-full max-w-lg max-h-[85vh] overflow-y-auto p-space-lg flex flex-col gap-space-md"
+        className="animate-pop rounded-2xl bg-surface-container-lowest w-full max-w-lg max-h-[85vh] overflow-y-auto p-space-lg flex flex-col gap-space-md"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-space-sm">
@@ -88,12 +96,13 @@ export default function TaskDetailModal({ teamId, task, projectName = "", member
             Descripción
           </label>
           <textarea
+            ref={descriptionRef}
             id="task-desc"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
             placeholder="Agrega detalles sobre esta tarea..."
-            className={`${inputClass} resize-none`}
+            className={`${inputClass} resize-none overflow-hidden`}
           />
         </div>
 

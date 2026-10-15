@@ -78,7 +78,7 @@ function TaskCardBody({ task, assigneeNames, onDelete, floating = false }) {
   return (
     <div
       className={`group relative flex flex-col gap-space-sm rounded-lg bg-surface-container-lowest p-space-sm ${
-        floating ? "rotate-2 shadow-xl ring-2 ring-primary/40" : "shadow-sm hover:shadow-md transition-shadow"
+        floating ? "rotate-2 shadow-xl ring-2 ring-primary/40" : "shadow-sm"
       }`}
     >
       <div className="pr-6">

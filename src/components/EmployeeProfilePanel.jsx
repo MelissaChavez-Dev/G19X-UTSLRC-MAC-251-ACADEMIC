@@ -3,28 +3,58 @@ import { useAuth } from "../hooks/useAuth";
 import { useProfiles } from "../hooks/useProfiles";
 import { saveEmployeeProfile, uploadProfilePhoto } from "../services/profileService";
 import Avatar from "./Avatar";
+import { Card, fieldClass, Icon, Notice, SectionHeader } from "./EmployeeUi";
 
-const inputClass =
-  "w-full rounded-lg border border-outline-variant bg-surface-container-low px-space-md py-2.5 text-body-md text-on-surface outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/30";
+function formatHireDate(value) {
+  if (!value) return "Sin registrar";
+  const date = typeof value === "string" ? new Date(`${value}T12:00:00`) : value.toDate?.();
+  if (!date || Number.isNaN(date.getTime())) return "Sin registrar";
+  return date.toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function ReadOnlyRow({ icon, label, value }) {
+  return (
+    <div className="flex items-center gap-space-sm py-space-sm">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant">
+        <Icon name={icon} size={18} />
+      </span>
+      <div className="min-w-0">
+        <dt className="text-label-sm text-on-surface-variant">{label}</dt>
+        <dd className="truncate text-body-md text-on-surface">{value}</dd>
+      </div>
+    </div>
+  );
+}
 
 export default function EmployeeProfilePanel() {
   const { user, profile } = useAuth();
   const { profiles } = useProfiles(user?.uid ? [user.uid] : []);
-  const [displayName, setDisplayName] = useState(profile?.displayName || user?.displayName || "");
-  const [phone, setPhone] = useState(profile?.phone || "");
+  const [draft, setDraft] = useState({});
+  const [baseline, setBaseline] = useState(null); // valores guardados en esta sesión
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const publicProfile = profiles[user?.uid] || {};
 
+  const current = baseline ?? {
+    displayName: profile?.displayName || user?.displayName || "",
+    phone: profile?.phone || "",
+  };
+  const displayName = draft.displayName ?? current.displayName;
+  const phone = draft.phone ?? current.phone;
+  const dirty = displayName.trim() !== current.displayName || phone.trim() !== current.phone;
+
   async function handleSave(event) {
     event.preventDefault();
+    const next = { displayName: displayName.trim(), phone: phone.trim() };
     setSaving(true);
     setError("");
     setNotice("");
     try {
-      await saveEmployeeProfile({ displayName, phone });
+      await saveEmployeeProfile(next);
+      setBaseline(next);
+      setDraft({});
       setNotice("Tus datos personales se actualizaron.");
     } catch (saveError) {
       console.error("No se pudo actualizar el perfil del colaborador:", saveError);
@@ -54,25 +84,17 @@ export default function EmployeeProfilePanel() {
   }
 
   return (
-    <section className="flex flex-col gap-space-md rounded-2xl bg-surface-container-lowest p-space-lg">
-      <div>
-        <h2 className="text-headline-sm text-on-surface">Mi perfil</h2>
-        <p className="mt-1 text-body-sm text-on-surface-variant">
-          Actualiza tu nombre visible, teléfono y foto para que tus compañeros te reconozcan.
-        </p>
-      </div>
-
-      <div className="flex items-center gap-space-md">
-        <Avatar
-          name={displayName}
-          photoURL={publicProfile.photoURL}
-          size={72}
-          className="text-headline-sm"
-        />
-        <div className="flex flex-col gap-space-xs">
-          <p className="text-label-md font-semibold text-on-surface">{displayName || "Colaborador"}</p>
-          <label className="motion-press inline-flex w-fit cursor-pointer items-center gap-space-xs rounded-full bg-surface-container-low px-space-md py-2 text-label-md text-primary hover:bg-surface-container">
-            <span className="material-symbols-outlined text-[18px]">photo_camera</span>
+    <div className="grid grid-cols-1 items-start gap-space-lg lg:grid-cols-[320px_minmax(0,1fr)]">
+      {/* Identidad y datos de RH */}
+      <div className="flex flex-col gap-space-md">
+        <Card className="flex flex-col items-center gap-space-sm text-center">
+          <Avatar name={displayName} photoURL={publicProfile.photoURL} size={96} className="text-headline-md" />
+          <div className="min-w-0">
+            <p className="text-headline-sm text-on-surface">{displayName || "Colaborador"}</p>
+            {user?.email && <p className="truncate text-body-sm text-on-surface-variant">{user.email}</p>}
+          </div>
+          <label className="motion-press inline-flex cursor-pointer items-center gap-space-xs rounded-full bg-primary-container px-space-md py-2 text-label-md font-semibold text-on-primary-container hover:brightness-95 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary">
+            <Icon name="photo_camera" size={18} />
             {uploading ? "Subiendo..." : "Cambiar foto"}
             <input
               type="file"
@@ -83,50 +105,76 @@ export default function EmployeeProfilePanel() {
               aria-label="Subir foto de perfil"
             />
           </label>
-          <span className="text-label-sm text-on-surface-variant">JPG, PNG o WebP · máximo 5 MB</span>
-        </div>
+          <span className="text-label-sm text-on-surface-variant">JPG, PNG o WebP, máximo 5 MB</span>
+        </Card>
+
+        <Card>
+          <h3 className="text-label-lg font-semibold text-on-surface">Datos administrados por RH</h3>
+          <dl className="mt-space-xs divide-y divide-outline-variant/60">
+            <ReadOnlyRow icon="mail" label="Correo" value={user?.email || "Sin registrar"} />
+            <ReadOnlyRow icon="event" label="Fecha de ingreso" value={formatHireDate(profile?.hireDate)} />
+          </dl>
+          <p className="mt-space-xs text-label-sm text-on-surface-variant">
+            El puesto, el departamento y la fecha de ingreso solo los modifica RH.
+          </p>
+        </Card>
       </div>
 
-      <form onSubmit={handleSave} className="flex flex-col gap-space-sm">
-        <label className="flex flex-col gap-space-xs text-label-md text-on-surface" htmlFor="employee-profile-name">
-          Nombre visible
-          <input
-            id="employee-profile-name"
-            className={inputClass}
-            value={displayName}
-            onChange={(event) => setDisplayName(event.target.value)}
-            maxLength={100}
-            required
-          />
-        </label>
-        <label className="flex flex-col gap-space-xs text-label-md text-on-surface" htmlFor="employee-profile-phone">
-          Teléfono
-          <input
-            id="employee-profile-phone"
-            className={inputClass}
-            type="tel"
-            value={phone}
-            onChange={(event) => setPhone(event.target.value)}
-            maxLength={30}
-            placeholder="Opcional"
-          />
-        </label>
-        <div className="flex flex-wrap items-center justify-between gap-space-sm border-t border-outline-variant pt-space-sm">
-          <span className="text-label-sm text-on-surface-variant">
-            El puesto, departamento y fecha de ingreso los administra RH.
-          </span>
-          <button
-            type="submit"
-            disabled={saving || uploading}
-            className="motion-press inline-flex items-center gap-space-xs rounded-full bg-primary px-space-md py-2 text-label-md font-semibold text-on-primary disabled:opacity-50"
-          >
-            {saving ? "Guardando..." : "Guardar datos"}
-          </button>
-        </div>
-      </form>
+      {/* Formulario */}
+      <Card className="flex max-w-3xl flex-col gap-space-md">
+        <SectionHeader
+          title="Datos personales"
+          description="Tu nombre y teléfono son visibles para tus compañeros de proyecto."
+        />
 
-      {error && <p role="alert" className="rounded-lg bg-error-container px-space-md py-space-sm text-body-sm text-on-error-container">{error}</p>}
-      {notice && <p role="status" className="rounded-lg bg-success-container px-space-md py-space-sm text-body-sm text-on-success-container">{notice}</p>}
-    </section>
+        <form onSubmit={handleSave} className="flex flex-col gap-space-md">
+          <label className="flex flex-col gap-space-xs text-label-md text-on-surface" htmlFor="employee-profile-name">
+            Nombre visible
+            <input
+              id="employee-profile-name"
+              className={fieldClass}
+              value={displayName}
+              onChange={(event) => setDraft((value) => ({ ...value, displayName: event.target.value }))}
+              maxLength={100}
+              required
+            />
+          </label>
+          <label className="flex flex-col gap-space-xs text-label-md text-on-surface" htmlFor="employee-profile-phone">
+            Teléfono
+            <input
+              id="employee-profile-phone"
+              className={fieldClass}
+              type="tel"
+              value={phone}
+              onChange={(event) => setDraft((value) => ({ ...value, phone: event.target.value }))}
+              maxLength={30}
+              placeholder="Opcional"
+            />
+          </label>
+
+          <div className="flex flex-wrap items-center justify-end gap-space-sm border-t border-outline-variant/60 pt-space-md">
+            {dirty && !saving && (
+              <button
+                type="button"
+                onClick={() => setDraft({})}
+                className="motion-press rounded-full px-space-md py-2 text-label-md font-semibold text-on-surface-variant hover:bg-surface-container-low"
+              >
+                Descartar cambios
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={!dirty || saving || uploading}
+              className="motion-press inline-flex items-center gap-space-xs rounded-full bg-primary px-space-lg py-2.5 text-label-md font-semibold text-on-primary disabled:opacity-50"
+            >
+              {saving ? "Guardando..." : "Guardar cambios"}
+            </button>
+          </div>
+        </form>
+
+        {error && <Notice tone="error">{error}</Notice>}
+        {notice && <Notice tone="success">{notice}</Notice>}
+      </Card>
+    </div>
   );
 }

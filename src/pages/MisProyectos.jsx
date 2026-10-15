@@ -3,8 +3,10 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import JoinTeamCard from "../components/JoinTeamCard";
 import TeamKanban from "../components/TeamKanban";
 import { useMyTeams } from "../hooks/useTeams";
+import { useProfiles } from "../hooks/useProfiles";
 import { leaveTeamProject, updateTeamProject } from "../services/userService";
-import { projectTheme, initials } from "../data/projectTheme";
+import { projectTheme } from "../data/projectTheme";
+import Avatar from "../components/Avatar";
 
 const TABS = [
   { id: "board", label: "Tablero", icon: "view_kanban" },
@@ -113,6 +115,7 @@ function ProjectDetails({ team, onLeave }) {
 function ProjectView({ team, onLeave, onJoined }) {
   const [tab, setTab] = useState("board");
   const members = Object.entries(team.memberNames || {});
+  const { profiles } = useProfiles(tab === "people" ? members.map(([uid]) => uid) : []);
 
   return (
     <>
@@ -121,7 +124,7 @@ function ProjectView({ team, onLeave, onJoined }) {
         <Icon name="dashboard" size={160} className="absolute -bottom-8 right-4 opacity-10" />
         <p className="relative text-label-md font-semibold opacity-80">Proyecto</p>
         <h1 className="relative mt-1 text-headline-xl tracking-tight">{team.name}</h1>
-        <p className="relative mt-1 line-clamp-2 max-w-prose text-body-md opacity-90">
+        <p className="relative mt-1 max-w-prose whitespace-pre-line break-words text-body-md opacity-90">
           {team.description || "Este proyecto aún no tiene descripción."}
         </p>
         <span className="relative mt-space-sm inline-flex items-center gap-space-xs rounded-full bg-surface-container-lowest/70 px-space-sm py-1 text-label-md font-semibold text-on-surface">
@@ -173,9 +176,12 @@ function ProjectView({ team, onLeave, onJoined }) {
               <ul className="divide-y divide-outline-variant/60">
                 {members.map(([uid, memberName]) => (
                   <li key={uid} className="flex items-center gap-space-sm py-space-sm">
-                    <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-container text-label-md font-semibold text-on-primary-container">
-                      {initials(memberName)}
-                    </span>
+                    <Avatar
+                      name={memberName}
+                      photoURL={profiles[uid]?.photoURL}
+                      size={40}
+                      className="text-label-md"
+                    />
                     <span className="min-w-0 flex-1 truncate text-body-md text-on-surface">{memberName}</span>
                   </li>
                 ))}
