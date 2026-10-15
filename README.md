@@ -44,19 +44,6 @@ permite hacer todas las funciones, solo inicie sesion con las credenciales que s
    ```bash
    cp env.example .env.local
    ```
-   En PowerShell:
-   ```powershell
-   Copy-Item env.example .env.local
-   ```
-   Variables requeridas (las seis son obligatorias):
-   ```env
-   VITE_FIREBASE_API_KEY=tu_api_key
-   VITE_FIREBASE_AUTH_DOMAIN=tu-proyecto.firebaseapp.com
-   VITE_FIREBASE_PROJECT_ID=tu-proyecto
-   VITE_FIREBASE_STORAGE_BUCKET=tu-proyecto.firebasestorage.app
-   VITE_FIREBASE_MESSAGING_SENDER_ID=tu_sender_id
-   VITE_FIREBASE_APP_ID=tu_app_id
-   ```
 
 ---
 
