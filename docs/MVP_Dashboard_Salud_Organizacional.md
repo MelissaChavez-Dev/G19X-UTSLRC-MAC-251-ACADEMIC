@@ -66,7 +66,7 @@ Durante el proceso de desarrollo y validación, el MVP evolucionó de un "visual
 2. **Inteligencia Artificial Operativa:** La API de Google Gemini procesa datos agregados y texto libre en tiempo de ejecución, entregando recomendaciones ejecutivas y explicaciones de métricas individuales.
 3. **Flujo Cerrado Diagnóstico-Acción:** La conversión de recomendaciones de IA a tarjetas en `teams/{teamId}/tasks` opera de forma inmediata sin fricción.
 4. **Integridad de Accesos:** Rutas protegidas mediante `ProtectedRoute` y `RoleBasedRedirect` según el perfil autenticado.
-5. **Calidad de Compilación:** El proyecto compila limpiamente (`npm run build`) en Vite con cero advertencias de sintaxis y compatibilidad multiplataforma.
+5. **Calidad de Compilación:** La compilación de producción se valida con `npm run build`. La última validación completó correctamente, pero Vite reportó un chunk de JavaScript superior a 500 kB después de minificar; por tanto, no se afirma que exista cero advertencias. El resultado debe registrarse junto con sus advertencias.
 
 ---
 

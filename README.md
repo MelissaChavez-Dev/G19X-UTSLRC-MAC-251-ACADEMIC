@@ -40,9 +40,13 @@ permite hacer todas las funciones, solo inicie sesion con las credenciales que s
    ```
 
 3. **Configurar variables de entorno:**
-   Copia la plantilla `.env.example` como `.env.local` en la raíz del proyecto y reemplaza cada valor con la configuración de la aplicación web de tu proyecto Firebase (Firebase Console → Configuración del proyecto → Tus apps). Las claves con datos de prueba están en .
+   Copia la plantilla `env.example` como `.env.local` en la raíz del proyecto y reemplaza cada valor con la configuración de la aplicación web de tu proyecto Firebase (Firebase Console → Configuración del proyecto → Tus apps). El repositorio no incluye claves ni credenciales de prueba; usa los valores de tu propio proyecto.
    ```bash
-   cp .env.example .env.local
+   cp env.example .env.local
+   ```
+   En PowerShell:
+   ```powershell
+   Copy-Item env.example .env.local
    ```
    Variables requeridas (las seis son obligatorias):
    ```env
@@ -74,11 +78,9 @@ npm run preview
 
 ### Despliegue del backend (Firebase)
 
-El frontend lee y escribe a través de Cloud Functions, reglas de Firestore y Storage. 
-para correr la base de datos de firebase, es necesario llenar lo que pide .env.example 
+El frontend usa Cloud Functions, reglas de Firestore y Storage. Las variables de `env.example` configuran el SDK web; no crean ni despliegan la base de datos.
 
-No se puede desplegar la base de datos con una cuenta que no sea la del desarrollador del proyecto ya que
-incluye funciones de paga e informacion sensible de otros proyectos personales que llevo a cabo fuera de la capacitación. 
+Para desplegar el backend en un proyecto propio se requiere Firebase CLI, Python 3.14 (runtime de `firebase.json`), un proyecto con el plan y servicios necesarios y el secreto `GEMINI_API_KEY` configurado en Firebase. Selecciona el proyecto con `firebase use --add` (esto crea un `.firebaserc` local, ignorado por Git) y despliega con `firebase deploy`. Las credenciales de servicio no deben guardarse en el repositorio.
 
 
 ## 5. Datos de encuestas y privacidad
@@ -102,8 +104,11 @@ Es necesario iniciar sesián con las cuentas autenticadas para correr el program
 ## 7. Estructura del Repositorio
 
 ```text
-├── docs/                      # Documentación oficial (PRD v3.0 y MVP unificado)
-├── functions/                 # Backend en Cloud Functions (Python) para roles, usuarios y tareas
+├── Arquitectura/              # Diagramas y documentación de arquitectura
+├── docs/                      # PRD y especificación del MVP
+├── Evidencias/                # Capturas de evidencia (vacía hasta agregar capturas)
+├── Fichas_KPIs_Dashboard_Salud_Organizacional.md # Definiciones y fichas de KPIs
+├── functions/                 # Cloud Functions (Python): cuentas, encuestas, permisos, equipos/tareas, presencia e IA
 ├── public/                    # Archivos estáticos y logos
 ├── src/
 │   ├── assets/                # Ilustraciones y recursos gráficos
@@ -113,14 +118,43 @@ Es necesario iniciar sesián con las cuentas autenticadas para correr el program
 │   ├── pages/                 # Páginas (Dashboard, Login, MiEspacio, SurveyBuilder, SurveyRunner, TeamBoard, etc.)
 │   ├── services/              # Servicios de conexión a Firebase, Gemini IA y exportaciones
 │   └── utils/                 # Utilidades de fechas, métricas y estilos de riesgo
+├── tests/                     # Pruebas JavaScript, Python y reglas de Firestore
+├── env.example                # Plantilla de variables de entorno web
 ├── firestore.rules            # Reglas de seguridad de Firestore
+├── storage.rules              # Reglas de seguridad de Storage
 ├── package.json               # Dependencias y scripts del proyecto
 └── README.md                  # Este documento
 ```
 
 ---
 
-## 8. Stack Tecnológico
+## 8. Pruebas y evidencias
+
+Las pruebas del frontend se ejecutan con:
+```bash
+npm test
+```
+
+La prueba de Cloud Functions necesita las dependencias Python de `functions/requirements.txt`; no requiere credenciales de Firebase:
+```bash
+python -m venv .venv
+# Windows PowerShell:
+.\.venv\Scripts\Activate.ps1
+# macOS/Linux: source .venv/bin/activate
+python -m pip install -r functions/requirements.txt
+python -m unittest discover -s tests -p "test_*.py"
+```
+
+Las reglas de Firestore se prueban contra el emulador (requiere Firebase CLI y Java):
+```bash
+npm run test:rules
+```
+
+Las capturas reales de ejecución y validación pueden añadirse en `Evidencias/`; no se declaran resultados de compilación o advertencias sin una ejecución registrada.
+
+---
+
+## 9. Stack Tecnológico
 
 - **Frontend:** React 19, Vite 8, Tailwind CSS v4, Framer Motion.
 - **Gráficos e Interactividad:** Recharts, `@dnd-kit/core`, `@dnd-kit/sortable`, Medidores SVG reactivos a la medida.
@@ -130,6 +164,6 @@ Es necesario iniciar sesián con las cuentas autenticadas para correr el program
 
 ---
 
-## 9. Notas Académicas
+## 10. Notas Académicas
 
 Este repositorio forma parte de la documentación técnica y entregable de la **Memoria de Estadía Profesional** para la obtención del título de TSU en Desarrollo de Software Multiplataforma, desarrollada conforme al Manual Metodológico de la **UTSLRC**.

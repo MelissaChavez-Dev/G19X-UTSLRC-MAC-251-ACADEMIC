@@ -20,5 +20,10 @@
       ],
       "runtime": "python314"
     }
-  ]
+  ],
+  "emulators": {
+    "firestore": {
+      "port": 8080
+    }
+  }
 }

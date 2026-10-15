@@ -9,17 +9,19 @@ lerna-debug.log*
 
 # Dependencias y build
 node_modules
+.venv/
 dist
 dist-ssr
 *.local
 Credenciales-keys_DASHBOARD_EJECUTIVO_ORGANIZACIONAL
-.firebaserc
+
 # Variables de entorno y credenciales
 .env
 .env.local
 .env.*.local
 serviceAccountKey.json
 firebase-debug.log
+firestore-debug.log
 .firebase/
 
 # Editor
