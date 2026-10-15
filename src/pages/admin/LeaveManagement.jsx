@@ -140,47 +140,6 @@ function businessDaysInMonth(request, month) {
 
 
 
-function StatCard({ label, value, icon, tone, hint }) {
-  const tones = {
-    primary: {
-      shell: "border-l-4 border-l-primary",
-      icon: "bg-primary-container text-on-primary-container",
-      accent: "bg-primary",
-      eyebrow: "text-primary",
-    },
-    secondary: {
-      shell: "border-l-4 border-l-secondary",
-      icon: "bg-secondary-container text-on-secondary-container",
-      accent: "bg-secondary",
-      eyebrow: "text-secondary",
-    },
-    warning: {
-      shell: "border-l-4 border-l-tertiary",
-      icon: "bg-tertiary-container text-on-tertiary-container",
-      accent: "bg-tertiary",
-      eyebrow: "text-tertiary",
-    },
-  };
-  const style = tones[tone] || tones.primary;
-  return (
-    <article className={`rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 shadow-sm transition-shadow hover:shadow-md ${style.shell}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-label-md font-medium text-on-surface-variant">{label}</p>
-          <p className="mt-2 text-display-sm font-semibold leading-none tracking-tight text-on-surface tabular-nums">{value}</p>
-          <p className={`mt-3 text-label-sm ${style.eyebrow}`}>{hint}</p>
-        </div>
-        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${style.icon}`}>
-          <span aria-hidden="true" className="material-symbols-outlined text-[22px]">{icon}</span>
-        </span>
-      </div>
-      <div className="mt-4 h-1 overflow-hidden rounded-full bg-surface-container-high">
-        <div className={`h-full w-2/5 rounded-full ${style.accent}`} />
-      </div>
-    </article>
-  );
-}
-
 export default function LeaveManagement() {
 
   const { collapsed } = useSidebarState();
@@ -213,29 +172,7 @@ export default function LeaveManagement() {
 
 
 
-  const today = new Date().toLocaleDateString("en-CA");
-
   const pendingCount = requests.filter((request) => request.status === "pending").length;
-
-  const approvedToday = requests.filter(
-
-    (request) => request.status === "approved"
-
-      && request.startDate <= today
-
-      && request.endDate >= today
-
-  ).length;
-
-  const approvedDaysThisMonth = requests
-
-    .filter((request) => request.status === "approved")
-
-    .reduce((sum, request) => sum + businessDaysInMonth(request, {
-
-      key: today.slice(0, 7),
-
-    }), 0);
 
 
 
@@ -404,12 +341,6 @@ export default function LeaveManagement() {
               <div><p className="text-label-sm">Requieren tu atención</p><p className="text-headline-md font-bold tabular-nums">{pendingCount} <span className="text-body-sm font-medium">pendientes</span></p></div>
             </div>
           </header>
-
-          <section aria-label="Resumen de permisos" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <StatCard label="Pendientes de revisión" value={pendingCount} icon="pending_actions" tone="warning" hint={pendingCount === 1 ? "Solicitud por resolver" : "Solicitudes por resolver"} />
-            <StatCard label="Permisos activos hoy" value={approvedToday} icon="event_available" tone="secondary" hint="Colaboradores ausentes hoy" />
-            <StatCard label="Días aprobados este mes" value={approvedDaysThisMonth} icon="beach_access" tone="primary" hint="Total de días hábiles" />
-          </section>
 
           <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.85fr)_minmax(230px,0.65fr)]">
             <article className="min-w-0 rounded-2xl border border-outline-variant bg-surface-container-lowest p-5">
