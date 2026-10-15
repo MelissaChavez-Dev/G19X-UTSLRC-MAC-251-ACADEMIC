@@ -12,13 +12,16 @@ Cuenta con una **doble experiencia**:
 - **Experiencia Ejecutiva (Dirección / RH):** Tableros interactivos con KPIs en tiempo real, medidor de eNPS tipo termómetro semicircular con caras expresivas, matriz de riesgo departamental, tendencias históricas, exportación formal a PDF/Excel y un panel de asesoría estratégica impulsado por Inteligencia Artificial (Google Gemini) que convierte diagnósticos cualitativos en tareas de equipo.
 - **Experiencia Colaborativa (Empleados):** Portal de colaboradores (`/mi-espacio`), contestación ágil de encuestas segmentadas, seguimiento de tareas de bienestar en tableros Kanban (`/mis-proyectos`) y resumen transparente de presencia digital para esquemas de trabajo remoto e híbrido.
 
+Nota: el proyecto se encuentra totalmente desplegado en: https://welfare-supra.netlify.app/login
+permite hacer todas las funciones, solo inicie sesion con las credenciales que se especifican en el documento CREDENCIALES DE ACCESO.md (se entregó por privado al evaluador)
+
 ---
 
 ## 2. Requisitos Previos
 
 - **Node.js:** Versión 18.0 o superior (recomendada v20 o v24).
 - **npm:** Gestor de paquetes incluido con Node.js.
-- **Firebase:** Proyecto activo con Firebase Authentication y Cloud Firestore configurados (se refiere a las API en .env.local, estas mismas las puede encontrar en KEYS.txt, este archivo al igual que .firebaserc, se eliminarán de .gitignore al momento de entregar el proyecto para evaluación)
+- **Firebase:** Proyecto activo con Firebase Authentication y Cloud Firestore configurados (se refiere a las API en .env.local).
 - **Solo si se despliega el backend en un proyecto Firebase propio** (ver sección 4, "Despliegue del backend"): Firebase CLI, Python (la versión del runtime declarado en `firebase.json`), plan Blaze del proyecto y una clave de la API de Gemini. Si se evalúa contra el proyecto Firebase entregado, el backend ya está desplegado y este paso no es necesario.
 
 ---
@@ -37,7 +40,7 @@ Cuenta con una **doble experiencia**:
    ```
 
 3. **Configurar variables de entorno:**
-   Copia la plantilla `.env.example` como `.env.local` en la raíz del proyecto y reemplaza cada valor con la configuración de la aplicación web de tu proyecto Firebase (Firebase Console → Configuración del proyecto → Tus apps). Las claves con datos de prueba están en KEYS.txt.
+   Copia la plantilla `.env.example` como `.env.local` en la raíz del proyecto y reemplaza cada valor con la configuración de la aplicación web de tu proyecto Firebase (Firebase Console → Configuración del proyecto → Tus apps). Las claves con datos de prueba están en .
    ```bash
    cp .env.example .env.local
    ```
@@ -91,6 +94,8 @@ No se generan respuestas sintéticas ni se incluyen filtros de origen en la apli
 El sistema utiliza los roles `admin` y `employee`; no hay autorregistro abierto. Las cuentas y contraseñas se aprovisionan individualmente desde Firebase Authentication y Gestión de Usuarios. 
 
 Las cuentas `employee` responden encuestas para el departamento asignado a su perfil; la administración puede responder para un departamento seleccionado. La administración también puede revisar calidad de datos, actividad digital, permisos, equipos y reportes.
+
+Es necesario iniciar sesián con las cuentas autenticadas para correr el programa, estas se encuentran en CREDENCIALES DE ACCESO.md dentro de la carpeta privada que se le entregó al evaluador. 
 
 --- 
 
