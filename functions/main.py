@@ -108,6 +108,10 @@ def _require_auth(req: https_fn.CallableRequest):
     return req.auth
 
 
+def _is_active_record(data: dict) -> bool:
+    return data.get("active", True) is not False
+
+
 def _require_admin(req: https_fn.CallableRequest):
     auth = _require_auth(req)
     if auth.token.get("role") != "admin":
@@ -286,8 +290,9 @@ def bootstrap_admin(req: https_fn.CallableRequest) -> dict:
 def sync_admin_claim(req: https_fn.CallableRequest) -> dict:
     """Restaura el custom claim solo si el perfil privado ya asigna admin."""
     auth = _require_auth(req)
-    profile = _db().collection("users").document(auth.uid).get()
-    if not profile.exists or profile.get("role") != "admin" or profile.get("active") is False:
+    profile_snapshot = _db().collection("users").document(auth.uid).get()
+    profile = profile_snapshot.to_dict() or {}
+    if not profile_snapshot.exists or profile.get("role") != "admin" or not _is_active_record(profile):
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.PERMISSION_DENIED,
             message="Solo una cuenta admin activa puede sincronizar este rol.",
@@ -780,8 +785,9 @@ def submit_survey_response(req: https_fn.CallableRequest) -> dict:
             code=https_fn.FunctionsErrorCode.PERMISSION_DENIED,
             message="Solo puedes responder para el departamento asignado a tu cuenta.",
         )
-    department = db.collection("departments").document(department_id).get()
-    if not department.exists or department.get("active") is False:
+    department_snapshot = db.collection("departments").document(department_id).get()
+    department = department_snapshot.to_dict() or {}
+    if not department_snapshot.exists or not _is_active_record(department):
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
             message="El departamento seleccionado no está disponible.",
@@ -859,11 +865,12 @@ def submit_survey_response(req: https_fn.CallableRequest) -> dict:
 
     @admin_firestore.transactional
     def commit_response(transaction):
-        completion_refs = [completion_ref]
-        if legacy_completion_ref is not None:
-            completion_refs.append(legacy_completion_ref)
-        completion_snapshots = transaction.get_all(completion_refs)
-        if any(snapshot.exists for snapshot in completion_snapshots):
+        completion_exists = next(transaction.get(completion_ref)).exists
+        legacy_completion_exists = (
+            next(transaction.get(legacy_completion_ref)).exists
+            if legacy_completion_ref else False
+        )
+        if completion_exists or legacy_completion_exists:
             raise https_fn.HttpsError(
                 code=https_fn.FunctionsErrorCode.ALREADY_EXISTS,
                 message="Ya respondiste esta encuesta durante el periodo vigente.",

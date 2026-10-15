@@ -6,12 +6,18 @@ from functions.main import (
     CURRENT_INSTRUMENT_VERSION,
     _DEFAULT_SURVEY_QUESTIONS,
     _current_survey_cycle,
+    _is_active_record,
     _normalize_survey_answers,
     _survey_instrument_version,
 )
 
 
 class SurveySubmissionTests(unittest.TestCase):
+    def test_missing_active_flag_defaults_to_active(self):
+        self.assertTrue(_is_active_record({}))
+        self.assertTrue(_is_active_record({"active": True}))
+        self.assertFalse(_is_active_record({"active": False}))
+
     def test_validates_answers_and_normalizes_psychological_safety(self):
         questions = [
             {
