@@ -186,8 +186,8 @@ export function useMyPresence() {
 }
 
 /**
- * Ausentismo digital agregado (solo admin): días sin ningún movimiento
- * dentro del horario laboral / días laborales esperados, últimos 30 días.
+ * Indicador agregado de actividad digital registrada durante el horario,
+ * no una medición de asistencia física.
  */
 export function useAbsenceMetrics(departmentId = null, refreshKey = 0) {
   const [absence, setAbsence] = useState(null);
@@ -238,7 +238,7 @@ export function useAbsenceMetrics(departmentId = null, refreshKey = 0) {
           rate: eligibleWorkDays > 0 ? Math.round((unjustifiedDays / eligibleWorkDays) * 100) : null,
         });
       } catch (err) {
-        console.error("No se pudo calcular el ausentismo digital:", err);
+        console.error("No se pudo calcular la actividad digital no registrada:", err);
         setAbsence(null);
       } finally {
         setLoading(false);

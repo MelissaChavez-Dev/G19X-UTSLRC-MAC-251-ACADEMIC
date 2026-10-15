@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "../services/firebase";
 import { classifySentiment } from "../services/aiService";
 import { useDepartments } from "./useDepartments";
-import { filterResponsesBySource } from "../utils/responseSources";
+import { listRecentResponses } from "../services/responseService";
 
-export function useWeeklySentiment(departmentId = null, sourceMode = "all") {
+export function useWeeklySentiment(departmentId = null) {
   const [trend, setTrend] = useState(null);
   const [hotspots, setHotspots] = useState(null);
   const [comments, setComments] = useState([]);
@@ -23,17 +21,14 @@ export function useWeeklySentiment(departmentId = null, sourceMode = "all") {
       setHotspots(null);
       setComments([]);
       try {
-        const q = query(collection(db, "responses"), where("openText", "!=", ""));
-        const snapshot = await getDocs(q);
-        const withText = filterResponsesBySource(
-          snapshot.docs.map((d) => ({ id: d.id, ...d.data() })),
-          sourceMode
-        )
+        const withText = (await listRecentResponses(180, 500))
           .filter((r) => r.openText && r.openText.trim().length > 0)
           .filter((r) => !departmentId || r.departmentId === departmentId);
 
         // Limitar la muestra para no disparar prompts enormes a Gemini
-        const sample = withText.slice(-120);
+        const sample = withText
+          .sort((a, b) => (b.submittedAt?.toMillis?.() || 0) - (a.submittedAt?.toMillis?.() || 0))
+          .slice(0, 120);
 
         const comments = sample.map((r) => ({
           id: r.id,
@@ -87,7 +82,7 @@ export function useWeeklySentiment(departmentId = null, sourceMode = "all") {
       }
     }
     load();
-  }, [departmentId, sourceMode, departments, departmentsLoading]);
+  }, [departmentId, departments, departmentsLoading]);
 
   return { trend, hotspots, comments, loading, error };
 }

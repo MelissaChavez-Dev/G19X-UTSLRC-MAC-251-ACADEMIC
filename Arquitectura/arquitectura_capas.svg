@@ -3,26 +3,23 @@
 <rect width="1260" height="704" fill="#ffffff"/>
 <rect x="56" y="24" width="954" height="100" rx="14" fill="#EEF3EA" stroke="#6E8763" stroke-width="1.5"/>
 <text x="72" y="44" font-size="12" font-weight="700" fill="#6E8763" letter-spacing="0.6">1 · FUENTES DE DATOS</text>
-<rect x="72.0" y="56" width="174.8" height="56" rx="9" fill="#fff" stroke="#6E8763" stroke-opacity="0.55"/>
-<text x="159.4" y="79" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">Encuesta de bienestar</text>
-<text x="159.4" y="97" font-size="11" fill="#555" text-anchor="middle">SurveyRunner</text>
-<rect x="258.8" y="56" width="174.8" height="56" rx="9" fill="#fff" stroke="#6E8763" stroke-opacity="0.55"/>
-<text x="346.2" y="79" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">Actividad del colaborador</text>
-<text x="346.2" y="97" font-size="11" fill="#555" text-anchor="middle">login · navegación · Kanban</text>
-<rect x="445.6" y="56" width="174.8" height="56" rx="9" fill="#fff" stroke="#6E8763" stroke-opacity="0.55"/>
-<text x="533.0" y="79" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">Altas y bajas de cuentas</text>
-<text x="533.0" y="97" font-size="11" fill="#555" text-anchor="middle">Gestión de usuarios</text>
-<rect x="632.4" y="56" width="174.8" height="56" rx="9" fill="#fff" stroke="#6E8763" stroke-opacity="0.55"/>
-<text x="719.8" y="79" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">Tareas de equipos</text>
-<text x="719.8" y="97" font-size="11" fill="#555" text-anchor="middle">tablero Kanban</text>
-<rect x="819.2" y="56" width="174.8" height="56" rx="9" fill="#fff" stroke="#6E8763" stroke-opacity="0.55"/>
-<text x="906.6" y="79" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">Datos simulados</text>
-<text x="906.6" y="97" font-size="11" fill="#555" text-anchor="middle">scripts/seed.js</text>
+<rect x="72.0" y="56" width="221.5" height="56" rx="9" fill="#fff" stroke="#6E8763" stroke-opacity="0.55"/>
+<text x="182.8" y="79" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">Encuesta de bienestar</text>
+<text x="182.8" y="97" font-size="11" fill="#555" text-anchor="middle">SurveyRunner · autenticada</text>
+<rect x="305.5" y="56" width="221.5" height="56" rx="9" fill="#fff" stroke="#6E8763" stroke-opacity="0.55"/>
+<text x="416.2" y="79" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">Actividad del colaborador</text>
+<text x="416.2" y="97" font-size="11" fill="#555" text-anchor="middle">login · navegación · Kanban</text>
+<rect x="539.0" y="56" width="221.5" height="56" rx="9" fill="#fff" stroke="#6E8763" stroke-opacity="0.55"/>
+<text x="649.8" y="79" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">Altas y bajas de cuentas</text>
+<text x="649.8" y="97" font-size="11" fill="#555" text-anchor="middle">Gestión de usuarios</text>
+<rect x="772.5" y="56" width="221.5" height="56" rx="9" fill="#fff" stroke="#6E8763" stroke-opacity="0.55"/>
+<text x="883.2" y="79" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">Tareas de equipos</text>
+<text x="883.2" y="97" font-size="11" fill="#555" text-anchor="middle">tablero Kanban</text>
 <rect x="56" y="164" width="954" height="100" rx="14" fill="#EAF0F8" stroke="#5B7FA6" stroke-width="1.5"/>
 <text x="72" y="184" font-size="12" font-weight="700" fill="#5B7FA6" letter-spacing="0.6">2 · INGESTA Y TRANSFORMACIÓN</text>
 <rect x="72.0" y="196" width="221.5" height="56" rx="9" fill="#fff" stroke="#5B7FA6" stroke-opacity="0.55"/>
-<text x="182.8" y="219" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">submitSurveyResponse</text>
-<text x="182.8" y="237" font-size="11" fill="#555" text-anchor="middle">normaliza al esquema responses</text>
+<text x="182.8" y="219" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">submit_survey_response</text>
+<text x="182.8" y="237" font-size="11" fill="#555" text-anchor="middle">valida y deduplica en servidor</text>
 <rect x="305.5" y="196" width="221.5" height="56" rx="9" fill="#fff" stroke="#5B7FA6" stroke-opacity="0.55"/>
 <text x="416.2" y="219" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">logActivity</text>
 <text x="416.2" y="237" font-size="11" fill="#555" text-anchor="middle">registro no invasivo</text>
@@ -36,7 +33,7 @@
 <text x="72" y="324" font-size="12" font-weight="700" fill="#7C6AA8" letter-spacing="0.6">3 · ALMACÉN · CLOUD FIRESTORE</text>
 <rect x="72.0" y="336" width="143.7" height="56" rx="9" fill="#fff" stroke="#7C6AA8" stroke-opacity="0.55"/>
 <text x="143.8" y="359" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">responses</text>
-<text x="143.8" y="377" font-size="11" fill="#555" text-anchor="middle">respuestas anónimas</text>
+<text x="143.8" y="377" font-size="11" fill="#555" text-anchor="middle">respuestas sin UID</text>
 <rect x="227.7" y="336" width="143.7" height="56" rx="9" fill="#fff" stroke="#7C6AA8" stroke-opacity="0.55"/>
 <text x="299.5" y="359" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">activityLogs</text>
 <text x="299.5" y="377" font-size="11" fill="#555" text-anchor="middle">eventos por persona</text>
@@ -58,13 +55,13 @@
 <text x="143.8" y="499" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">Pulso y heatmap</text>
 <text x="143.8" y="517" font-size="11" fill="#555" text-anchor="middle">KPIs de encuesta</text>
 <rect x="227.7" y="476" width="143.7" height="56" rx="9" fill="#fff" stroke="#C58A4A" stroke-opacity="0.55"/>
-<text x="299.5" y="499" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">Ausentismo digital</text>
-<text x="299.5" y="517" font-size="11" fill="#555" text-anchor="middle">días sin actividad</text>
+<text x="299.5" y="499" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">Actividad digital</text>
+<text x="299.5" y="517" font-size="11" fill="#555" text-anchor="middle">proxy de jornadas sin registro</text>
 <rect x="383.3" y="476" width="143.7" height="56" rx="9" fill="#fff" stroke="#C58A4A" stroke-opacity="0.55"/>
 <text x="455.2" y="499" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">Rotación</text>
 <text x="455.2" y="517" font-size="11" fill="#555" text-anchor="middle">bajas sobre plantilla</text>
 <rect x="539.0" y="476" width="143.7" height="56" rx="9" fill="#fff" stroke="#C58A4A" stroke-opacity="0.55"/>
-<text x="610.8" y="499" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">Desempeño operativo</text>
+<text x="610.8" y="499" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">Ejecución Kanban</text>
 <text x="610.8" y="517" font-size="11" fill="#555" text-anchor="middle">tareas al corriente</text>
 <rect x="694.7" y="476" width="143.7" height="56" rx="9" fill="#fff" stroke="#C58A4A" stroke-opacity="0.55"/>
 <text x="766.5" y="499" font-size="12.5" font-weight="700" fill="#222" text-anchor="middle">Sentimiento</text>

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../services/firebase";
 import { useHeadcount } from "./useHeadcount";
 import { averageNumeric, computeWeeklyParticipation, toFiniteNumber, workPressureIndex } from "../utils/metricUtils";
-import { filterResponsesBySource } from "../utils/responseSources";
+import { listRecentResponses } from "../services/responseService";
+import { MIN_SAMPLE } from "../data/kpiThresholds";
+import { CURRENT_INSTRUMENT_VERSION } from "../data/surveyTemplate";
 
 function daysAgo(n) {
   const d = new Date();
@@ -13,24 +13,49 @@ function daysAgo(n) {
 
 function computeMetrics(responses, headcount) {
   if (responses.length === 0) {
-    return { enps: 0, attritionRisk: null, activePulseRate: 0, avgPerWeek: 0, psychSafety: null, sampleSize: 0 };
+    return {
+      enps: 0,
+      attritionRisk: null,
+      activePulseRate: 0,
+      avgPerWeek: 0,
+      psychSafety: null,
+      sampleSize: 0,
+      psychosocialSampleSize: 0,
+    };
   }
 
   const promoters = responses.filter((r) => (toFiniteNumber(r.enps) ?? -Infinity) >= 9).length;
   const detractors = responses.filter((r) => (toFiniteNumber(r.enps) ?? Infinity) <= 6).length;
   const enps = Math.round(((promoters - detractors) / responses.length) * 100);
 
-  const attritionRisk = workPressureIndex(responses);
+  const measuredResponses = responses.filter(
+    (response) => response.instrumentVersion === CURRENT_INSTRUMENT_VERSION
+  );
+  const hasPsychosocialSample = measuredResponses.length >= MIN_SAMPLE.responses;
+  const attritionRisk = hasPsychosocialSample ? workPressureIndex(measuredResponses) : null;
 
   const { rate: activePulseRate, avgPerWeek } = computeWeeklyParticipation(responses, headcount);
 
-  const psychSafetyAvg = averageNumeric(responses.map((r) => r.psychosocialFactors?.psychSafety));
+  const psychSafetyValues = measuredResponses
+    .map((response) => toFiniteNumber(response.psychosocialFactors?.psychSafety))
+    .filter((value) => value !== null);
+  const psychSafetyAvg = psychSafetyValues.length >= MIN_SAMPLE.responses
+    ? averageNumeric(psychSafetyValues)
+    : null;
   const psychSafety = psychSafetyAvg === null ? null : Math.round(psychSafetyAvg * 10) / 10;
 
-  return { enps, attritionRisk, activePulseRate, avgPerWeek, psychSafety, sampleSize: responses.length };
+  return {
+    enps,
+    attritionRisk,
+    activePulseRate,
+    avgPerWeek,
+    psychSafety,
+    sampleSize: responses.length,
+    psychosocialSampleSize: measuredResponses.length,
+  };
 }
 
-export function useOrgHealthMetrics(departmentId = null, sourceMode = "all") {
+export function useOrgHealthMetrics(departmentId = null) {
   const [metrics, setMetrics] = useState(null);
   const [previousMetrics, setPreviousMetrics] = useState(null);
   const [periodLabel, setPeriodLabel] = useState("Últimos 30 días");
@@ -42,8 +67,7 @@ export function useOrgHealthMetrics(departmentId = null, sourceMode = "all") {
     async function load() {
       setLoading(true);
       try {
-        const snapshot = await getDocs(collection(db, "responses"));
-        const all = filterResponsesBySource(snapshot.docs.map((d) => d.data()), sourceMode)
+        const all = (await listRecentResponses(60))
           .filter((r) => !departmentId || r.departmentId === departmentId);
 
         const headcount = departmentId ? forDepartment(departmentId) : totalHeadcount;
@@ -58,7 +82,7 @@ export function useOrgHealthMetrics(departmentId = null, sourceMode = "all") {
 
         const useHistorical = current.length === 0 && all.length > 0;
         setMetrics(computeMetrics(useHistorical ? all : current, headcount));
-        setPeriodLabel(useHistorical ? "Histórico" : "Últimos 30 días");
+        setPeriodLabel(useHistorical ? "Muestra disponible (60 días)" : "Últimos 30 días");
         setPreviousMetrics(
           current.length > 0 && previous.length > 0
             ? computeMetrics(previous, headcount)
@@ -72,7 +96,7 @@ export function useOrgHealthMetrics(departmentId = null, sourceMode = "all") {
       }
     }
     load();
-  }, [departmentId, sourceMode, totalHeadcount, forDepartment]);
+  }, [departmentId, totalHeadcount, forDepartment]);
 
   return {
     metrics,

@@ -1,5 +1,6 @@
 export const SURVEY_TEMPLATE_STATUSES = ["draft", "published"];
 export const SURVEY_QUESTION_TYPES = ["scale", "choice", "text"];
+export const CURRENT_INSTRUMENT_VERSION = 2;
 
 export const RESPONSE_FIELD_PATHS = [
   "enps",

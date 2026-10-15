@@ -25,10 +25,10 @@ const DEFAULT_WORK_DAYS = ["mon", "tue", "wed", "thu", "fri"];
 const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
 const STATUS_CONFIG = {
-  present: { label: "Presente", color: "bg-success-container text-on-success-container" },
+  present: { label: "Actividad registrada", color: "bg-success-container text-on-success-container" },
   justified_absence: { label: "Permiso justificado", color: "bg-secondary-container text-on-secondary-container" },
-  unjustified_absence: { label: "Ausencia injustificada", color: "bg-error-container text-on-error-container" },
-  in_progress: { label: "Jornada en curso", color: "bg-warning-container text-on-warning-container" },
+  unjustified_absence: { label: "Sin actividad digital", color: "bg-error-container text-on-error-container" },
+  in_progress: { label: "Horario en curso", color: "bg-warning-container text-on-warning-container" },
   no_record: { label: "Sin registro", color: "bg-surface-container text-on-surface-variant" },
 };
 
@@ -151,7 +151,7 @@ export default function Attendance() {
               </span>
               <h1 className="mt-space-sm text-headline-xl text-on-surface">Asistencia</h1>
               <p className="mt-1 text-body-sm text-on-surface-variant">
-                La presencia se calcula con la actividad dentro del horario configurado; no registra checadas ni horas exactas.
+                Proxy de actividad en la plataforma durante el horario configurado; no mide asistencia física, horas trabajadas ni productividad.
               </p>
             </div>
             <label className="flex flex-col gap-space-xs text-label-sm text-on-surface-variant">
@@ -167,15 +167,15 @@ export default function Attendance() {
           </header>
 
           <div className="grid grid-cols-1 gap-space-md sm:grid-cols-3">
-            <StatCard icon="person_check" label="Presentes" value={daySummary.present} tone="success" />
+            <StatCard icon="person_check" label="Con actividad registrada" value={daySummary.present} tone="success" />
             <StatCard icon="event_available" label="Permisos justificados" value={daySummary.justified} tone="secondary" />
-            <StatCard icon="person_off" label="Ausencias injustificadas" value={daySummary.unjustified} tone="error" />
+            <StatCard icon="person_off" label="Sin actividad digital" value={daySummary.unjustified} tone="error" />
           </div>
 
           <section className="flex flex-col gap-space-sm rounded-2xl bg-surface-container-lowest p-space-lg">
             <div>
-              <h2 className="text-headline-sm text-on-surface">Resumen de asistencia por mes</h2>
-              <p className="text-body-sm text-on-surface-variant">Últimos seis meses · los permisos aprobados se separan de las ausencias injustificadas.</p>
+              <h2 className="text-headline-sm text-on-surface">Actividad digital por mes</h2>
+              <p className="text-body-sm text-on-surface-variant">Últimos seis meses · las jornadas sin actividad se separan de los permisos aprobados.</p>
             </div>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -184,9 +184,9 @@ export default function Attendance() {
                   <XAxis dataKey="month" tick={{ fill: "var(--on-surface-variant)", fontSize: 12 }} />
                   <YAxis allowDecimals={false} tick={{ fill: "var(--on-surface-variant)", fontSize: 12 }} />
                   <Tooltip />
-                  <Bar dataKey="present" name="Presente" stackId="attendance" fill="var(--success)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="present" name="Actividad registrada" stackId="attendance" fill="var(--success)" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="justified" name="Permiso justificado" stackId="attendance" fill="var(--secondary)" />
-                  <Bar dataKey="unjustified" name="Ausencia injustificada" stackId="attendance" fill="var(--error)" />
+                  <Bar dataKey="unjustified" name="Sin actividad digital" stackId="attendance" fill="var(--error)" />
                 </BarChart>
               </ResponsiveContainer>
             </div>

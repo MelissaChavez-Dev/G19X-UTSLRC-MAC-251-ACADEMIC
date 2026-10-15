@@ -44,7 +44,7 @@ export function buildDashboardAlerts({
       "org-pressure",
       "Presión laboral",
       `${metrics.attritionRisk ?? "—"}/100`,
-      getKpiLevelForSample("workPressure", metrics.attritionRisk, metrics.sampleSize)
+      getKpiLevelForSample("workPressure", metrics.attritionRisk, metrics.psychosocialSampleSize)
     );
 
     const participationLevel = getKpiLevelForSample(
@@ -67,7 +67,7 @@ export function buildDashboardAlerts({
       "org-safety",
       "Seguridad psicológica",
       `${metrics.psychSafety ?? "—"}/5`,
-      getKpiLevelForSample("psychSafety", metrics.psychSafety, metrics.sampleSize)
+      getKpiLevelForSample("psychSafety", metrics.psychSafety, metrics.psychosocialSampleSize)
     );
 
     if (
@@ -82,7 +82,7 @@ export function buildDashboardAlerts({
       });
     }
     if (
-      previousMetrics?.sampleSize >= MIN_SAMPLE.responses
+      previousMetrics?.psychosocialSampleSize >= MIN_SAMPLE.responses
       && Number.isFinite(metrics.attritionRisk)
       && Number.isFinite(previousMetrics.attritionRisk)
       && metrics.attritionRisk - previousMetrics.attritionRisk >= ALERT_RULES.workPressureRise
@@ -99,7 +99,7 @@ export function buildDashboardAlerts({
   departmentRows.forEach((row) => {
     if (row.sampleSize < MIN_SAMPLE.responses || row.headcount < MIN_SAMPLE.headcount) return;
     const departmentName = row.name || row.id;
-    const riskLevel = getKpiLevelForSample("psychosocialRisk", row.avgRisk, row.sampleSize);
+    const riskLevel = getKpiLevelForSample("psychosocialRisk", row.avgRisk, row.psychosocialSampleSize);
     addLevelAlert(
       `department-risk-${row.id}`,
       `${departmentName} · Riesgo psicosocial`,
@@ -116,7 +116,7 @@ export function buildDashboardAlerts({
       `department-pressure-${row.id}`,
       `${departmentName} · Presión laboral`,
       `${row.attritionRisk ?? "—"}/100`,
-      getKpiLevelForSample("workPressure", row.attritionRisk, row.sampleSize)
+      getKpiLevelForSample("workPressure", row.attritionRisk, row.psychosocialSampleSize)
     );
     addLevelAlert(
       `department-participation-${row.id}`,
@@ -128,14 +128,14 @@ export function buildDashboardAlerts({
       `department-safety-${row.id}`,
       `${departmentName} · Seguridad psicológica`,
       `${row.factors?.psychSafety ?? "—"}/5`,
-      getKpiLevelForSample("psychSafety", row.factors?.psychSafety, row.sampleSize)
+      getKpiLevelForSample("psychSafety", row.factors?.psychSafety, row.psychosocialSampleSize)
     );
   });
 
   if (absence?.workDays > 0 && headcount >= MIN_SAMPLE.headcount) {
     addLevelAlert(
       "digital-absence",
-      "Ausentismo digital",
+      "Actividad digital no registrada",
       `${absence.rate}%`,
       getKpiLevelForSample("digitalAbsence", absence.rate, absence.workDays, 1)
     );

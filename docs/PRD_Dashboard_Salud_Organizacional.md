@@ -15,7 +15,7 @@
 La organización participante carecía de un mecanismo centralizado y automatizado para evaluar, diagnosticar y dar seguimiento a la salud organizacional de su talento humano. Los indicadores de bienestar, ausentismo, rotación, carga laboral, desempeño y clima organizacional se encontraban dispersos o se gestionaban de manera manual y reactiva.
 
 Este **Product Requirement Document (PRD)** define las especificaciones integrales de la **Plataforma de Salud y Bienestar Organizacional**, una solución web completa que unifica dos experiencias:
-1. **Experiencia Ejecutiva (Dirección / RH):** Tableros de control con KPIs calculados en tiempo real, matriz de riesgo psicosocial (alineada con factores tipo ISO 45003), tendencias históricas, alertas tempranas, exportación ejecutiva (PDF/Excel) y un panel de asesoría estratégica impulsado por Inteligencia Artificial (Gemini) que convierte hallazgos diagnósticos en tareas operativas.
+1. **Experiencia Ejecutiva (Dirección / RH):** Tableros de control con KPIs calculados en tiempo real, matriz orientativa de factores psicosociales inspirados en ISO 45003 (sin afirmar conformidad), tendencias de encuesta, alertas tempranas, exportación ejecutiva (PDF/Excel) y un panel de asesoría estratégica impulsado por Inteligencia Artificial (Gemini) que convierte hallazgos en tareas operativas.
 2. **Experiencia Colaborativa (Empleados):** Portal personal (`/mi-espacio`), contestación de encuestas segmentadas por departamento, tableros Kanban interactivos para seguimiento de proyectos y visibilidad transparente de presencia digital para esquemas de trabajo híbridos o remotos.
 
 ---
@@ -60,7 +60,7 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
 2. **Control de roles:** El sistema utiliza `admin`, `team_lead` y `employee`, con rutas protegidas según cada rol.
 3. **Redirección condicional (`RoleBasedRedirect`):** Según el rol asignado, el sistema conduce al administrador a `/dashboard`, al líder a `/mi-equipo` y al empleado a `/mi-espacio`.
 
-**Entorno de pruebas actual:** Las cuentas existentes son cuentas de prueba personales de la propietaria, no cuentas de empleados reales. Sus contraseñas se establecieron en `12345678` para pruebas exclusivamente. Esta contraseña no es apropiada para producción y debe cambiarse antes de cualquier despliegue público.
+Las cuentas se aprovisionan individualmente mediante Firebase Authentication y Gestión de Usuarios. El repositorio no documenta contraseñas ni cuentas compartidas.
 
 ---
 
@@ -83,8 +83,10 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
 - **Firebase Storage `profile-photos/{uid}/avatar`**: Foto del perfil, con escritura limitada a su propietario, formatos JPG/PNG/WebP y máximo de 5 MB.
 - **`teams/{teamId}/tasks/{taskId}`**: Tarjetas de trabajo del Kanban (`title`, `description`, `status`, `origin: "ai_recommendation" | "manual"`, `sourceMetric`, `assignedTo`, `createdAt`, `updatedAt`).
 - **`surveyTemplates/{templateId}`**: Plantillas creadas (`title`, `status`, `targetDepartments`, `cycle`, `questions[]`).
-- **`responses/{responseId}`**: Respuestas individuales procesadas (`enps`, `factors`, `openComments`, `departmentId`, `submittedAt`).
-- **`surveyCompletions/{completionId}`**: Registro de control para evitar duplicidad de respuestas por ciclo y colaborador.
+- **`responses/{responseId}`**: Respuestas desidentificadas validadas por Cloud Function (`enps`, factores medidos, comentario abierto, `departmentId`, `weekId`, `submittedAt`, `source`, `instrumentVersion`), sin UID del colaborador.
+- **`surveyCompletions/{completionId}`**: Control de unicidad transaccional por ciclo y colaborador, legible solo por su propietario y sin hora de completado; no se entrega a administración mediante las reglas del cliente.
+
+Las respuestas solo pueden crearse mediante `submit_survey_response`; las reglas bloquean escritura directa, y restringen su lectura a administración. El documento analítico no almacena UID. Las respuestas libres deben evitar nombres y otros datos personales.
 - **`activityLogs/{logId}`**: Registro no invasivo de presencia digital (`userId`, `type`, `timestamp`).
 - **`departments/{deptId}`**: Catálogo de áreas organizacionales y headcounts asignados.
 
@@ -99,12 +101,12 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
   - 4 rangos semánticos con glifos expresivos de estados de ánimo: *Bajo* (≤ −11, triste), *Bueno* (−10 a 19, neutro), *Muy bueno* (20 a 39, sonriente), y *Excelente* (≥ 40, alegre).
   - Indicación numérica central limpia y comparativo de variación delta frente al periodo anterior.
 - **RF-D02: Métricas de Pulso Complementarias:**
-  - *Índice de presión laboral:* Evaluación sobre 100 puntos de carga y fricción operativa.
+  - *Índice de presión laboral:* Proxy orientativo sobre 100 puntos construido con preguntas directas de fatiga de turno y carga emocional; no predice renuncia.
   - *Participación en pulsos:* Porcentaje semanal y promedio de respuestas sobre el headcount real.
   - *Seguridad psicológica:* Promedio sobre 5.0 puntos de libertad de expresión y confianza en el entorno.
   - Modal de análisis micro con Gemini al interactuar con cualquier tarjeta.
 - **RF-D03: Matriz de Riesgo Psicosocial (`RiskHeatmap`):**
-  - Malla bidimensional Departamentos × Factores con código de color semántico (Riesgo Bajo, Moderado, Alto, Crítico).
+  - Malla Departamentos × Factores con código de color semántico. Sus dimensiones están inspiradas en ISO 45003; no representa una certificación ni una evaluación de conformidad.
   - Alertas tempranas de todos los KPIs en la campana del TopBar.
 - **RF-D04: Tendencias Históricas y Focos de Fricción:**
   - Gráfica de evolución semanal de bienestar y listado de focos urgentes de atención.
@@ -114,26 +116,26 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
   - Botón integrado **"Convertir en tarea"** para derivar recomendaciones de IA a los tableros de equipo.
   - Modo minimizable/expandible con control condicional y soporte visual adaptativo: despliegue de ilustración conceptual (`ilust3.png`) en modo minimizado, e ilustración decorativa (`ilust4.png`) debajo de la matriz de riesgo únicamente cuando existe análisis generado y el panel se encuentra expandido.
 - **RF-D06: Bloque Operativo:**
-  - Métricas de ausentismo digital, rotación real a 90 días y ejecución de tareas Kanban (tareas al corriente, cumplimiento y puntualidad), con filtro departamental y apoyo visual (`ilust 2.png`).
+  - Proxies de actividad digital registrada, rotación de bajas de plataforma a 90 días y ejecución de tareas Kanban (tareas al corriente, cumplimiento y puntualidad), con filtro departamental y apoyo visual (`ilust 2.png`). No miden asistencia física ni desempeño individual.
 - **RF-D07: Filtros y Exportaciones:**
-  - Filtro global por departamento y origen de respuestas (todas, reales o sintéticas).
+  - Filtro global por departamento.
   - Botones de exportación a PDF (informe formal de alta dirección) y Excel (archivo multipestaña con respuestas anonimizadas, matriz y KPIs con sus niveles).
 - **RF-D08: Calidad de Datos (`/admin/calidad`):**
   - Módulo administrativo de solo lectura con puntaje ponderado y verificaciones de completitud, rangos, muestra mínima por departamento, posibles duplicados y frescura de respuestas.
-  - Filtro para evaluar todas las respuestas, solo las reales o solo las simuladas; muestra también la composición por origen y el estado de las fuentes operativas de ausentismo y rotación.
+  - Evalúa hasta 5,000 respuestas recientes de los últimos 12 meses y muestra el estado de las fuentes operativas de actividad digital y rotación.
   - Explica los hallazgos y cómo corregirlos; no modifica ni elimina respuestas.
 - **RF-D09: Asistencia (`/admin/asistencia`):**
-  - Resumen por fecha y departamento con presentes, permisos aprobados, ausencias injustificadas y tendencia de seis meses.
-  - La asistencia reutiliza la actividad digital (`activityLogs`) contrastada contra el horario; actualiza presencia en tiempo real y la concilia diariamente.
-  - No registra checadas ni horas exactas; excluye feriados federales mexicanos y permisos aprobados del porcentaje de ausentismo injustificado.
+  - Resumen por fecha y departamento de actividad digital registrada y jornadas sin actividad cubiertas por permisos aprobados.
+  - Este proxy reutiliza actividad de la aplicación (`activityLogs`) contrastada contra el horario; actualiza el resumen en tiempo real y lo concilia diariamente.
+  - No mide asistencia física, horas trabajadas ni productividad; excluye feriados federales mexicanos y permisos aprobados del porcentaje de jornadas sin actividad digital.
 - **RF-D10: Gestión de Permisos (`/admin/permisos`):**
   - Permite a administración revisar, aprobar o rechazar solicitudes de vacaciones, incapacidad y otros permisos.
   - Muestra calendario y días aprobados por tipo; solo una solicitud aprobada justifica la ausencia.
 
 ### 6.2 Motor de Encuestas (`SurveyBuilder` y `SurveyRunner`)
 - **RF-E01: Constructor de Encuestas (`SurveyBuilder`):** Creación visual de encuestas con biblioteca de preguntas (Likert 1-5, eNPS 0-10, opción múltiple y texto abierto) con reordenamiento arrastrable (`@dnd-kit`) y configuración de departamentos destino.
-- **RF-E02: Ejecutor de Encuestas (`SurveyRunner` / `WellnessSurvey`):** Interfaz enfocada (paso a paso), responsiva, con progreso visual, guardado en tiempo real en Firestore y validación de respuesta única por periodo.
-- **RF-E03: Datos de prueba:** La aplicación no realiza carga automática de respuestas de muestra. La propietaria ingresa manualmente las respuestas y datos de prueba en Firebase.
+- **RF-E02: Ejecutor de Encuestas (`SurveyRunner` / `WellnessSurvey`):** Interfaz enfocada (paso a paso), responsiva y con progreso visual. Requiere autenticación; la Cloud Function valida esquema, rol, departamento, plantilla y ciclo y registra atómicamente una respuesta desidentificada y el control de unicidad.
+- **RF-E03: Datos operativos:** No se generan respuestas sintéticas. Las respuestas analíticas se capturan mediante la aplicación; las pruebas unitarias usan datos aislados y no escriben en Firestore.
 
 ### 6.3 Espacio Colaborativo y Tableros Kanban (`/mi-espacio` y `/mis-proyectos`)
 - **RF-C01: Mi Espacio:** Vista del empleado que reúne encuestas pendientes, actividad y proyectos; incluye saldo e historial de permisos, formulario para solicitar/cancelar permisos pendientes y edición propia de nombre, teléfono y foto.
@@ -141,9 +143,9 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
 - **RF-C03: Directorio de Equipos (`TeamDirectory`):** Módulo administrativo con tarjetas de equipos, integrantes destacados con badges tonales aqua y generación de códigos de invitación.
 - **RF-C04: Perfil laboral:** Administración asigna identificador de empleado, puesto, tipo de contratación y fecha de ingreso; el colaborador no puede editar estos datos organizacionales.
 
-### 6.4 Presencia Digital y Ausentismo Remoto
+### 6.4 Presencia Digital (proxy)
 - **RF-P01: Registro No Invasivo:** Captura throttled de eventos relevantes de actividad (login, navegación, envío de encuestas, movimientos en Kanban).
-- **RF-P02: Monitoreo Ético:** La actividad se contrasta con el horario asignado. Feriados y permisos aprobados se excluyen de ausencias injustificadas; el tablero identifica permisos justificados y ausencias injustificadas por separado.
+- **RF-P02: Monitoreo Ético:** La actividad se contrasta con el horario asignado. Es un proxy de uso de la aplicación, no una medición de asistencia física, horas trabajadas o productividad. Feriados y permisos aprobados se excluyen de jornadas sin actividad digital.
 
 ---
 

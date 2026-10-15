@@ -2,10 +2,8 @@
 // Verificaciones de calidad sobre las respuestas guardadas en "responses".
 // Son funciones puras: reciben las respuestas y devuelven resultados; no leen ni escriben en Firestore.
 import { LEVELS, MIN_SAMPLE } from "./kpiThresholds";
+import { CURRENT_INSTRUMENT_VERSION } from "./surveyTemplate";
 import { toFiniteNumber } from "../utils/metricUtils";
-import { filterResponsesBySource, getResponseSource } from "../utils/responseSources";
-
-export { getResponseSource };
 
 // Pesos del puntaje (suman 100). Las verificaciones informativas pesan 0.
 export const QUALITY_WEIGHTS = { completeness: 25, ranges: 25, minSample: 20, duplicates: 15, freshness: 15 };
@@ -46,7 +44,7 @@ export const CHECK_DOCS = {
   duplicates: {
     title: "Posibles duplicados",
     what: "Respuestas idénticas del mismo departamento enviadas con menos de un minuto de diferencia.",
-    why: "Suelen ser envíos dobles. Como las respuestas son anónimas no se sabe quién las envió, por eso se muestran como posibles duplicados y no como errores confirmados.",
+    why: "Suelen ser envíos dobles. El documento analítico no tiene UID, así que se muestran como posibles duplicados y no como errores confirmados.",
     fix: "Revisa los ejemplos en Firestore y elimina la copia si confirmas que es un envío doble.",
   },
   freshness: {
@@ -57,15 +55,15 @@ export const CHECK_DOCS = {
   },
   instrument: {
     title: "Instrumento de captura",
-    what: "Qué porcentaje de las respuestas reales conserva la plantilla con la que se contestaron.",
-    why: "Sin plantilla asociada no se sabe con qué instrumento se capturó la respuesta; puede haberse usado la encuesta por defecto por un error al cargar la plantilla publicada.",
-    fix: "Revisa que la plantilla publicada pase la validación del Constructor y vuelve a publicarla si hace falta.",
+    what: "Qué porcentaje de respuestas usa la versión actual del instrumento con preguntas directas por factor.",
+    why: "Respuestas de versiones anteriores pueden contener factores inferidos a partir de otras preguntas y no deben alimentar el heatmap como mediciones directas.",
+    fix: "Las respuestas nuevas se etiquetan automáticamente con la versión actual del instrumento.",
   },
   sources: {
     title: "Cobertura de fuentes operativas",
-    what: "Si la presencia digital y las bajas tienen datos suficientes para calcular ausentismo y rotación.",
-    why: "Ausentismo y rotación salen de otras colecciones; sin registros sus tarjetas muestran 0% o Sin datos.",
-    fix: `El ausentismo se calcula cada noche con la actividad de los colaboradores; la rotación necesita al menos ${MIN_SAMPLE.headcount} colaboradores activos.`,
+    what: "Si la presencia digital y las bajas tienen datos suficientes para estimar actividad digital y rotación.",
+    why: "Ambos indicadores son proxies operativos derivados de otras colecciones; sin registros sus tarjetas muestran Sin datos.",
+    fix: `La actividad digital se resume cada noche; la rotación necesita al menos ${MIN_SAMPLE.headcount} colaboradores activos.`,
   },
 };
 
@@ -75,16 +73,6 @@ export function qualityLevel(score) {
   if (score >= QUALITY_LEVEL_FROM.controlled) return LEVELS.controlled;
   if (score >= QUALITY_LEVEL_FROM.elevated) return LEVELS.elevated;
   return LEVELS.critical;
-}
-
-export const filterBySource = filterResponsesBySource;
-
-export function compositionOf(responses) {
-  const composition = { live: 0, simulated: 0, unknown: 0, total: responses.length };
-  responses.forEach((response) => {
-    composition[getResponseSource(response)] += 1;
-  });
-  return composition;
 }
 
 function millisOf(value) {
@@ -298,25 +286,21 @@ function checkFreshness(responses, now) {
 }
 
 function checkInstrument(responses) {
-  const live = responses.filter((response) => getResponseSource(response) === "live");
-  if (live.length === 0) {
-    return makeCheck("instrument", {
-      score: null,
-      status: "info",
-      summary: "Aún no hay respuestas reales; las simuladas no usan plantilla.",
-    });
-  }
-
-  const withoutTemplate = live.filter((response) => !response.templateId);
-  const ratio = 1 - withoutTemplate.length / live.length;
+  const currentInstrumentResponses = responses.filter(
+    (response) => response.instrumentVersion === CURRENT_INSTRUMENT_VERSION
+  );
+  const legacyResponses = responses.filter(
+    (response) => response.instrumentVersion !== CURRENT_INSTRUMENT_VERSION
+  );
+  const ratio = currentInstrumentResponses.length / responses.length;
   return makeCheck("instrument", {
     score: ratio,
     status: ratio >= 0.95 ? "ok" : "warn",
-    summary: `${live.length - withoutTemplate.length} de ${live.length} respuestas reales tienen plantilla asociada.`,
-    details: withoutTemplate.length > 0
-      ? [`${withoutTemplate.length} respuestas reales sin plantilla (posible uso de la encuesta por defecto).`]
+    summary: `${currentInstrumentResponses.length} de ${responses.length} respuestas usan el instrumento con factores directos.`,
+    details: legacyResponses.length > 0
+      ? [`${legacyResponses.length} respuestas anteriores al instrumento actual se excluyen de las métricas psicosociales.`]
       : [],
-    examples: withoutTemplate,
+    examples: legacyResponses,
   });
 }
 
@@ -334,7 +318,7 @@ function checkSources(sources) {
   return makeCheck("sources", {
     score: allOk ? 1 : 0.5,
     status: allOk ? "ok" : "warn",
-    summary: allOk ? "Ausentismo y rotación tienen datos suficientes." : "Alguna fuente operativa no tiene datos suficientes.",
+    summary: allOk ? "Actividad digital y rotación tienen datos suficientes." : "Alguna fuente operativa no tiene datos suficientes.",
     details,
   });
 }
@@ -344,9 +328,8 @@ function checkSources(sources) {
  * @param {Object} options departments (activos), knownDepartments (todos), sources ({ absenceWorkDays, turnoverHeadcount }), now
  */
 export function runQualityChecks(responses, { departments = [], knownDepartments = departments, sources = null, now = Date.now() } = {}) {
-  const composition = compositionOf(responses);
   if (responses.length === 0) {
-    return { total: 0, composition, score: null, level: LEVELS.noData, checks: [] };
+    return { total: 0, score: null, level: LEVELS.noData, checks: [] };
   }
 
   const knownIds = new Set(knownDepartments.map((department) => department.id));
@@ -366,5 +349,5 @@ export function runQualityChecks(responses, { departments = [], knownDepartments
     ? Math.round((weighted.reduce((sum, check) => sum + check.weight * check.score, 0) / totalWeight) * 100)
     : null;
 
-  return { total: responses.length, composition, score, level: qualityLevel(score), checks };
+  return { total: responses.length, score, level: qualityLevel(score), checks };
 }

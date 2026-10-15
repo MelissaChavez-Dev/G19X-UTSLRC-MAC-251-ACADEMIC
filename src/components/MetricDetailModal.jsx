@@ -18,7 +18,7 @@ const METRIC_CONFIG = {
     suffix: " / 100",
     higherIsBetter: false,
     hue: "peach",
-    description: "Derivado de la respuesta sobre balance vida-trabajo. Escala 0-100 puntos basados en niveles de fatiga y carga emocional. Es una regla orientativa, no probabilística.",
+    description: "Proxy orientativo de 0 a 100 basado en preguntas directas de fatiga de turno y carga emocional. No es una probabilidad ni predice renuncias.",
   },
   activePulseRate: { label: "Participación", suffix: "%", higherIsBetter: true, hue: "sky" },
   psychSafety: { label: "Seguridad psicológica", suffix: " / 5.0", higherIsBetter: true, hue: "rose" },

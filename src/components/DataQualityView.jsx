@@ -17,12 +17,6 @@ const READINGS = {
   "no-data": "Aún no hay respuestas para evaluar.",
 };
 
-const SOURCE_MODES = [
-  { value: "all", label: "Todos" },
-  { value: "live", label: "Reales" },
-  { value: "simulated", label: "Simuladas" },
-];
-
 const STEPS = [
   { icon: "speed", title: "Mira el puntaje", text: "Resume en un número de 0 a 100 qué tan confiables son los datos que alimentan el dashboard." },
   { icon: "fact_check", title: "Abre lo que falla", text: "Cada verificación explica qué revisa, por qué importa y cómo corregirlo, con ejemplos para buscar en Firestore." },
@@ -75,21 +69,6 @@ function ScoreRing({ score, color }) {
         {hasScore ? score : "—"}
       </text>
     </svg>
-  );
-}
-
-function CompositionRow({ label, count, total, color }) {
-  const percent = total > 0 ? Math.round((count / total) * 100) : 0;
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-baseline justify-between gap-space-sm text-label-md text-on-surface">
-        <span>{label}</span>
-        <span className="text-on-surface-variant">{count} · {percent}%</span>
-      </div>
-      <span aria-hidden="true" className="block h-1.5 w-full overflow-hidden rounded-full bg-surface-container-high">
-        <span className="block h-full rounded-full" style={{ width: `${percent}%`, background: color }} />
-      </span>
-    </div>
   );
 }
 
@@ -162,9 +141,6 @@ function CheckCard({ check }) {
 
 export default function DataQualityView({
   result,
-  composition,
-  sourceMode,
-  onSourceModeChange,
   loading,
   error,
   onReload,
@@ -235,7 +211,7 @@ export default function DataQualityView({
         )}
 
         {result && (
-          <div className="grid grid-cols-1 gap-space-md lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="grid grid-cols-1 gap-space-md">
             <div className="flex flex-wrap items-center gap-space-lg rounded-[32px] bg-surface-container-low p-space-lg">
               <ScoreRing score={result.score} color={color} />
               <div className="flex min-w-0 flex-1 flex-col gap-space-xs">
@@ -243,44 +219,9 @@ export default function DataQualityView({
                 <LevelBadge level={result.level} />
                 <p className="text-body-sm text-on-surface">{READINGS[result.level.tone]}</p>
                 <p className="text-label-sm text-on-surface-variant">
-                  Sobre {result.total} {result.total === 1 ? "respuesta evaluada" : "respuestas evaluadas"}.
+                  Se evaluaron {result.total} {result.total === 1 ? "respuesta reciente" : "respuestas recientes"} de los últimos 12 meses (máximo 5,000).
                 </p>
               </div>
-            </div>
-
-            <div className="flex flex-col gap-space-md rounded-[32px] bg-surface-container-low p-space-lg">
-              <div className="flex flex-col gap-space-xs">
-                <span className="text-label-md font-semibold text-on-surface">Datos a evaluar</span>
-                <div role="group" aria-label="Origen de las respuestas a evaluar" className="inline-flex w-full gap-1 rounded-full bg-surface-container p-1">
-                  {SOURCE_MODES.map((mode) => (
-                    <button
-                      key={mode.value}
-                      type="button"
-                      aria-pressed={sourceMode === mode.value}
-                      onClick={() => onSourceModeChange(mode.value)}
-                      className={`motion-press min-w-0 flex-1 rounded-full px-space-sm py-1.5 text-label-md transition-colors ${
-                        sourceMode === mode.value
-                          ? "bg-primary text-on-primary"
-                          : "text-on-surface-variant hover:bg-surface-container-high"
-                      }`}
-                    >
-                      {mode.label}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-label-sm text-on-surface-variant">
-                  Solo cambia lo que se evalúa en esta página; los KPIs del dashboard no se alteran.
-                </p>
-              </div>
-
-              {composition && (
-                <div className="flex flex-col gap-space-sm">
-                  <span className="text-label-md font-semibold text-on-surface">Composición de las respuestas guardadas</span>
-                  <CompositionRow label="Reales (respondidas en la app)" count={composition.live} total={composition.total} color="var(--success)" />
-                  <CompositionRow label="Simuladas (script de datos de prueba)" count={composition.simulated} total={composition.total} color="var(--primary)" />
-                  <CompositionRow label="Sin origen registrado" count={composition.unknown} total={composition.total} color="var(--on-surface-variant)" />
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -311,7 +252,7 @@ export default function DataQualityView({
 
       {result && result.checks.length === 0 && (
         <p role="status" className="rounded-2xl bg-surface-container-low px-space-md py-space-md text-body-md text-on-surface-variant">
-          No hay respuestas para evaluar con el filtro elegido. Prueba con «Todos» o responde una encuesta.
+          No hay respuestas recientes para evaluar en el último año.
         </p>
       )}
 
@@ -355,7 +296,7 @@ export default function DataQualityView({
         <h2 id="dq-limits" className="text-headline-sm text-on-surface">Qué no hace esta página</h2>
         <ul className="list-disc pl-5 text-body-sm text-on-surface-variant">
           <li>Revisa los datos después de guardados; no impide que entre una respuesta mal formada.</li>
-          <li>No identifica personas: las respuestas son anónimas, por eso los duplicados son «posibles».</li>
+          <li>Las respuestas no incluyen UID; aun así, el texto libre podría contener información que identifique a quien responde.</li>
           <li>No corrige nada por su cuenta: los arreglos se hacen en el Constructor de encuestas o en Firestore.</li>
         </ul>
       </section>

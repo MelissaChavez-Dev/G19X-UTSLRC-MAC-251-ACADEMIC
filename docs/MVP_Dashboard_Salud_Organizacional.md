@@ -24,28 +24,28 @@ Durante el proceso de desarrollo y validación, el MVP evolucionó de un "visual
 |---|---|:---:|
 | **Medidor eNPS tipo Termómetro** | Medidor semicircular reactivo con aguja animada, escala de −100 a +100 y 4 niveles semánticos con glifos de caras (*Bajo*, *Bueno*, *Muy bueno*, *Excelente*). | **Completado** |
 | **KPIs de Salud Organizacional** | Indicadores consolidados de eNPS, Presión Laboral (/100), Participación de Pulso (%) y Seguridad Psicológica (/5.0) con cálculo dinámico en Firestore. | **Completado** |
-| **Calidad de datos (`/admin/calidad`)** | Puntaje ponderado de confiabilidad de respuestas, con verificaciones de completitud, rangos, muestra mínima, duplicados y frescura; incluye filtros por origen y cobertura de fuentes operativas. Solo lectura. | **Completado** |
-| **Matriz de Riesgo Psicosocial** | Heatmap interactivo Departamentos × Factores con semaforización cromática; alertas tempranas consolidadas en la campana del TopBar. | **Completado** |
+| **Calidad de datos (`/admin/calidad`)** | Puntaje ponderado de confiabilidad de respuestas, con verificaciones de completitud, rangos, muestra mínima, duplicados y frescura; evalúa un conjunto reciente acotado y la cobertura de fuentes operativas. Solo lectura. | **Completado** |
+| **Matriz de Riesgo Psicosocial** | Heatmap interactivo Departamentos × Factores preguntados directamente, inspirados en dimensiones de ISO 45003, sin afirmar conformidad; alertas en la campana del TopBar. | **Completado** |
 | **Panel de Estrategia con IA (Gemini)** | Síntesis ejecutiva de comentarios abiertos, generación de 3 recomendaciones estructuradas y conversión automática en tareas de equipo. | **Completado** |
 | **Composición Visual y Minimizado** | Panel de IA minimizable/expandible con despliegue de ilustraciones dinámicas (`ilust3.png` al minimizar, `ilust4.png` bajo el heatmap al expandir con análisis). | **Completado** |
-| **Métricas Operativas** | Ausentismo digital injustificado a 30 días (permisos aprobados y feriados excluidos), rotación real a 90 días y ejecución de tareas Kanban, filtrables por departamento cuando aplica. | **Completado** |
-| **Asistencia digital (`/admin/asistencia`)** | Resumen por fecha y departamento con presentes, permisos aprobados y ausencias injustificadas, calculadas desde la actividad digital en horario y excluyendo feriados federales. No es un checador ni registra horas de entrada/salida. | **Completado** |
+| **Métricas Operativas** | Proxies de actividad digital no registrada a 30 días (permisos aprobados y feriados excluidos), bajas de plataforma a 90 días y ejecución de tareas Kanban, filtrables por departamento cuando aplica; no equivalen a asistencia física o desempeño individual. | **Completado** |
+| **Actividad digital (`/admin/asistencia`)** | Resumen por fecha y departamento de eventos registrados, permisos aprobados y jornadas sin actividad digital; no mide asistencia física, entrada/salida ni productividad. | **Completado** |
 | **Gestión de permisos (`/admin/permisos`)** | Revisión administrativa de vacaciones, incapacidades y otros permisos; aprobación/rechazo y calendario de permisos. Las solicitudes aprobadas justifican los días cubiertos. | **Completado** |
 | **Filtro Departamental y Exportación** | Filtro dinámico en cabecera (`TopBar`), exportación de reporte ejecutivo formal a PDF y exportación de libro de cálculo en Excel (hojas múltiples). | **Completado** |
 | **Constructor de Encuestas (`SurveyBuilder`)** | Editor visual de preguntas con biblioteca de componentes, arrastre interactivo con `@dnd-kit`, ciclos de encuesta y asignación por departamento. | **Completado** |
-| **Ejecutor de Encuestas (`SurveyRunner`)** | Interfaz tipo Typeform (paso a paso), responsiva, con registro directo en Firestore y prevención de respuestas duplicadas. | **Completado** |
+| **Ejecutor de Encuestas (`SurveyRunner`)** | Interfaz paso a paso y responsiva; requiere sesión y usa una Cloud Function que valida la entrada y evita duplicados por persona/ciclo en servidor. | **Completado** |
 | **Espacio del Empleado (`/mi-espacio`)** | Encuestas pendientes, proyectos, resumen personal de actividad, saldo e historial de permisos, formulario de solicitud, edición de nombre/teléfono y carga de foto. | **Completado** |
 | **Tableros Kanban por Equipo** | Tableros colaborativos (`/mis-proyectos` y `/equipos/:teamId`) con 3 columnas y comentarios con foto pública del autor o iniciales. | **Completado** |
 | **Directorio de Equipos (`TeamDirectory`)** | Administración de equipos, integrantes destacados con badges aqua y códigos únicos de unión (`joinCode`). | **Completado** |
 | **Gestión de Usuarios y Seguridad** | Directorio con distribución por departamento, identificador, puesto, contratación, fecha de ingreso y foto; creación administrativa y acceso por rol. | **Completado** |
-| **Monitoreo de Presencia Digital** | Registro no invasivo de actividad (`activityLogs`) contrastado contra horario y solicitudes aprobadas para distinguir ausencias justificadas e injustificadas. | **Completado** |
+| **Monitoreo de Presencia Digital** | Registro no invasivo de actividad (`activityLogs`) contrastado contra horario y solicitudes aprobadas; es un proxy de uso de la app, no asistencia física. | **Completado** |
 | **Diseño y Tema Claro/Oscuro** | Sistema de diseño de acentos por zona ("Executive Pulse"): lienzo base `#FFFCF7`, paleta pastel armonizada y soporte completo a modo oscuro (`.dark`). | **Completado** |
 
-### 2.1 Datos de prueba y cuentas
+### 2.1 Captura de datos y privacidad
 
-- La aplicación no carga automáticamente respuestas de encuesta ni otros datos de demostración. Existe un script opcional `scripts/seed.js` que agrega respuestas sintéticas al ejecutarlo manualmente.
-- El entorno contiene cuentas de prueba personales de la propietaria; el sistema también contempla el rol `team_lead` para vistas y tableros de equipo.
-- Para las pruebas actuales, las contraseñas de las cuentas existentes se establecieron en `12345678`. Esta clave compartida es solo para pruebas y no debe utilizarse en producción.
+- Las encuestas requieren una sesión activa y se envían mediante `submit_survey_response`, que valida las respuestas en el servidor y limita a una respuesta por persona y ciclo.
+- El documento analítico no contiene el UID. El control de completado queda en `surveyCompletions`, es legible solo por su propietario y no guarda una hora que permita cruzarlo directamente con una respuesta.
+- Las reglas bloquean las escrituras directas de respuestas y limitan su lectura a la administración. No hay fuentes sintéticas ni cuentas o contraseñas compartidas en el repositorio.
 
 ---
 
@@ -56,7 +56,7 @@ Durante el proceso de desarrollo y validación, el MVP evolucionó de un "visual
 - **HU-03 (Capital Humano):** *"Como responsable de talento, quiero exportar reportes en PDF y Excel para presentar resultados en comités directivos sin elaborar informes manuales."* **[Cumplida]**
 - **HU-04 (Colaborador):** *"Como empleado, quiero responder encuestas de bienestar de forma confidencial y rápida desde cualquier dispositivo."* **[Cumplida]**
 - **HU-05 (Empleado):** *"Como empleado, quiero visualizar las tareas derivadas de bienestar en un tablero Kanban para dar seguimiento continuo a las mejoras de mi equipo."* **[Cumplida]**
-- **HU-06 (Administrador):** *"Como administrador, quiero gestionar las cuentas y equipos de prueba desde la plataforma."* **[Cumplida]**
+- **HU-06 (Administrador):** *"Como administrador, quiero gestionar las cuentas y equipos de trabajo desde la plataforma."* **[Cumplida]**
 
 ---
 

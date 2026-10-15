@@ -40,7 +40,14 @@ function App() {
           <NavigationLogger />
           <Routes>
             <Route path="/" element={<RoleBasedRedirect />} />
-            <Route path="/survey" element={<WellnessSurvey />} />
+            <Route
+              path="/survey"
+              element={
+                <ProtectedRoute roles={["employee", "team_lead", "admin"]}>
+                  <WellnessSurvey />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/login" element={<Login />} />
             <Route
               path="/cambiar-password"

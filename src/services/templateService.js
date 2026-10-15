@@ -1,14 +1,25 @@
 import {
-  collection, doc, addDoc, deleteDoc, updateDoc, getDocs, getDoc, setDoc, query, where, orderBy, Timestamp,
+  collection, doc, addDoc, deleteDoc, updateDoc, getDocs, getDoc, query, where, orderBy, Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { validateSurveyTemplate } from "../data/surveyTemplate";
 import { getISOWeek } from "../utils/dateUtils";
 
+function currentHermosilloWeek(date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Hermosillo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return getISOWeek(new Date(Number(values.year), Number(values.month) - 1, Number(values.day), 12));
+}
+
 /** Identificador del ciclo vigente según la periodicidad de la encuesta. */
 export function getCurrentCycleId(cycle = "weekly") {
   if (cycle === "once") return "unica";
-  const isoWeek = getISOWeek(new Date()); // "2026-W40"
+  const isoWeek = currentHermosilloWeek(new Date());
   if (cycle === "biweekly") {
     const [year, weekPart] = isoWeek.split("-W");
     return `${year}-Q${String(Math.ceil(Number(weekPart) / 2)).padStart(2, "0")}`;
@@ -98,16 +109,6 @@ export async function listPublishedTemplates() {
   const q = query(collection(db, "surveyTemplates"), where("status", "==", "published"));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-}
-
-/** Marca que un colaborador ya respondió una encuesta en el ciclo vigente. */
-export async function markSurveyCompleted({ userId, templateId, cycleId }) {
-  await setDoc(doc(db, "surveyCompletions", `${userId}_${templateId}_${cycleId}`), {
-    userId,
-    templateId,
-    cycleId,
-    completedAt: Timestamp.now(),
-  });
 }
 
 /** Historial de encuestas completadas por un colaborador. */

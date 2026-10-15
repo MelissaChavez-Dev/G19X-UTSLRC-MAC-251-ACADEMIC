@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../services/firebase";
 import { useHeadcount } from "./useHeadcount";
 import { useDepartments } from "./useDepartments";
 import { getKpiLevelForSample, MIN_SAMPLE } from "../data/kpiThresholds";
 import { averageNumeric, computeWeeklyParticipation, toFiniteNumber, workPressureIndex } from "../utils/metricUtils";
-import { filterResponsesBySource } from "../utils/responseSources";
+import { listRecentResponses } from "../services/responseService";
+import { CURRENT_INSTRUMENT_VERSION } from "../data/surveyTemplate";
 
 const FACTOR_KEYS = ["cognitiveLoad", "roleAmbiguity", "emotionalLabor", "shiftFatigue", "autonomy", "psychSafety"];
 const PROTECTIVE_FACTORS = ["autonomy", "psychSafety"];
@@ -30,16 +29,21 @@ export function calculateDepartmentRisk(responses, headcount) {
   const riskEquivalents = [];
   const promoters = metricResponses.filter((r) => (toFiniteNumber(r.enps) ?? -Infinity) >= 9).length;
   const detractors = metricResponses.filter((r) => (toFiniteNumber(r.enps) ?? Infinity) <= 6).length;
+  const measuredResponses = metricResponses.filter(
+    (response) => response.instrumentVersion === CURRENT_INSTRUMENT_VERSION
+  );
+  const hasMinimumPsychosocialSample = measuredResponses.length >= MIN_SAMPLE.responses;
+  const factorResponses = hasMinimumPsychosocialSample ? measuredResponses : [];
   const enps = hasMinimumSample
     ? Math.round(((promoters - detractors) / metricResponses.length) * 100)
     : null;
   const averageWorkLifeBalance = averageNumeric(metricResponses.map((response) => response.workLifeBalance));
 
   FACTOR_KEYS.forEach((key) => {
-    const values = metricResponses
+    const values = factorResponses
       .map((response) => response.psychosocialFactors?.[key])
       .filter((value) => toFiniteNumber(value) !== null);
-    const average = averageNumeric(values);
+    const average = values.length >= MIN_SAMPLE.responses ? averageNumeric(values) : null;
     factors[key] = average === null ? null : Math.round(average * 10) / 10;
     if (average !== null) {
       riskEquivalents.push(PROTECTIVE_FACTORS.includes(key) ? 6 - average : average);
@@ -47,7 +51,7 @@ export function calculateDepartmentRisk(responses, headcount) {
   });
 
   const avgRisk = riskEquivalents.length > 0 ? averageNumeric(riskEquivalents) : null;
-  const attritionRisk = hasMinimumSample ? workPressureIndex(metricResponses) : null;
+  const attritionRisk = hasMinimumPsychosocialSample ? workPressureIndex(measuredResponses) : null;
   const activePulseRate = hasMinimumSample
     ? computeWeeklyParticipation(metricResponses, headcount).rate
     : null;
@@ -61,13 +65,14 @@ export function calculateDepartmentRisk(responses, headcount) {
     workLifeBalance: averageWorkLifeBalance === null
       ? null
       : Math.round(averageWorkLifeBalance * 10) / 10,
-    tier: riskTier(avgRisk, responses.length),
+    tier: riskTier(avgRisk, measuredResponses.length),
     sampleSize: responses.length,
+    psychosocialSampleSize: measuredResponses.length,
     minimumSampleSize: MIN_SAMPLE.responses,
   };
 }
 
-export function useDepartmentRisk(departmentId = null, sourceMode = "all") {
+export function useDepartmentRisk(departmentId = null) {
   const [rows, setRows] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -80,8 +85,7 @@ export function useDepartmentRisk(departmentId = null, sourceMode = "all") {
     async function load() {
       setLoading(true);
       try {
-        const snapshot = await getDocs(collection(db, "responses"));
-        const all = filterResponsesBySource(snapshot.docs.map((d) => d.data()), sourceMode);
+        const all = await listRecentResponses(30);
         const recent = filterRecentResponses(all);
 
         const result = departments.map((dept) => {
@@ -105,7 +109,7 @@ export function useDepartmentRisk(departmentId = null, sourceMode = "all") {
       }
     }
     load();
-  }, [departmentId, sourceMode, departments, departmentsLoading, forDepartment]);
+  }, [departmentId, departments, departmentsLoading, forDepartment]);
 
   return { rows, loading, error };
 }

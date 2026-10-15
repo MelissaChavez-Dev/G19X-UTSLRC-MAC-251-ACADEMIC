@@ -1,10 +1,8 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "./firebase";
 import { getKpiLevel, getKpiLevelForSample, LEVELS, MIN_SAMPLE } from "../data/kpiThresholds";
-import { filterResponsesBySource, responseSourceLabel } from "../utils/responseSources";
+import { listRecentResponses } from "./responseService";
 
 function departmentName(id, departments = []) {
   return departments.find((department) => department.id === id)?.name || id || "Todos los departamentos";
@@ -22,17 +20,19 @@ function dashboardKpiRows({ metrics, absence, turnover, performance, headcount }
   const responseSample = metrics?.sampleSize ?? 0;
   const responseLevel = (key, value) =>
     getKpiLevelForSample(key, value, responseSample).label;
+  const psychosocialLevel = (key, value) =>
+    getKpiLevelForSample(key, value, metrics?.psychosocialSampleSize ?? 0).label;
   const participationLevel = headcount >= MIN_SAMPLE.headcount && responseSample >= MIN_SAMPLE.responses
     ? getKpiLevel("participation", metrics?.activePulseRate)
     : LEVELS.noData;
 
   return [
     { metric: "Salud neta del equipo (eNPS)", value: metrics?.enps ?? "—", level: responseLevel("enps", metrics?.enps) },
-    { metric: "Índice de presión laboral", value: Number.isFinite(metrics?.attritionRisk) ? `${metrics.attritionRisk}/100` : "—", level: responseLevel("workPressure", metrics?.attritionRisk) },
+    { metric: "Índice de presión laboral", value: Number.isFinite(metrics?.attritionRisk) ? `${metrics.attritionRisk}/100` : "—", level: psychosocialLevel("workPressure", metrics?.attritionRisk) },
     { metric: "Participación en pulsos", value: Number.isFinite(metrics?.activePulseRate) ? `${metrics.activePulseRate}%` : "—", level: participationLevel.label },
-    { metric: "Seguridad psicológica", value: Number.isFinite(metrics?.psychSafety) ? `${metrics.psychSafety}/5` : "—", level: responseLevel("psychSafety", metrics?.psychSafety) },
+    { metric: "Seguridad psicológica", value: Number.isFinite(metrics?.psychSafety) ? `${metrics.psychSafety}/5` : "—", level: psychosocialLevel("psychSafety", metrics?.psychSafety) },
     {
-      metric: "Ausentismo digital",
+      metric: "Actividad digital no registrada",
       value: Number.isFinite(absence?.rate) ? `${absence.rate}%` : "—",
       level: getKpiLevelForSample("digitalAbsence", absence?.rate, absence?.workDays, 1).label,
     },
@@ -69,7 +69,6 @@ export function exportDashboardPdf({
   absence = null,
   headcount = 0,
   periodLabel = "Últimos 30 días",
-  sourceMode = "all",
 }) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -81,7 +80,7 @@ export function exportDashboardPdf({
   doc.setFontSize(14);
   doc.text("Welfare — Reporte ejecutivo", 14, 11);
   doc.setFontSize(9);
-  doc.text(`${departmentName(departmentId, departments)} · ${periodLabel} · ${responseSourceLabel(sourceMode)} · Generado el ${todayLabel()}`, 14, 19);
+  doc.text(`${departmentName(departmentId, departments)} · ${periodLabel} · Generado el ${todayLabel()}`, 14, 19);
 
   let cursorY = 34;
 
@@ -150,15 +149,10 @@ export async function exportResponsesExcel({
   headcount = 0,
   departmentId = null,
   periodLabel = "Últimos 30 días",
-  sourceMode = "all",
 }) {
-  const snapshot = await getDocs(collection(db, "responses"));
-  const responses = filterResponsesBySource(
-    snapshot.docs
-      .map((d) => d.data())
-      .filter((response) => !departmentId || response.departmentId === departmentId),
-    sourceMode
-  );
+  const periodDays = periodLabel.includes("60 días") ? 60 : 30;
+  const responses = (await listRecentResponses(periodDays))
+    .filter((response) => !departmentId || response.departmentId === departmentId);
 
   const workbook = XLSX.utils.book_new();
 
@@ -180,7 +174,6 @@ export async function exportResponsesExcel({
   // Hoja 2: resumen de KPIs
   const kpiRows = [
     { métrica: "Periodo", valor: periodLabel, nivel: "" },
-    { métrica: "Origen", valor: responseSourceLabel(sourceMode), nivel: "" },
     ...dashboardKpiRows({ metrics, absence, turnover, performance, headcount })
       .map((row) => ({ métrica: row.metric, valor: row.value, nivel: row.level })),
   ];
@@ -194,6 +187,7 @@ export async function exportResponsesExcel({
     participación: row.activePulseRate,
     nivel: row.tier?.label || "",
     respuestas: row.sampleSize,
+    respuestasPsicosocialesMedidas: row.psychosocialSampleSize,
   }));
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(riskRows), "Riesgo por depto");
 

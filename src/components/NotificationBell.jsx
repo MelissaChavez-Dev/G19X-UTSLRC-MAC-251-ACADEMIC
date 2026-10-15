@@ -69,12 +69,12 @@ function alertFingerprint(alert) {
 }
 
 /** Campana del admin: departamentos que entran en nivel de riesgo alto y rotación real elevada. */
-export function AdminNotificationBell({ responseSourceMode = "all", alerts: dashboardAlerts }) {
+export function AdminNotificationBell({ alerts: dashboardAlerts }) {
   const [open, setOpen] = useState(false);
   const [readAlertState, setReadAlertState] = useState({ uid: null, alerts: {} });
   const [readError, setReadError] = useState("");
   const { user } = useAuth();
-  const { rows } = useDepartmentRisk(null, responseSourceMode);
+  const { rows } = useDepartmentRisk();
   const { metrics: turnover } = useTurnoverMetrics();
   useDismissOnOutsideClick(open, () => setOpen(false));
 

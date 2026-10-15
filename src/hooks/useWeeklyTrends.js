@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../services/firebase";
 import { useHeadcount } from "./useHeadcount";
-import { averageNumeric, toFiniteNumber, workPressureIndex } from "../utils/metricUtils";
-import { filterResponsesBySource } from "../utils/responseSources";
+import { calculateWeeklyMetrics } from "../utils/metricUtils";
+import { listRecentResponses } from "../services/responseService";
 
-export function useWeeklyTrends(departmentId = null, sourceMode = "all") {
+export function useWeeklyTrends(departmentId = null) {
   const [trends, setTrends] = useState(null);
   const [loading, setLoading] = useState(true);
   const { total: totalHeadcount, forDepartment } = useHeadcount();
@@ -15,8 +13,7 @@ export function useWeeklyTrends(departmentId = null, sourceMode = "all") {
       setLoading(true);
       try {
         const headcount = departmentId ? forDepartment(departmentId) : totalHeadcount;
-        const snapshot = await getDocs(collection(db, "responses"));
-        const all = filterResponsesBySource(snapshot.docs.map((d) => d.data()), sourceMode)
+        const all = (await listRecentResponses(365))
           .filter((r) => !departmentId || r.departmentId === departmentId);
 
         const byWeek = {};
@@ -29,21 +26,7 @@ export function useWeeklyTrends(departmentId = null, sourceMode = "all") {
 
         const series = weekIds.map((weekId) => {
           const items = byWeek[weekId];
-          const n = items.length || 1;
-
-          const promoters = items.filter((r) => (toFiniteNumber(r.enps) ?? -Infinity) >= 9).length;
-          const detractors = items.filter((r) => (toFiniteNumber(r.enps) ?? Infinity) <= 6).length;
-          const enps = Math.round(((promoters - detractors) / n) * 100);
-
-          const attritionRisk = workPressureIndex(items);
-
-          const activePulseRate = Math.min(100, Math.round((items.length / headcount) * 100));
-
-          const psychSafety = Math.round(
-            (averageNumeric(items.map((response) => response.psychosocialFactors?.psychSafety)) ?? 0) * 10
-          ) / 10;
-
-          return { weekId, enps, attritionRisk, activePulseRate, psychSafety };
+          return { weekId, ...calculateWeeklyMetrics(items, headcount) };
         });
 
         setTrends(series);
@@ -54,7 +37,7 @@ export function useWeeklyTrends(departmentId = null, sourceMode = "all") {
       }
     }
     load();
-  }, [departmentId, sourceMode, totalHeadcount, forDepartment]);
+  }, [departmentId, totalHeadcount, forDepartment]);
 
   return { trends, loading };
 }

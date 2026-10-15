@@ -7,7 +7,6 @@ export default function TopBar({
   departmentId,
   onDepartmentChange,
   periodLabel = "Últimos 30 días",
-  responseSourceMode = "all",
   alerts,
 }) {
   const { collapsed } = useSidebarState();
@@ -36,7 +35,7 @@ export default function TopBar({
           <span className="material-symbols-outlined text-[18px]">calendar_today</span>
           <span className="text-label-md text-on-surface">{periodLabel}</span>
         </div>
-        <AdminNotificationBell responseSourceMode={responseSourceMode} alerts={alerts} />
+        <AdminNotificationBell alerts={alerts} />
         <ThemeToggle />
       </div>
     </header>

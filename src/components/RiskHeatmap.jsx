@@ -57,7 +57,7 @@ export default function RiskHeatmap({ rows }) {
             Matriz de Riesgo Psicosocial
           </h2>
           <p className={`text-body-sm ${INK_SOFT}`}>
-            Correlación de dinámicas de carga laboral con marcadores tipo ISO 45003
+            Factores inspirados en ISO 45003; son indicadores orientativos, no una evaluación de conformidad.
           </p>
         </div>
         <div className="flex items-center gap-2 text-label-sm flex-wrap">
@@ -100,9 +100,9 @@ export default function RiskHeatmap({ rows }) {
                     <span className={`w-2 h-2 rounded-full ${TIER_DOT[row.tier.tone]}`} />
                     {row.name}
                     </span>
-                    {row.sampleSize < MIN_SAMPLE.responses && (
+                    {row.psychosocialSampleSize < MIN_SAMPLE.responses && (
                       <span className={`pl-4 text-label-sm font-normal ${INK_SOFT}`}>
-                        {row.sampleSize}/{MIN_SAMPLE.responses} respuestas en 30 días
+                        {row.psychosocialSampleSize}/{MIN_SAMPLE.responses} respuestas medidas en 30 días
                       </span>
                     )}
                   </div>

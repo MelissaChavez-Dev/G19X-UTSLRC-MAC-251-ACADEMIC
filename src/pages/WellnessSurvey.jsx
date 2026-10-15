@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "../hooks/useAuth";
 import { SURVEY_STEPS as DEFAULT_STEPS } from "../data/surveyQuestion";
 import { submitSurveyResponse } from "../services/surveyService";
 import {
   getActivePublishedTemplate,
-  getCurrentCycleId,
   getTemplate,
 } from "../services/templateService";
 import { validateSurveyTemplate } from "../data/surveyTemplate";
@@ -20,11 +20,13 @@ import WelfareLogo from "../components/WelfareLogo";
  *   selector de departamento; con onCompleted muestra botón de regreso.
  */
 export default function WellnessSurvey({ templateId = null, fixedDepartmentId = null, onCompleted = null }) {
+  const { profile, role } = useAuth();
   const [departmentId, setDepartmentId] = useState("");
   const { departments, loading: departmentsLoading } = useDepartments();
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [status, setStatus] = useState("idle"); // idle | submitting | done | error
+  const [submitError, setSubmitError] = useState("");
   const [surveySteps, setSurveySteps] = useState(DEFAULT_STEPS);
   const [template, setTemplate] = useState(null);
   const [loadingTemplate, setLoadingTemplate] = useState(true);
@@ -51,7 +53,9 @@ export default function WellnessSurvey({ templateId = null, fixedDepartmentId = 
     loadTemplate();
   }, [templateId]);
 
-  const activeDepartmentId = fixedDepartmentId || departmentId || departments[0]?.id || "";
+  const departmentLocked = Boolean(fixedDepartmentId) || role !== "admin";
+  const activeDepartmentId = fixedDepartmentId
+    || (role === "admin" ? departmentId || departments[0]?.id || "" : profile?.departmentId || "");
   const step = surveySteps[stepIndex];
   const isLast = stepIndex === surveySteps.length - 1;
   const progress = Math.round(((stepIndex + 1) / surveySteps.length) * 100);
@@ -67,22 +71,22 @@ export default function WellnessSurvey({ templateId = null, fixedDepartmentId = 
       return;
     }
 
+    setSubmitError("");
     setStatus("submitting");
     try {
       await submitSurveyResponse({
         departmentId: activeDepartmentId,
         answers,
-        questions: surveySteps,
         templateId: template?.id ?? null,
-        cycleId: template ? getCurrentCycleId(template.cycle) : null,
         surveyTitle: template?.title || "Encuesta de bienestar",
       });
       setStatus("done");
     } catch (err) {
-      console.error(err);
+      console.error("No se pudo enviar la respuesta de la encuesta:", err);
+      setSubmitError(err?.message || "No se pudo enviar tu respuesta. Intenta de nuevo.");
       setStatus("error");
     }
-  }, [canAdvance, isLast, activeDepartmentId, answers, status, surveySteps, template]);
+  }, [canAdvance, isLast, activeDepartmentId, answers, status, template]);
 
   const goBack = useCallback(() => {
     if (stepIndex > 0) setStepIndex((i) => i - 1);
@@ -178,8 +182,8 @@ export default function WellnessSurvey({ templateId = null, fixedDepartmentId = 
             />
           </div>
 
-          {/* Selector de departamento solo en el primer paso del modo público */}
-          {stepIndex === 0 && !fixedDepartmentId && departments.length > 0 && (
+          {/* La administración puede elegir el departamento; los colaboradores usan el asignado a su perfil. */}
+          {stepIndex === 0 && !departmentLocked && departments.length > 0 && (
             <div className="mb-6">
               <label className="text-label-sm text-on-surface-variant uppercase tracking-widest">
                 Departamento
@@ -195,14 +199,14 @@ export default function WellnessSurvey({ templateId = null, fixedDepartmentId = 
               </select>
             </div>
           )}
-          {stepIndex === 0 && !fixedDepartmentId && departments.length === 0 && (
+          {stepIndex === 0 && !departmentLocked && departments.length === 0 && (
             <p role="status" className="mb-6 rounded-xl bg-warning-container px-space-md py-space-sm text-body-sm text-on-warning-container">
               Esta organización todavía no configura departamentos. No es posible enviar esta respuesta por ahora.
             </p>
           )}
-          {stepIndex === 0 && !fixedDepartmentId && departments.length === 0 && (
+          {stepIndex === 0 && departmentLocked && !activeDepartmentId && (
             <p role="status" className="mb-6 rounded-xl bg-warning-container px-space-md py-space-sm text-body-sm text-on-warning-container">
-              Esta organización todavía no configura departamentos. No es posible enviar esta respuesta por ahora.
+              Tu perfil no tiene un departamento asignado. Contacta a RH antes de responder.
             </p>
           )}
 
@@ -238,7 +242,7 @@ export default function WellnessSurvey({ templateId = null, fixedDepartmentId = 
 
           {status === "error" && (
             <p className="text-error text-body-sm mt-4">
-              Ocurrió un error al enviar tu respuesta. Intenta de nuevo.
+              {submitError}
             </p>
           )}
 
@@ -269,7 +273,7 @@ export default function WellnessSurvey({ templateId = null, fixedDepartmentId = 
         <div className="text-center mt-6">
           <p className="text-body-sm text-on-surface-variant flex items-center justify-center gap-2">
             <span className="material-symbols-outlined text-[16px] text-secondary">verified_user</span>
-            Tus respuestas son confidenciales y se envían de forma segura.
+            Tus respuestas son             Respuesta sin UIDes y se envían de forma segura.
           </p>
         </div>
       </div>

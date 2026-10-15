@@ -44,6 +44,7 @@ export const MAPPABLE_FIELDS = [
   { value: "mood", label: "Estado de ánimo (feliz, neutral, etc.)" },
   { value: "workLifeBalance", label: "Balance vida-trabajo (1-10)" },
   { value: "cognitiveLoad", label: "Fuente de fricción" },
+  { value: "psychosocialFactors.cognitiveLoad", label: "Carga cognitiva (1-5)" },
   { value: "psychosocialFactors.psychSafety", label: "Seguridad psicológica (1-10)" },
   { value: "psychosocialFactors.roleAmbiguity", label: "Ambigüedad de rol" },
   { value: "psychosocialFactors.emotionalLabor", label: "Carga emocional" },

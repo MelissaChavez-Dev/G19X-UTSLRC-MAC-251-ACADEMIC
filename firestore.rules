@@ -35,8 +35,8 @@ service cloud.firestore {
     }
 
     match /responses/{responseId} {
-      allow create: if true;
-      allow read: if isSignedIn();
+      allow create: if false; // Las respuestas solo se validan y escriben desde submit_survey_response.
+      allow read: if isAdmin();
       allow update, delete: if false;
     }
 
@@ -131,12 +131,8 @@ service cloud.firestore {
     }
 
     match /surveyCompletions/{docId} {
-      allow read: if isAdmin()
-        || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow create: if isSignedIn()
-        && request.resource.data.userId == request.auth.uid
-        && docId.matches("^" + request.auth.uid + "_.*");
-      allow update, delete: if false;
+      allow read: if isSelf(resource.data.userId);
+      allow create, update, delete: if false; // La Cloud Function aplica la unicidad en una transacción.
     }
 
     match /departments/{deptId} {

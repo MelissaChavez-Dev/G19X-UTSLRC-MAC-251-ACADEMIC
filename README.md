@@ -6,7 +6,7 @@ Proyecto de estadía profesional desarrollado por **Melissa Alejandra Chávez** 
 
 ## 1. Descripción del Proyecto
 
-Aplicación web integral que consolida y analiza indicadores de salud organizacional (bienestar laboral, eNPS, ausentismo digital, rotación, clima laboral, desempeño y factores psicosociales alineados con ISO 45003). 
+Aplicación web integral que consolida indicadores de salud organizacional (bienestar laboral, eNPS, actividad digital registrada, rotación y ejecución de tareas Kanban) y factores psicosociales inspirados en dimensiones descritas por ISO 45003. No es una evaluación de conformidad con la norma; actividad digital y ejecución Kanban son indicadores proxy, no mediciones de asistencia física ni de desempeño individual.
 
 Cuenta con una **doble experiencia**:
 - **Experiencia Ejecutiva (Dirección / RH):** Tableros interactivos con KPIs en tiempo real, medidor de eNPS tipo termómetro semicircular con caras expresivas, matriz de riesgo departamental, tendencias históricas, exportación formal a PDF/Excel y un panel de asesoría estratégica impulsado por Inteligencia Artificial (Google Gemini) que convierte diagnósticos cualitativos en tareas de equipo.
@@ -18,7 +18,7 @@ Cuenta con una **doble experiencia**:
 
 - **Node.js:** Versión 18.0 o superior (recomendada v20 o v24).
 - **npm:** Gestor de paquetes incluido con Node.js.
-- **Firebase:** Proyecto activo con Firebase Authentication y Cloud Firestore configurados (se refiere a las API en .env.local, estas mismas las puede encontrar en KEYS.txt)
+- **Firebase:** Proyecto activo con Firebase Authentication y Cloud Firestore configurados (se refiere a las API en .env.local, estas mismas las puede encontrar en KEYS.txt, este archivo al igual que .firebaserc, se eliminarán de .gitignore al momento de entregar el proyecto para evaluación)
 
 ---
 
@@ -37,7 +37,7 @@ Cuenta con una **doble experiencia**:
 
 3. **Configurar variables de entorno:**
    Crea o verifica el archivo `.env.local` en la raíz del proyecto con la configuración del proyecto en Firebase:
-   las claves con datos de prueba estan en KEYS.txt
+   las claves con datos de prueba estan en KEYS.txt.
    ```env
    VITE_FIREBASE_API_KEY=tu_api_key
    VITE_FIREBASE_AUTH_DOMAIN=tu-proyecto.firebaseapp.com
@@ -71,30 +71,20 @@ Las reglas de fechas, saldo de vacaciones y clasificación de asistencia usan No
 npm test
 ```
 
-## 5. Despliegue en Netlify
+## 5. Datos de encuestas y privacidad
 
-El repositorio incluye `netlify.toml`: Netlify ejecutará `npm run build`, publicará `dist` y redirigirá las rutas de la SPA a `index.html`.
+Las rutas para responder encuestas requieren una cuenta activa. `submit_survey_response` valida plantilla, periodo, departamento y respuestas, y en una transacción registra la respuesta y el control de unicidad por colaborador y ciclo. El documento analítico no contiene el UID; el control de completado, que sí contiene el UID, solo puede leerlo su propietario. Las reglas bloquean la lectura de respuestas para colaboradores y toda escritura directa desde el navegador; la administración consulta las respuestas desidentificadas para analítica.
 
-1. Importa este repositorio en Netlify y selecciona la rama que deseas desplegar.
-2. En **Site configuration → Environment variables**, configura las variables `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID` y `VITE_FIREBASE_APP_ID` con los valores de la aplicación web de Firebase. No uses los valores de `.env.local` como archivo; carga las variables directamente en Netlify.
-3. Agrega el dominio asignado al sitio (por ejemplo, `mi-sitio.netlify.app`) y cualquier dominio personalizado en **Firebase Authentication → Settings → Authorized domains**.
-4. Despliega. Netlify aloja el frontend; las Cloud Functions y Firestore permanecen en Firebase.
-
-No subas `.env.local` ni `serviceAccountKey.json`. Ambos están ignorados por Git y no se necesitan para compilar el frontend.
-
-Los módulos de permisos y fotos también requieren habilitar Firebase Storage y desplegar los cambios del backend y reglas desde la raíz con `firebase deploy --only functions,firestore:rules,storage`.
+No se generan respuestas sintéticas ni se incluyen filtros de origen en la aplicación. Las respuestas nuevas solo se etiquetan como versión actual cuando contienen los seis factores directos; los registros anteriores se excluyen de las métricas psicosociales. Los registros históricos sintéticos también se excluyen de las consultas analíticas y no se eliminan automáticamente de Firestore.
 
 ---
 
-## 6. Datos de Prueba
+## 6. Usuarios y Acceso al Sistema
 
-La aplicación no genera respuestas de prueba automáticamente durante la instalación. El repositorio incluye el script opcional `scripts/seed.js`, que crea ocho semanas de respuestas sintéticas (`source: "synthetic_seed"`) en los departamentos activos. Ejecútalo manualmente con `node scripts/seed.js` desde la raíz, solo después de configurar credenciales seguras de Firebase Admin; cada ejecución agrega nuevos documentos. El Dashboard permite filtrar respuestas reales, sintéticas o ambas.
+El sistema utiliza los roles `admin` y `employee`; no hay autorregistro abierto. Las cuentas y contraseñas se aprovisionan individualmente desde Firebase Authentication y Gestión de Usuarios. No hay credenciales compartidas en este repositorio. `team_lead` tiene acceso a las vistas de su equipo (`/mi-equipo`, `/mis-proyectos` y `/equipos/:teamId`).
 
----
+Las cuentas `employee` responden encuestas para el departamento asignado a su perfil; la administración puede responder para un departamento seleccionado. La administración también puede revisar calidad de datos, actividad digital, permisos, equipos y reportes.
 
-## 7. Usuarios y Acceso al Sistema
-
-El sistema utiliza los roles `admin`, `employee` y `team_lead`; no hay autorregistro abierto. `team_lead` tiene acceso a las vistas de su equipo (`/mi-equipo`, `/mis-proyectos` y `/equipos/:teamId`). Las cuentas configuradas en Firebase son cuentas de prueba personales de la propietaria del proyecto, no cuentas de empleados reales.
 
 ### Credenciales de Acceso
 
@@ -126,11 +116,11 @@ El sistema utiliza los roles `admin`, `employee` y `team_lead`; no hay autorregi
   - Su foto de perfil aparece en los comentarios del Kanban.
   - Resumen de presencia y actividad digital personal.
 
-> **Nota de seguridad:** `12345678` es una contraseña compartida únicamente para el entorno de pruebas actual, cuyas cuentas son personales de la propietaria. No debe usarse en producción ni en cuentas reales. Cambia las credenciales antes de desplegar la aplicación públicamente.
+> **Nota de seguridad:** `12345678` es una contraseña compartida únicamente para el entorno de pruebas y evaluación del proyecto. 
 
----
+--- 
 
-## 8. Estructura del Repositorio
+## 7. Estructura del Repositorio
 
 ```text
 ├── docs/                      # Documentación oficial (PRD v3.0 y MVP unificado)
@@ -151,7 +141,7 @@ El sistema utiliza los roles `admin`, `employee` y `team_lead`; no hay autorregi
 
 ---
 
-## 9. Stack Tecnológico
+## 8. Stack Tecnológico
 
 - **Frontend:** React 19, Vite 8, Tailwind CSS v4, Framer Motion.
 - **Gráficos e Interactividad:** Recharts, `@dnd-kit/core`, `@dnd-kit/sortable`, Medidores SVG reactivos a la medida.
@@ -161,6 +151,6 @@ El sistema utiliza los roles `admin`, `employee` y `team_lead`; no hay autorregi
 
 ---
 
-## 10. Notas Académicas
+## 9. Notas Académicas
 
 Este repositorio forma parte de la documentación técnica y entregable de la **Memoria de Estadía Profesional** para la obtención del título de TSU en Desarrollo de Software Multiplataforma, desarrollada conforme al Manual Metodológico de la **UTSLRC**.

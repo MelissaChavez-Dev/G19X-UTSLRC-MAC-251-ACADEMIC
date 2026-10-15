@@ -13,11 +13,11 @@ Documentos relacionados: `Fichas_KPIs_Dashboard_Salud_Organizacional.md` (defini
 
 ## 1. Principios de diseño
 
-1. **Una fuente por indicador.** Cada KPI sale de una colección concreta de Firestore; la asistencia combina el resumen digital diario con permisos aprobados para distinguir ausencias justificadas.
+1. **Una fuente por indicador.** Cada KPI sale de una colección concreta de Firestore; el proxy de actividad digital combina los eventos diarios con permisos aprobados, sin inferir asistencia física.
 2. **Umbrales y reglas fuera de la interfaz.** Los niveles de riesgo están en `src/data/kpiThresholds.js` y las reglas de calidad en `src/data/dataQualityRules.js`. Las tarjetas solo los leen.
 3. **Funciones puras para calcular.** Las fórmulas (`metricUtils.js`, `dataQualityRules.js`) reciben datos y devuelven resultados sin tocar Firestore, lo que permite probarlas por separado.
-4. **Anonimato en la encuesta, transparencia en la presencia.** Las respuestas no guardan quién las envió; la presencia digital sí es por persona, pero el colaborador puede ver su propio historial y el dashboard solo muestra agregados.
-5. **La calidad es parte de la arquitectura.** El módulo `/admin/calidad` evalúa los datos antes de confiar en los KPIs y distingue respuestas reales de simuladas.
+4. **Desidentificación de respuestas.** Todas las encuestas requieren sesión. La Cloud Function aplica unicidad por persona/ciclo, pero omite el UID de `responses`; el control de completado queda separado, sin hora de respuesta y solo es legible por su propietario. Las reglas bloquean lectura de respuestas para colaboradores y escritura directa desde cliente. El texto libre puede incluir información identificable, por lo que se recomienda no escribir nombres ni datos personales.
+5. **La calidad es parte de la arquitectura.** El módulo `/admin/calidad` evalúa respuestas recientes antes de confiar en los KPIs. No hay datos sintéticos ni controles de origen en la aplicación.
 6. **La IA es un complemento.** Gemini interpreta y resume datos ya agregados; si falla, los KPIs se siguen mostrando.
 
 ## 2. Vista general
@@ -44,13 +44,13 @@ Documentos relacionados: `Fichas_KPIs_Dashboard_Salud_Organizacional.md` (defini
 
 | Colección | Qué guarda | Quién escribe | Qué KPI alimenta |
 |---|---|---|---|
-| `responses` | Una respuesta anónima por encuesta: `enps`, `workLifeBalance`, `psychosocialFactors`, `openText`, `departmentId`, `weekId`, `source` | `submitSurveyResponse` (cliente) o `scripts/seed.js` (simuladas) | eNPS, presión laboral, participación, seguridad psicológica, heatmap, sentimiento, calidad |
-| `surveyCompletions` | Control de quién ya contestó cada ciclo, sin vincularlo a su respuesta | Cliente, al terminar la encuesta | Encuestas pendientes (no entra a los KPIs) |
-| `activityLogs` | Eventos de actividad por persona: `userId`, `type`, `timestamp` | `logActivity` (cliente) | Materia prima del ausentismo |
-| `presenceSummary` | Un documento por persona y día programado: `present`, `workDay`, `departmentId` | `publish_digital_attendance` (en tiempo real) y `compute_daily_presence` (programada) | Asistencia y ausentismo injustificado |
+| `responses` | Respuesta desidentificada: indicadores, `openText`, `departmentId`, `weekId`, `submittedAt`, `source`, `instrumentVersion`; no guarda UID | `submit_survey_response` (Cloud Function) | eNPS, presión laboral, participación, seguridad psicológica, heatmap, sentimiento, calidad |
+| `surveyCompletions` | UID, plantilla y ciclo; sin hora de completado. ID derivado con hash para evitar exponer UID en la ruta | `submit_survey_response` (misma transacción que `responses`) | Encuestas pendientes y racha personal; no entra a KPIs |
+| `activityLogs` | Eventos de actividad por persona: `userId`, `type`, `timestamp` | `logActivity` (cliente) | Proxy de actividad en la aplicación |
+| `presenceSummary` | Un documento por persona y día programado: `present`, `workDay`, `departmentId` | `publish_digital_attendance` (en tiempo real) y `compute_daily_presence` (programada) | Jornadas con/sin actividad digital registrada |
 | `leaveRequests` | Tipo, rango de fechas, días hábiles calculados en servidor, motivo, estado y revisión | `submit_leave_request` (Cloud Function); colaborador cancela pendientes y administración las resuelve | Permisos justificados y saldo de vacaciones |
 | `departureLog` | Una baja: `departmentId`, `reason`, `recordedAt` | Cloud Functions de usuarios | Rotación |
-| `teams/{id}/tasks` | Tarjetas Kanban: estado, fecha límite, `completedAt`, origen y comentarios con `authorId` | Cliente y Cloud Functions | Desempeño operativo y avatares de comentarios |
+| `teams/{id}/tasks` | Tarjetas Kanban: estado, fecha límite, `completedAt`, origen y comentarios con `authorId` | Cliente y Cloud Functions | Ejecución de tareas del equipo y avatares de comentarios |
 | `users` | Perfil privado, `employeeId`, puesto, contratación, ingreso, rol, departamento, horario y estado | Cloud Functions de usuarios; el colaborador solo puede cambiar nombre/teléfono mediante callable | Headcount, horario y saldo de vacaciones |
 | `publicProfiles` | Solo nombre visible y `photoURL`; no contiene correo ni departamento y requiere sesión para leerse | Cloud Functions de usuarios y propietario del perfil para la foto | Avatares del directorio y comentarios Kanban |
 | Firebase Storage | Foto en `profile-photos/{uid}/avatar` | El propio usuario, con límite de tamaño y MIME; lectura autenticada | Foto del perfil |
@@ -69,7 +69,7 @@ Cada fila responde a la pregunta *¿de dónde sale este número?*
 | Ausentismo injustificado | `useAbsenceMetrics` | `presenceSummary` + `leaveRequests` | Días sin actividad ni permiso aprobado / días esperados menos permisos y feriados | `digitalAbsence` |
 | Solicitudes de permiso | `useLeaves` | `leaveRequests` + `users.hireDate` | Días hábiles y saldo por aniversario de ingreso | — |
 | Rotación | `useTurnoverMetrics` | `departureLog` + headcount | Bajas / (activos + bajas) | `turnover90d` |
-| Desempeño operativo | `useTeamPerformance` | `tasks` (todos los equipos) | Tareas al corriente, cumplimiento y puntualidad | `taskOnTrack`, `taskCompletion` |
+| Ejecución de tareas Kanban (proxy) | `useTeamPerformance` | `tasks` (todos los equipos) | Tareas al corriente, cumplimiento y puntualidad | `taskOnTrack`, `taskCompletion` |
 | Sentimiento | `useWeeklySentiment` | `responses.openText` | Clasificación con Gemini y balance neto por departamento | — |
 | Calidad de datos | `useDataQuality` | `responses` + cobertura de presencia y bajas | Puntaje ponderado de 5 chequeos | `QUALITY_LEVEL_FROM` |
 
@@ -77,7 +77,7 @@ Cada fila responde a la pregunta *¿de dónde sale este número?*
 
 ### 6.1 Captura (en el momento del evento)
 
-1. La persona contesta una encuesta. `submitSurveyResponse` lee la plantilla, mapea cada pregunta a un campo del esquema (`mapsTo`), normaliza las escalas y guarda la respuesta **sin identificar a quien la envió**. Aparte se registra en `surveyCompletions` que esa persona ya contestó.
+1. La persona autenticada contesta una encuesta. `submit_survey_response` verifica perfil activo, departamento, plantilla publicada, ciclo vigente, respuestas obligatorias, tipos y rangos. En una transacción crea una respuesta sin UID y un control de ciclo legible solo por su propietario. Los reintentos duplicados se rechazan en servidor. Los documentos de respuesta solo los puede leer administración; el cliente no puede crearlos, modificarlos ni eliminarlos directamente.
 2. Cada inicio de sesión, envío de encuesta o acción en el Kanban genera un evento en `activityLogs`. La navegación se registra como máximo una vez cada 5 minutos para no saturar la base.
 3. Cuando la administración desactiva o elimina una cuenta, la Cloud Function correspondiente escribe la baja en `departureLog`.
 4. El colaborador envía una solicitud desde Mi Espacio. `leaveService.js` da validación inmediata; `submit_leave_request` vuelve a calcular los días hábiles, revisa saldo y traslapes y crea `leaveRequests`. Firestore bloquea la creación directa desde el cliente y restringe la cancelación a la persona propietaria mientras esté pendiente.
@@ -132,11 +132,13 @@ Los cálculos se hacen en el navegador porque el proyecto no tiene un servidor p
 El módulo `/admin/calidad` es el control de calidad de la arquitectura:
 
 - **Qué evalúa:** completitud, rangos válidos, muestra mínima por departamento, posibles duplicados y frescura de las respuestas, con un puntaje ponderado (90 o más es confiable; menos de 50 no debe usarse para decidir).
-- **Qué distingue:** respuestas reales (`source: "live"`) frente a simuladas (`synthetic_seed`), con filtro por origen.
+- **Ventana de análisis:** los hooks usan consultas acotadas por fecha y límite de documentos; la calidad revisa hasta 5,000 respuestas de los últimos 12 meses. Los registros históricos marcados como sintéticos se excluyen de la analítica.
 - **Qué informa de las demás fuentes:** si hay registros de presencia en los últimos 30 días y headcount suficiente para calcular rotación.
 - **Qué no hace:** no modifica ni elimina datos; explica cada hallazgo y cómo corregirlo.
 
 Además, cada tarjeta de KPI aplica una **muestra mínima** (`MIN_SAMPLE`) y muestra "Sin datos" en lugar de un valor poco confiable.
+
+La actividad digital no registrada es un proxy de actividad dentro de la aplicación, no de asistencia física. Los indicadores Kanban describen ejecución de tareas del equipo, no desempeño individual. Los factores psicosociales se inspiran en dimensiones de ISO 45003, sin afirmar validación ni conformidad normativa.
 
 ## 8. Seguridad y privacidad en la arquitectura
 

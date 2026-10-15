@@ -105,7 +105,7 @@ const PULSE_ROWS = [
     unit: "/ 100",
     deltaUnit: " pts",
     hint: () => "Escala orientativa, no es una probabilidad",
-    level: (m) => getKpiLevelForSample("workPressure", m.attritionRisk, m.sampleSize), // KPI-LEVEL
+    level: (m) => getKpiLevelForSample("workPressure", m.attritionRisk, m.psychosocialSampleSize), // KPI-LEVEL
   },
   {
     id: "kpi-pulse",
@@ -120,7 +120,7 @@ const PULSE_ROWS = [
   {
     id: "kpi-safety",
     progress: (m) => clamp01(m.psychSafety / 5),
-    level: (m) => getKpiLevelForSample("psychSafety", m.psychSafety, m.sampleSize), // KPI-LEVEL
+    level: (m) => getKpiLevelForSample("psychSafety", m.psychSafety, m.psychosocialSampleSize), // KPI-LEVEL
     color: "var(--secondary)",
     unit: "/ 5,0",
     deltaUnit: "",
@@ -502,7 +502,7 @@ const OperationStrip = memo(function OperationStrip({
           {showAbsence && (
             <OpsTile
               icon="person_off"
-              label="Ausentismo digital"
+              label="Actividad digital no registrada"
               level={absenceLoading ? undefined : hasWorkdayRecords ? getKpiLevel("digitalAbsence", absence?.rate) : LEVELS.noData} // KPI-LEVEL
               period="30 días"
               value={absenceLoading ? "…" : Number.isFinite(absence?.rate) ? `${absence.rate}%` : "—"}
@@ -510,9 +510,9 @@ const OperationStrip = memo(function OperationStrip({
                 absenceLoading
                   ? "Calculando..."
                   : hasWorkdayRecords
-                    ? `${absence.unjustifiedDays} injustificadas, ${absence.justifiedDays} justificadas en ${absence.workDays} jornadas registradas.`
+                    ? `${absence.unjustifiedDays} jornadas sin actividad digital no cubiertas por permiso; ${absence.justifiedDays} cubiertas.`
                     : absence?.workDays > 0
-                      ? "Todas las jornadas registradas tienen permiso aprobado."
+                      ? "Todas las jornadas sin actividad digital están cubiertas por permisos aprobados."
                       : "Sin registros aún, se calcula cada noche"
               }
             />
@@ -614,19 +614,18 @@ function ExportActions({ onExport, exporting, disabled }) {
 
 export default function Dashboard() {
   const [departmentId, setDepartmentId] = useState(null);
-  const [sourceMode, setSourceMode] = useState("all");
   const { collapsed } = useSidebarState();
   const { departments } = useDepartments();
-  const { metrics, previousMetrics, periodLabel, loading, headcount } = useOrgHealthMetrics(departmentId, sourceMode);
-  const { rows: deptRows, loading: deptLoading } = useDepartmentRisk(departmentId, sourceMode);
+  const { metrics, previousMetrics, periodLabel, loading, headcount } = useOrgHealthMetrics(departmentId);
+  const { rows: deptRows, loading: deptLoading } = useDepartmentRisk(departmentId);
   const {
     trend,
     hotspots,
     comments,
     loading: sentimentLoading,
     error: sentimentError,
-  } = useWeeklySentiment(departmentId, sourceMode);
-  const { trends: weeklyTrends } = useWeeklyTrends(departmentId, sourceMode);
+  } = useWeeklySentiment(departmentId);
+  const { trends: weeklyTrends } = useWeeklyTrends(departmentId);
   const { absence, loading: absenceLoading } = useAbsenceMetrics(departmentId);
   const { metrics: turnover, loading: turnoverLoading } = useTurnoverMetrics(departmentId);
   const { metrics: performance, loading: performanceLoading } = useTeamPerformance(departmentId);
@@ -663,12 +662,12 @@ export default function Dashboard() {
       if (kind === "pdf") {
         exportDashboardPdf({
           metrics, deptRows: deptRows || [], aiMarkdown, departmentId, departments,
-          turnover, performance, absence, headcount, periodLabel, sourceMode,
+          turnover, performance, absence, headcount, periodLabel,
         });
       } else {
         await exportResponsesExcel({
           metrics, deptRows: deptRows || [], departments, turnover, performance,
-          absence, headcount, departmentId, periodLabel, sourceMode,
+          absence, headcount, departmentId, periodLabel,
         });
       }
     } catch {
@@ -698,9 +697,11 @@ export default function Dashboard() {
         context: {
           valorActual: def.getValue(m),
           valorAnterior: prev ? def.getValue(prev) : null,
-          muestra: m.sampleSize,
+          muestra: ["attritionRisk", "psychSafety"].includes(def.dataKey)
+            ? m.psychosocialSampleSize
+            : m.sampleSize,
           interpretacion: def.dataKey === "attritionRisk"
-            ? "Índice orientativo de 0 a 100 puntos. En la encuesta actual deriva fatiga y carga emocional de la respuesta de balance vida-trabajo usando un umbral; no es una probabilidad ni predice renuncias."
+            ? "Índice orientativo de 0 a 100 puntos calculado con preguntas directas de fatiga de turno y carga emocional. No es una probabilidad ni predice renuncias."
             : undefined,
         },
       });
@@ -729,7 +730,6 @@ export default function Dashboard() {
         departmentId={departmentId}
         onDepartmentChange={setDepartmentId}
         periodLabel={periodLabel}
-        responseSourceMode={sourceMode}
         alerts={alerts}
       />
       <main className={`${collapsed ? "pl-20" : "pl-64"} pt-16 relative z-10 transition-[padding] duration-300 ease-out`}>
@@ -741,20 +741,6 @@ export default function Dashboard() {
                 <span aria-hidden="true" className="h-2 w-2 rounded-full bg-secondary" />
                 {metrics ? metrics.sampleSize : "…"} respuestas · {periodLabel}
               </span>
-              <label className="inline-flex items-center gap-space-xs self-start rounded-full bg-surface-container-low px-3 py-1 text-label-md text-on-surface-variant">
-                <span aria-hidden="true" className="material-symbols-outlined text-[16px]">filter_alt</span>
-                <span>Origen</span>
-                <select
-                  value={sourceMode}
-                  onChange={(event) => setSourceMode(event.target.value)}
-                  className="theme-select bg-transparent border-none outline-none text-label-md text-on-surface cursor-pointer"
-                  aria-label="Filtrar indicadores por origen de respuestas"
-                >
-                  <option value="all">Todos</option>
-                  <option value="live">Reales</option>
-                  <option value="simulated">Simulados</option>
-                </select>
-              </label>
               <h1 className="text-headline-xl text-on-surface">Diagnóstico Psicosocial y Salud Estratégica</h1>
             </div>
             <div className="flex flex-col items-end gap-space-xs">
