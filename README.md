@@ -19,6 +19,7 @@ Cuenta con una **doble experiencia**:
 - **Node.js:** Versión 18.0 o superior (recomendada v20 o v24).
 - **npm:** Gestor de paquetes incluido con Node.js.
 - **Firebase:** Proyecto activo con Firebase Authentication y Cloud Firestore configurados (se refiere a las API en .env.local, estas mismas las puede encontrar en KEYS.txt, este archivo al igual que .firebaserc, se eliminarán de .gitignore al momento de entregar el proyecto para evaluación)
+- **Solo si se despliega el backend en un proyecto Firebase propio** (ver sección 4, "Despliegue del backend"): Firebase CLI, Python (la versión del runtime declarado en `firebase.json`), plan Blaze del proyecto y una clave de la API de Gemini. Si se evalúa contra el proyecto Firebase entregado, el backend ya está desplegado y este paso no es necesario.
 
 ---
 
@@ -36,8 +37,11 @@ Cuenta con una **doble experiencia**:
    ```
 
 3. **Configurar variables de entorno:**
-   Crea o verifica el archivo `.env.local` en la raíz del proyecto con la configuración del proyecto en Firebase:
-   las claves con datos de prueba estan en KEYS.txt.
+   Copia la plantilla `.env.example` como `.env.local` en la raíz del proyecto y reemplaza cada valor con la configuración de la aplicación web de tu proyecto Firebase (Firebase Console → Configuración del proyecto → Tus apps). Las claves con datos de prueba están en KEYS.txt.
+   ```bash
+   cp .env.example .env.local
+   ```
+   Variables requeridas (las seis son obligatorias):
    ```env
    VITE_FIREBASE_API_KEY=tu_api_key
    VITE_FIREBASE_AUTH_DOMAIN=tu-proyecto.firebaseapp.com
@@ -65,6 +69,36 @@ npm run build
 npm run preview
 ```
 
+### Despliegue del backend (Firebase)
+
+El frontend lee y escribe a través de Cloud Functions, reglas de Firestore y Storage. Las encuestas **solo** pueden enviarse mediante la función `submit_survey_response` (las reglas bloquean la escritura directa en `responses`), por lo que el backend debe estar desplegado antes de usar la aplicación. Esta sección aplica cuando se usa un proyecto Firebase propio; el proyecto entregado ya está desplegado.
+
+1. **Instalar la CLI de Firebase e iniciar sesión:**
+   ```bash
+   npm install -g firebase-tools
+   firebase login
+   ```
+
+2. **Seleccionar el proyecto.** El archivo `.firebaserc` apunta al proyecto por defecto; para usar otro:
+   ```bash
+   firebase use <id-del-proyecto>
+   ```
+
+3. **Habilitar los servicios en Firebase Console:** Authentication (proveedor *Correo electrónico/contraseña*), Cloud Firestore y Storage. El proyecto debe tener el plan **Blaze**: lo requieren Cloud Functions y la función programada `compute_daily_presence` (Cloud Scheduler, diaria a las 23:30, zona America/Hermosillo).
+
+4. **Guardar la clave de Gemini como secreto de Cloud Functions** (no va en el código ni en `.env.local`):
+   ```bash
+   firebase functions:secrets:set GEMINI_API_KEY
+   ```
+
+5. **Desplegar funciones, reglas, índices y Storage** desde la raíz del repositorio:
+   ```bash
+   firebase deploy --only functions,firestore:rules,firestore:indexes,storage
+   ```
+   Los índices de Firestore tardan unos minutos en construirse; hasta que terminen, las consultas del dashboard que los usan devolverán error.
+
+6. **Primer administrador.** En un proyecto sin administradores, crea una cuenta en Firebase Authentication e inicia sesión con ella: la función `bootstrap_admin` le asigna el rol `admin` automáticamente a la primera cuenta. A partir de ahí, las demás cuentas, los departamentos y los equipos se gestionan desde la aplicación (`/admin/usuarios` y `/equipos`).
+
 ### Pruebas unitarias
 Las reglas de fechas, saldo de vacaciones y clasificación de asistencia usan Node.js nativo:
 ```bash
@@ -81,7 +115,7 @@ No se generan respuestas sintéticas ni se incluyen filtros de origen en la apli
 
 ## 6. Usuarios y Acceso al Sistema
 
-El sistema utiliza los roles `admin` y `employee`; no hay autorregistro abierto. Las cuentas y contraseñas se aprovisionan individualmente desde Firebase Authentication y Gestión de Usuarios. No hay credenciales compartidas en este repositorio. `team_lead` tiene acceso a las vistas de su equipo (`/mi-equipo`, `/mis-proyectos` y `/equipos/:teamId`).
+El sistema utiliza los roles `admin` y `employee`; no hay autorregistro abierto. Las cuentas y contraseñas se aprovisionan individualmente desde Firebase Authentication y Gestión de Usuarios. `team_lead` tiene acceso a las vistas de su equipo (`/mi-equipo`, `/mis-proyectos` y `/equipos/:teamId`).
 
 Las cuentas `employee` responden encuestas para el departamento asignado a su perfil; la administración puede responder para un departamento seleccionado. La administración también puede revisar calidad de datos, actividad digital, permisos, equipos y reportes.
 
