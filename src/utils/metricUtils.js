@@ -1,4 +1,3 @@
-import { MIN_SAMPLE } from "../data/kpiThresholds.js";
 import { CURRENT_INSTRUMENT_VERSION } from "../data/surveyTemplate.js";
 
 export function toFiniteNumber(value) {
@@ -22,7 +21,7 @@ export function workPressureIndex(responses) {
   const emotionalLaborValues = responses
     .map((response) => toFiniteNumber(response.psychosocialFactors?.emotionalLabor))
     .filter((value) => value !== null);
-  if (fatigueValues.length < MIN_SAMPLE.responses || emotionalLaborValues.length < MIN_SAMPLE.responses) {
+  if (fatigueValues.length === 0 || emotionalLaborValues.length === 0) {
     return null;
   }
 
@@ -40,6 +39,7 @@ export function calculateWeeklyMetrics(responses, headcount) {
       attritionRisk: null,
       activePulseRate: 0,
       psychSafety: null,
+      workLifeBalance: null,
       psychosocialSampleSize: 0,
     };
   }
@@ -49,19 +49,19 @@ export function calculateWeeklyMetrics(responses, headcount) {
   const measuredResponses = responses.filter(
     (response) => response.instrumentVersion === CURRENT_INSTRUMENT_VERSION
   );
-  const hasPsychosocialSample = measuredResponses.length >= MIN_SAMPLE.responses;
   const psychSafetyValues = measuredResponses
     .map((response) => toFiniteNumber(response.psychosocialFactors?.psychSafety))
     .filter((value) => value !== null);
-  const psychSafetyAverage = psychSafetyValues.length >= MIN_SAMPLE.responses
+  const psychSafetyAverage = psychSafetyValues.length > 0
     ? averageNumeric(psychSafetyValues)
     : null;
 
   return {
     enps: Math.round(((promoters - detractors) / n) * 100),
-    attritionRisk: hasPsychosocialSample ? workPressureIndex(measuredResponses) : null,
+    attritionRisk: workPressureIndex(measuredResponses),
     activePulseRate: headcount > 0 ? Math.min(100, Math.round((n / headcount) * 100)) : 0,
     psychSafety: psychSafetyAverage === null ? null : Math.round(psychSafetyAverage * 10) / 10,
+    workLifeBalance: averageNumeric(responses.map((response) => response.workLifeBalance)),
     psychosocialSampleSize: measuredResponses.length,
   };
 }

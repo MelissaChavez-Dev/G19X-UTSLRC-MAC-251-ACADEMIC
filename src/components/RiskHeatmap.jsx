@@ -8,6 +8,7 @@ const COLUMNS = [
   { key: "shiftFatigue", label: "Fatiga", invert: false },
   { key: "autonomy", label: "Autonomía", invert: true },
   { key: "psychSafety", label: "Seguridad Psicológica", invert: true },
+  { key: "workLifeBalance", label: "Balance vida-trabajo", neutral: true },
 ];
 
 const TIER_STYLES = {
@@ -102,24 +103,34 @@ export default function RiskHeatmap({ rows }) {
                     </span>
                     {row.psychosocialSampleSize < MIN_SAMPLE.responses && (
                       <span className={`pl-4 text-label-sm font-normal ${INK_SOFT}`}>
-                        {row.psychosocialSampleSize}/{MIN_SAMPLE.responses} respuestas medidas en 30 días
+                        {row.psychosocialSampleSize}/{MIN_SAMPLE.responses} respuestas medidas
+                        {row.psychosocialSampleSize > 0 ? " · valores preliminares" : " · sin datos directos"}
                       </span>
                     )}
                   </div>
                 </td>
-                {COLUMNS.map((col) => (
-                  <td key={col.key} className="py-3 px-2 text-center">
-                    <span
-                      className={`inline-block px-2.5 py-1 rounded font-mono ${
-                        Number.isFinite(row.factors[col.key])
-                          ? getRiskColorClasses(row.factors[col.key], col.invert)
-                          : "bg-surface-container text-on-surface-variant"
-                      }`}
-                    >
-                      {Number.isFinite(row.factors[col.key]) ? row.factors[col.key].toFixed(1) : "–"}
-                    </span>
-                  </td>
-                ))}
+                {COLUMNS.map((col) => {
+                  const value = col.key === "workLifeBalance"
+                    ? row.workLifeBalance
+                    : row.factors[col.key];
+                  const hasEnoughSample = col.key === "workLifeBalance"
+                    ? row.sampleSize >= MIN_SAMPLE.responses
+                    : row.psychosocialSampleSize >= MIN_SAMPLE.responses;
+                  const riskColor = !col.neutral && hasEnoughSample && Number.isFinite(value);
+                  return (
+                    <td key={col.key} className="py-3 px-2 text-center">
+                      <span
+                        className={`inline-block px-2.5 py-1 rounded font-mono ${
+                          riskColor
+                            ? getRiskColorClasses(value, col.invert)
+                            : "bg-surface-container text-on-surface-variant"
+                        }`}
+                      >
+                        {Number.isFinite(value) ? value.toFixed(1) : "–"}
+                      </span>
+                    </td>
+                  );
+                })}
                 <td className="py-3 px-space-md text-right">
                   <span
                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-label-sm font-bold tracking-wide shadow-sm ${TIER_STYLES[row.tier.tone]}`}

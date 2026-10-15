@@ -12,6 +12,26 @@ test("la seguridad psicológica semanal queda vacía si faltan respuestas para e
   assert.equal(calculateWeeklyMetrics([{ enps: 8 }], 10).psychSafety, null);
 });
 
+test("muestra promedios psicosociales y balance como preliminares con una respuesta actual", () => {
+  const metrics = calculateWeeklyMetrics([{
+    enps: 8,
+    workLifeBalance: 8,
+    instrumentVersion: CURRENT_INSTRUMENT_VERSION,
+    psychosocialFactors: {
+      shiftFatigue: 2,
+      emotionalLabor: 2,
+      psychSafety: 4.6,
+    },
+  }], 25);
+
+  assert.equal(metrics.enps, 0);
+  assert.equal(metrics.workLifeBalance, 8);
+  assert.equal(metrics.attritionRisk, 25);
+  assert.equal(metrics.psychSafety, 4.6);
+  assert.equal(metrics.activePulseRate, 4);
+  assert.equal(metrics.psychosocialSampleSize, 1);
+});
+
 test("no usa factores inferidos de versiones anteriores como mediciones directas", () => {
   const oldResponse = {
     enps: 9,
@@ -23,7 +43,7 @@ test("no usa factores inferidos de versiones anteriores como mediciones directas
   assert.equal(metrics.psychSafety, null);
 });
 
-test("calcula presión y seguridad solo con muestra suficiente del instrumento actual", () => {
+test("calcula presión y seguridad con respuestas del instrumento actual", () => {
   const responses = Array.from({ length: 5 }, () => ({
     instrumentVersion: CURRENT_INSTRUMENT_VERSION,
     enps: 8,

@@ -28,6 +28,7 @@ Este documento describe cada indicador tal como está implementado en el código
 | KPI | Dimensión | Unidad | Sentido | Fuente | Ventana |
 |---|---|---|---|---|---|
 | eNPS | Bienestar y clima | −100 a +100 | Mayor es mejor | `responses` | 30 días |
+| Balance vida-trabajo | Bienestar | 1 a 10 | Mayor es mejor | `responses.workLifeBalance` | 30 días |
 | Presión laboral | Factores psicosociales | 0 a 100 | Mayor es peor | `responses` | 30 días |
 | Participación en pulsos | Clima | % | Mayor es mejor | `responses`, headcount | Promedio semanal |
 | Seguridad psicológica | Factores psicosociales | 1 a 5 | Mayor es mejor | `responses` | 30 días |
@@ -90,7 +91,15 @@ Las cinco reglas se evalúan al cargar el dashboard; todas las alertas activas a
 - **Fuente:** campo `enps` (0 a 10) de `responses`.
 - **Frecuencia y ventana:** se recalcula al cargar el dashboard con las respuestas de los últimos 30 días y se compara con los 30 días previos.
 - **Umbrales:** Bajo (menor a −10), Bueno (−10 a 19), Muy bueno (20 a 39), Excelente (40 o más).
-- **Limitaciones:** la respuesta analítica no incluye UID y el control de completado está separado; los comentarios libres aún pueden contener información identificable. La participación se mide en respuestas, no en personas únicas. Si no hay respuestas en los últimos 30 días, se usa la muestra disponible de los últimos 60 días; no se presenta delta si falta el periodo anterior.
+- **Limitaciones:** una respuesta de 7 u 8 es pasiva; por ejemplo, una respuesta individual de 8 produce eNPS 0, no un promedio de 8. La respuesta analítica no incluye UID y el control de completado está separado; los comentarios libres aún pueden contener información identificable. La participación se mide en respuestas, no en personas únicas. Si no hay respuestas en los últimos 30 días, se usa la muestra disponible de los últimos 60 días; no se presenta delta si falta el periodo anterior.
+
+#### Indicador complementario: Balance vida-trabajo
+
+- **Qué mide:** promedio de la calificación individual de balance entre vida personal y trabajo.
+- **Fórmula:** promedio de `workLifeBalance` en escala de 1 a 10.
+- **Fuente:** `responses.workLifeBalance`.
+- **Frecuencia y ventana:** se recalcula al cargar el dashboard con respuestas de los últimos 30 días.
+- **Visualización:** el valor numérico se muestra desde la primera respuesta y se etiqueta como preliminar si hay menos de cinco; no se asigna nivel porque este indicador aún no tiene umbrales definidos.
 
 ### 4.2 Índice de presión laboral
 
@@ -98,7 +107,7 @@ Las cinco reglas se evalúan al cargar el dashboard; todas las alertas activas a
 - **Fórmula:** promedio de fatiga de turno y carga emocional (escala 1 a 5), convertido con `((promedio − 1) / 4) × 100` y acotado entre 0 y 100.
 - **Fuente:** `psychosocialFactors.shiftFatigue` y `psychosocialFactors.emotionalLabor` de respuestas con `instrumentVersion: 2`.
 - **Frecuencia y ventana:** 30 días, con comparación contra el periodo anterior.
-- **Umbrales:** Bajo riesgo menor a 25; Controlado 25 a 49; Elevado 50 a 74; Crítico 75 o más. A mayor valor, mayor presión. Requiere al menos 5 respuestas con el instrumento actual.
+- **Umbrales:** Bajo riesgo menor a 25; Controlado 25 a 49; Elevado 50 a 74; Crítico 75 o más. A mayor valor, mayor presión. El promedio se muestra como preliminar desde una respuesta con el instrumento actual; solo se asigna nivel y se generan alertas al reunir al menos 5.
 - **Limitaciones:** cada factor se recoge con una pregunta directa, pero el índice y sus umbrales son orientativos y requieren validación con datos de la organización. No es una probabilidad de renuncia. Internamente el campo se llama `attritionRisk` por herencia de una versión anterior; en pantalla y reportes se muestra como presión laboral.
 
 ### 4.3 Participación en pulsos
@@ -116,7 +125,7 @@ Las cinco reglas se evalúan al cargar el dashboard; todas las alertas activas a
 - **Fórmula:** promedio de `psychosocialFactors.psychSafety` (escala 1 a 5). Si la pregunta usa un rango mayor que 1–5, se normaliza linealmente del rango configurado a 1–5.
 - **Fuente:** `responses`.
 - **Frecuencia y ventana:** 30 días, con comparación contra el periodo anterior.
-- **Umbrales:** Bajo riesgo 4.1 o más; Controlado 3.1 a 4.0; Elevado 2.1 a 3.0; Crítico 2.0 o menos. A mayor valor, mejor. Requiere al menos 5 respuestas con el instrumento actual.
+- **Umbrales:** Bajo riesgo 4.1 o más; Controlado 3.1 a 4.0; Elevado 2.1 a 3.0; Crítico 2.0 o menos. A mayor valor, mejor. El promedio se muestra como preliminar desde una respuesta con el instrumento actual; solo se asigna nivel al reunir al menos 5.
 - **Limitaciones:** si la encuesta no incluye la pregunta, el indicador queda sin datos.
 
 ### 4.5 Riesgo psicosocial por departamento (heatmap)
@@ -125,8 +134,8 @@ Las cinco reglas se evalúan al cargar el dashboard; todas las alertas activas a
 - **Fórmula:** promedio por factor (1 a 5). Autonomía y seguridad psicológica son protectores, así que se invierten (6 − valor) antes de promediar el riesgo total.
 - **Fuente:** `psychosocialFactors` de respuestas con `instrumentVersion: 2`, agrupado por `departmentId`.
 - **Frecuencia y ventana:** se calcula con las respuestas de los últimos 30 días, igual que los demás KPIs del pulso.
-- **Umbrales:** Crítico 4 o más; Elevado 3 a 3.9; Controlado 2 a 2.9; Bajo riesgo menor a 2; "Sin datos" cuando el departamento tiene menos de 5 respuestas recientes con el instrumento actual o no hay factores válidos. Los niveles Elevado y Crítico aparecen entre las alertas activas de la campana del TopBar.
-- **Limitaciones:** son autoinformes y no una evaluación normativa o clínica. Los umbrales son propuestos y deben calibrarse con datos reales. Con menos de 5 respuestas recientes no se muestran niveles ni factores.
+- **Umbrales:** Crítico 4 o más; Elevado 3 a 3.9; Controlado 2 a 2.9; Bajo riesgo menor a 2; "Sin datos" para el nivel cuando el departamento tiene menos de 5 respuestas recientes con el instrumento actual o no hay factores válidos. Los niveles Elevado y Crítico aparecen entre las alertas activas de la campana del TopBar.
+- **Limitaciones:** son autoinformes y no una evaluación normativa o clínica. Los umbrales son propuestos y deben calibrarse con datos reales. Los valores de factores se muestran como preliminares con menos de 5 respuestas y sin color de riesgo; los niveles y colores se habilitan al alcanzar la muestra mínima. Balance vida-trabajo se muestra aparte y no forma parte del promedio de riesgo psicosocial.
 
 ### 4.6 Actividad digital no registrada (proxy)
 

@@ -22,6 +22,7 @@ const METRIC_CONFIG = {
   },
   activePulseRate: { label: "Participación", suffix: "%", higherIsBetter: true, hue: "sky" },
   psychSafety: { label: "Seguridad psicológica", suffix: " / 5.0", higherIsBetter: true, hue: "rose" },
+  workLifeBalance: { label: "Balance vida-trabajo", suffix: " / 10", higherIsBetter: true, hue: "sky" },
 };
 
 const PAPER = "color-mix(in oklab, var(--h-bg) 45%, var(--surface-container-lowest, white))";

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useHeadcount } from "./useHeadcount";
 import { averageNumeric, computeWeeklyParticipation, toFiniteNumber, workPressureIndex } from "../utils/metricUtils";
 import { listRecentResponses } from "../services/responseService";
-import { MIN_SAMPLE } from "../data/kpiThresholds";
 import { CURRENT_INSTRUMENT_VERSION } from "../data/surveyTemplate";
 
 function daysAgo(n) {
@@ -19,6 +18,7 @@ function computeMetrics(responses, headcount) {
       activePulseRate: 0,
       avgPerWeek: 0,
       psychSafety: null,
+      workLifeBalance: null,
       sampleSize: 0,
       psychosocialSampleSize: 0,
     };
@@ -31,18 +31,18 @@ function computeMetrics(responses, headcount) {
   const measuredResponses = responses.filter(
     (response) => response.instrumentVersion === CURRENT_INSTRUMENT_VERSION
   );
-  const hasPsychosocialSample = measuredResponses.length >= MIN_SAMPLE.responses;
-  const attritionRisk = hasPsychosocialSample ? workPressureIndex(measuredResponses) : null;
+  const attritionRisk = workPressureIndex(measuredResponses);
 
   const { rate: activePulseRate, avgPerWeek } = computeWeeklyParticipation(responses, headcount);
 
   const psychSafetyValues = measuredResponses
     .map((response) => toFiniteNumber(response.psychosocialFactors?.psychSafety))
     .filter((value) => value !== null);
-  const psychSafetyAvg = psychSafetyValues.length >= MIN_SAMPLE.responses
+  const psychSafetyAvg = psychSafetyValues.length > 0
     ? averageNumeric(psychSafetyValues)
     : null;
   const psychSafety = psychSafetyAvg === null ? null : Math.round(psychSafetyAvg * 10) / 10;
+  const workLifeBalance = averageNumeric(responses.map((response) => response.workLifeBalance));
 
   return {
     enps,
@@ -50,6 +50,7 @@ function computeMetrics(responses, headcount) {
     activePulseRate,
     avgPerWeek,
     psychSafety,
+    workLifeBalance,
     sampleSize: responses.length,
     psychosocialSampleSize: measuredResponses.length,
   };

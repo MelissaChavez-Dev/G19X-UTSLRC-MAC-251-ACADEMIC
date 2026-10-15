@@ -19,16 +19,30 @@ function todayLabel() {
 function dashboardKpiRows({ metrics, absence, turnover, performance, headcount }) {
   const responseSample = metrics?.sampleSize ?? 0;
   const responseLevel = (key, value) =>
-    getKpiLevelForSample(key, value, responseSample).label;
+    responseSample > 0 && responseSample < MIN_SAMPLE.responses
+      ? `Preliminar (${responseSample}/${MIN_SAMPLE.responses})`
+      : getKpiLevelForSample(key, value, responseSample).label;
+  const psychosocialSample = metrics?.psychosocialSampleSize ?? 0;
   const psychosocialLevel = (key, value) =>
-    getKpiLevelForSample(key, value, metrics?.psychosocialSampleSize ?? 0).label;
+    psychosocialSample > 0 && psychosocialSample < MIN_SAMPLE.responses
+      ? `Preliminar (${psychosocialSample}/${MIN_SAMPLE.responses})`
+      : getKpiLevelForSample(key, value, psychosocialSample).label;
   const participationLevel = headcount >= MIN_SAMPLE.headcount && responseSample >= MIN_SAMPLE.responses
     ? getKpiLevel("participation", metrics?.activePulseRate)
-    : LEVELS.noData;
+    : responseSample > 0
+      ? `Preliminar (${responseSample}/${MIN_SAMPLE.responses})`
+      : LEVELS.noData;
 
   return [
     { metric: "Salud neta del equipo (eNPS)", value: metrics?.enps ?? "—", level: responseLevel("enps", metrics?.enps) },
     { metric: "Índice de presión laboral", value: Number.isFinite(metrics?.attritionRisk) ? `${metrics.attritionRisk}/100` : "—", level: psychosocialLevel("workPressure", metrics?.attritionRisk) },
+    {
+      metric: "Balance vida-trabajo",
+      value: Number.isFinite(metrics?.workLifeBalance) ? `${metrics.workLifeBalance}/10` : "—",
+      level: responseSample > 0 && responseSample < MIN_SAMPLE.responses
+        ? `Preliminar (${responseSample}/${MIN_SAMPLE.responses})`
+        : "Sin umbral definido",
+    },
     { metric: "Participación en pulsos", value: Number.isFinite(metrics?.activePulseRate) ? `${metrics.activePulseRate}%` : "—", level: participationLevel.label },
     { metric: "Seguridad psicológica", value: Number.isFinite(metrics?.psychSafety) ? `${metrics.psychSafety}/5` : "—", level: psychosocialLevel("psychSafety", metrics?.psychSafety) },
     {
@@ -104,10 +118,11 @@ export function exportDashboardPdf({
   doc.text("Presión laboral por departamento (índice / 100)", 14, cursorY);
   autoTable(doc, {
     startY: cursorY + 3,
-    head: [["Departamento", "eNPS", "Presión laboral / 100", "Participación", "Nivel"]],
+    head: [["Departamento", "eNPS", "Balance vida-trabajo / 10", "Presión laboral / 100", "Participación", "Nivel"]],
     body: deptRows.map((row) => [
       row.name,
       `${row.enps}`,
+      Number.isFinite(row.workLifeBalance) ? `${row.workLifeBalance}/10` : "—",
       Number.isFinite(row.attritionRisk) ? `${row.attritionRisk}/100` : "—",
       `${row.activePulseRate}%`,
       row.tier?.label || "—",
@@ -183,6 +198,7 @@ export async function exportResponsesExcel({
   const riskRows = deptRows.map((row) => ({
     departamento: row.name,
     eNPS: row.enps,
+    balanceVidaTrabajo: row.workLifeBalance,
     indicePresionLaboral: row.attritionRisk,
     participación: row.activePulseRate,
     nivel: row.tier?.label || "",

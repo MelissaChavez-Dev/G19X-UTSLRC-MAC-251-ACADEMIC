@@ -7,9 +7,11 @@ import RiskHeatmap from "../components/RiskHeatmap";
 import AIStrategistPanel from "../components/AIStrategistPanel";
 import DepartmentSentimentTrend from "../components/DepartmentSentimentTrend";
 import FrictionHotspots from "../components/FrictionHotspots";
+import FrictionSourceChart from "../components/FrictionSourceChart";
 import MetricDetailModal from "../components/MetricDetailModal";
 import { useOrgHealthMetrics } from "../hooks/useOrgHealthMetrics";
 import { useDepartmentRisk } from "../hooks/useDepartmentRisk";
+import { useFrictionSources } from "../hooks/useFrictionSources";
 import { useWeeklySentiment } from "../hooks/useWeeklySentiment";
 import { useWeeklyTrends } from "../hooks/useWeeklyTrends";
 import { useAbsenceMetrics } from "../hooks/usePresence";
@@ -77,6 +79,14 @@ const KPI_DEFS = [
     getSuffix: () => "/ 100 puntos",
   },
   {
+    id: "kpi-work-life",
+    icon: "balance",
+    label: "Balance vida-trabajo",
+    dataKey: "workLifeBalance",
+    getValue: (m) => (Number.isFinite(m.workLifeBalance) ? m.workLifeBalance : "—"),
+    getSuffix: (m) => (Number.isFinite(m.workLifeBalance) ? "/ 10" : null),
+  },
+  {
     id: "kpi-pulse",
     icon: "how_to_reg",
     label: "Participación en pulsos",
@@ -96,7 +106,7 @@ const KPI_DEFS = [
 
 const DEF_BY_ID = Object.fromEntries(KPI_DEFS.map((def) => [def.id, def]));
 
-/* Las tres filas secundarias del pulso: cada una explica su escala en una línea. */
+/* Filas secundarias del pulso: cada una explica su escala en una línea. */
 const PULSE_ROWS = [
   {
     id: "kpi-attrition",
@@ -104,18 +114,38 @@ const PULSE_ROWS = [
     color: "var(--error)",
     unit: "/ 100",
     deltaUnit: " pts",
-    hint: () => "Escala orientativa, no es una probabilidad",
+    hint: (m) => m.psychosocialSampleSize < MIN_SAMPLE.responses
+      ? `Valor preliminar · ${m.psychosocialSampleSize}/${MIN_SAMPLE.responses} respuestas`
+      : "Escala orientativa, no es una probabilidad",
     level: (m) => getKpiLevelForSample("workPressure", m.attritionRisk, m.psychosocialSampleSize), // KPI-LEVEL
+  },
+  {
+    id: "kpi-work-life",
+    progress: (m) => clamp01(m.workLifeBalance / 10),
+    color: "var(--primary)",
+    unit: "/ 10",
+    deltaUnit: " pts",
+    hint: (m) => m.sampleSize < MIN_SAMPLE.responses
+      ? `Promedio preliminar · ${m.sampleSize}/${MIN_SAMPLE.responses} respuestas`
+      : `Promedio sobre ${m.sampleSize} respuestas`,
   },
   {
     id: "kpi-pulse",
     progress: (m) => clamp01(m.activePulseRate / 100),
-    level: (m, headcount) => (headcount > 0 ? getKpiLevel("participation", m.activePulseRate) : LEVELS.noData), // KPI-LEVEL
+    level: (m, headcount) => headcount >= MIN_SAMPLE.headcount
+      ? getKpiLevelForSample("participation", m.activePulseRate, m.sampleSize)
+      : LEVELS.noData, // KPI-LEVEL
     color: "var(--success)",
     unit: null,
     deltaUnit: "",
-    hint: (m, headcount) =>
-      headcount > 0 ? `~${m.avgPerWeek} de ${headcount} por semana` : `~${m.avgPerWeek} por semana`,
+    hint: (m, headcount) => {
+      const participation = headcount > 0
+        ? `~${m.avgPerWeek} de ${headcount} por semana`
+        : `~${m.avgPerWeek} por semana`;
+      return m.sampleSize < MIN_SAMPLE.responses
+        ? `Preliminar · ${m.sampleSize}/${MIN_SAMPLE.responses} respuestas · ${participation}`
+        : participation;
+    },
   },
   {
     id: "kpi-safety",
@@ -124,12 +154,15 @@ const PULSE_ROWS = [
     color: "var(--secondary)",
     unit: "/ 5,0",
     deltaUnit: "",
-    hint: (m) =>
-      !Number.isFinite(m.psychSafety)
-        ? "Sin datos aún"
-        : ["low", "controlled"].includes(getKpiLevel("psychSafety", m.psychSafety).tone) // KPI-LEVEL: mismo criterio que el chip
-          ? "Estable"
-          : "Requiere atención",
+    hint: (m) => {
+      if (!Number.isFinite(m.psychSafety)) return "Sin datos aún";
+      if (m.psychosocialSampleSize < MIN_SAMPLE.responses) {
+        return `Promedio preliminar · ${m.psychosocialSampleSize}/${MIN_SAMPLE.responses} respuestas`;
+      }
+      return ["low", "controlled"].includes(getKpiLevel("psychSafety", m.psychSafety).tone) // KPI-LEVEL: mismo criterio que el chip
+        ? "Estable"
+        : "Requiere atención";
+    },
   },
 ];
 
@@ -306,6 +339,11 @@ const HeroTile = memo(function HeroTile({ def, metrics, previousMetrics, onExpan
         <span className="block text-body-sm text-on-surface-variant">
           Escala de −100 a +100, sobre {metrics.sampleSize} respuestas
         </span>
+        {metrics.sampleSize < MIN_SAMPLE.responses && (
+          <span className="text-label-sm text-on-surface-variant">
+            Resultado preliminar · mínimo {MIN_SAMPLE.responses} respuestas
+          </span>
+        )}
         <DeltaNote diff={diff} unit="" hasPrevious={Boolean(previousMetrics)} />
         <span className="mt-space-sm inline-flex items-center gap-2 rounded-full bg-surface-container-low px-space-md py-2 text-label-md text-on-surface">
           <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
@@ -619,6 +657,11 @@ export default function Dashboard() {
   const { metrics, previousMetrics, periodLabel, loading, headcount } = useOrgHealthMetrics(departmentId);
   const { rows: deptRows, loading: deptLoading } = useDepartmentRisk(departmentId);
   const {
+    sources: frictionSources,
+    loading: frictionSourcesLoading,
+    error: frictionSourcesError,
+  } = useFrictionSources(departmentId);
+  const {
     trend,
     hotspots,
     comments,
@@ -823,6 +866,11 @@ export default function Dashboard() {
               <MemoFrictionHotspots items={hotspots} />
             </div>
           )}
+          <FrictionSourceChart
+            items={frictionSources}
+            loading={frictionSourcesLoading}
+            error={frictionSourcesError}
+          />
           {sentimentLoading && (
             <p role="status" className="text-body-md text-on-surface-variant">
               Analizando sentimiento de comentarios...
