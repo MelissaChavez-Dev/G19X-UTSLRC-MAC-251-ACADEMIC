@@ -24,7 +24,7 @@ serviceAccountKey.json
 firebase-debug.log
 firestore-debug.log
 .firebase/
-
+.firebaserc
 # Editor
 .vscode/*
 !.vscode/extensions.json
