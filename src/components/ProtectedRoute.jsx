@@ -4,7 +4,6 @@ import LoadingScreen from "./LoadingScreen";
 
 const ROLE_HOME = {
   admin: "/dashboard",
-  team_lead: "/mi-equipo",
   employee: "/mi-espacio",
 };
 

@@ -43,7 +43,7 @@ function App() {
             <Route
               path="/survey"
               element={
-                <ProtectedRoute roles={["employee", "team_lead", "admin"]}>
+                <ProtectedRoute roles={["employee", "admin"]}>
                   <WellnessSurvey />
                 </ProtectedRoute>
               }
@@ -108,7 +108,7 @@ function App() {
             <Route
               path="/mi-espacio"
               element={
-                <ProtectedRoute roles={["employee", "team_lead"]}>
+                <ProtectedRoute roles={["employee"]}>
                   <MiEspacio />
                 </ProtectedRoute>
               }
@@ -116,7 +116,7 @@ function App() {
             <Route
               path="/mis-proyectos/:teamId?"
               element={
-                <ProtectedRoute roles={["employee", "team_lead"]}>
+                <ProtectedRoute roles={["employee"]}>
                   <MisProyectos />
                 </ProtectedRoute>
               }
@@ -124,7 +124,7 @@ function App() {
             <Route
               path="/encuesta/:templateId"
               element={
-                <ProtectedRoute roles={["employee", "team_lead", "admin"]}>
+                <ProtectedRoute roles={["employee", "admin"]}>
                   <SurveyRunner />
                 </ProtectedRoute>
               }
@@ -140,7 +140,7 @@ function App() {
             <Route
               path="/equipos/:teamId"
               element={
-                <ProtectedRoute roles={["admin", "team_lead"]}>
+                <ProtectedRoute roles={["admin"]}>
                   <TeamBoard />
                 </ProtectedRoute>
               }
@@ -148,7 +148,7 @@ function App() {
             <Route
               path="/mi-equipo"
               element={
-                <ProtectedRoute roles={["team_lead"]}>
+                <ProtectedRoute roles={["admin"]}>
                   <MiEquipo />
                 </ProtectedRoute>
               }

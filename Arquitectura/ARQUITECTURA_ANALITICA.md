@@ -142,7 +142,7 @@ La actividad digital no registrada es un proxy de actividad dentro de la aplicac
 
 ## 8. Seguridad y privacidad en la arquitectura
 
-- **Roles con claims:** el rol (`admin`, `employee`, `team_lead`) viaja en el token de Firebase Auth y lo usan tanto las reglas de Firestore como las Cloud Functions.
+- **Roles con claims:** el rol (`admin`, `employee`) viaja en el token de Firebase Auth y lo usan tanto las reglas de Firestore como las Cloud Functions.
 - **Rutas protegidas:** `ProtectedRoute` limita cada pantalla a sus roles; dashboard, calidad, asistencia, gestión de permisos y directorio son solo para administración.
 - **Operaciones sensibles en el servidor:** alta de usuarios, contraseñas temporales, bajas y equipos pasan por Cloud Functions con el Admin SDK, no por escrituras directas del navegador.
 - **Secretos fuera del código:** la clave de Gemini es un secreto de Cloud Functions, no se incluye en el cliente.

@@ -72,7 +72,7 @@ export default function TeamBoard() {
   );
 
   if (!isAdmin) {
-    // colaborador / team_lead: cabecera simple, sin el sidebar ejecutivo
+    // colaborador / cabecera simple, sin el sidebar ejecutivo
     return <EmployeeShell>{content}</EmployeeShell>;
   }
 

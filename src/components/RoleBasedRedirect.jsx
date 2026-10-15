@@ -8,7 +8,6 @@ import LoadingScreen from "./LoadingScreen";
  * Decide a dónde va el usuario después de iniciar sesión:
  * - mustChangePassword → /cambiar-password
  * - admin              → /dashboard
- * - team_lead          → /mi-equipo
  * - employee           → /mi-espacio
  *
  * Si el usuario autenticado no tiene rol ni perfil (cuenta heredada del MVP),
@@ -38,7 +37,6 @@ export default function RoleBasedRedirect() {
   if (mustChangePassword) return <Navigate to="/cambiar-password" replace />;
 
   if (role === "admin") return <Navigate to="/dashboard" replace />;
-  if (role === "team_lead") return <Navigate to="/mi-equipo" replace />;
   if (role === "employee") return <Navigate to="/mi-espacio" replace />;
 
   return (

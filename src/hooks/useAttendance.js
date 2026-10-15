@@ -50,7 +50,7 @@ export function useAttendance() {
       (snapshot) => {
         currentEmployees = snapshot.docs
           .map((item) => ({ id: item.id, ...item.data() }))
-          .filter((employee) => employee.role === "employee" || employee.role === "team_lead")
+          .filter((employee) => employee.role === "employee")
           .sort((first, second) => (first.displayName || "").localeCompare(second.displayName || "", "es"));
         employeesLoaded = true;
         currentError = null;

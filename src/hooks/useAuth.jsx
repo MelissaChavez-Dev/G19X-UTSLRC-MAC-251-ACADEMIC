@@ -121,7 +121,6 @@ export function AuthProvider({ children }) {
     role,
     refreshClaims,
     isAdmin: role === "admin",
-    isTeamLead: role === "team_lead",
     isEmployee: role === "employee",
     mustChangePassword: state.profile?.mustChangePassword === true,
   };

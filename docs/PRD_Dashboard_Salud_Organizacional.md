@@ -52,12 +52,12 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
 | Rol | Usuario | Propósito y Alcance de Acceso |
 |---|---|---|
 | **`admin`** | Dirección / propietaria del entorno | Acceso al Dashboard Ejecutivo (`/dashboard`), Gestión de Usuarios (`/admin/usuarios`), Asistencia (`/admin/asistencia`), Gestión de Permisos (`/admin/permisos`), Directorio de Equipos (`/equipos`), tableros, encuestas, reportes y descargas PDF/Excel. |
-| **`team_lead`** | Líder de equipo | Acceso a su espacio de equipo (`/mi-equipo`), proyectos (`/mis-proyectos`) y tableros autorizados (`/equipos/:teamId`). |
+
 | **`employee`** | Colaborador | Portal personal (`/mi-espacio`) para solicitar/cancelar permisos pendientes, consultar saldo e historial, editar nombre y teléfono, subir foto de perfil, contestar encuestas y consultar actividad; puede unirse a equipos y usar sus tableros. |
 
 ### 4.2 Flujo de Alta y Autenticación
 1. **Alta centralizada por Administrador:** No existe autorregistro abierto. La administradora crea las cuentas necesarias desde `/admin/usuarios`.
-2. **Control de roles:** El sistema utiliza `admin`, `team_lead` y `employee`, con rutas protegidas según cada rol.
+2. **Control de roles:** El sistema utiliza `admin` y `employee`, con rutas protegidas según cada rol.
 3. **Redirección condicional (`RoleBasedRedirect`):** Según el rol asignado, el sistema conduce al administrador a `/dashboard`, al líder a `/mi-equipo` y al empleado a `/mi-espacio`.
 
 Las cuentas se aprovisionan individualmente mediante Firebase Authentication y Gestión de Usuarios. El repositorio no documenta contraseñas ni cuentas compartidas.

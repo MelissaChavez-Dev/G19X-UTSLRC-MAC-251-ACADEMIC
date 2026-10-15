@@ -60,8 +60,6 @@ const ROLE_OPTIONS = [
 
   { id: "employee", label: "Colaborador" },
 
-  { id: "team_lead", label: "Líder de equipo" },
-
   { id: "admin", label: "Administrador" },
 
 ];
@@ -794,7 +792,7 @@ export default function UserManagement() {
 
   const employeeUsers = users.filter(
 
-    (user) => (user.role === "employee" || user.role === "team_lead") && user.active !== false
+    (user) => (user.role === "employee") && user.active !== false
 
   );
 

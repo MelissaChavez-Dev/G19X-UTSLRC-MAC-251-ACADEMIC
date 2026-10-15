@@ -105,7 +105,7 @@ Las cinco reglas se evalúan al cargar el dashboard; todas las alertas activas a
 
 - **Qué mide:** qué proporción de la plantilla responde en una semana típica.
 - **Fórmula:** (promedio semanal de respuestas / headcount) × 100, con tope de 100. La misma función (`computeWeeklyParticipation`) se usa en el KPI global y en el heatmap por departamento.
-- **Fuente:** `responses` agrupadas por `weekId` y headcount vigente (usuarios activos con rol `employee` o `team_lead`).
+- **Fuente:** `responses` agrupadas por `weekId` y headcount vigente (usuarios activos con rol `employee`).
 - **Frecuencia y ventana:** semanal; el KPI muestra el promedio del periodo.
 - **Umbrales:** Bajo riesgo 70 o más; Controlado 50 a 69; Elevado 30 a 49; Crítico menor a 30. A mayor valor, mejor. Solo se asigna nivel si el headcount es mayor a 0.
 - **Limitaciones:** cuenta respuestas, no personas. Un departamento sin usuarios asignados tiene headcount 0 y su participación se muestra como 0%.

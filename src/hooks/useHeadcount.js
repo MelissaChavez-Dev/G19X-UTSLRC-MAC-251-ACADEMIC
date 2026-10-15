@@ -3,7 +3,7 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../services/firebase";
 
 /**
- * Headcount real: usuarios activos employee/team_lead agrupados por departamento.
+ * Headcount real: usuarios activos employee agrupados por departamento.
  */
 export function useHeadcount() {
   const [state, setState] = useState({
@@ -16,7 +16,7 @@ export function useHeadcount() {
     return onSnapshot(usersQuery, (snapshot) => {
         const respondents = snapshot.docs
           .map((d) => d.data())
-          .filter((u) => u.role === "employee" || u.role === "team_lead");
+          .filter((u) => u.role === "employee");
 
         const byDepartment = {};
         respondents.forEach((u) => {

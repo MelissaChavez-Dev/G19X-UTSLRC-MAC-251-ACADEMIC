@@ -324,7 +324,7 @@ def create_employee_account(req: https_fn.CallableRequest) -> dict:
             code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
             message="Nombre y correo son obligatorios.",
         )
-    if role not in ("employee", "team_lead", "admin"):
+    if role not in ("employee", "admin"):
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
             message="Rol no válido.",
@@ -467,7 +467,7 @@ def update_user_account(req: https_fn.CallableRequest) -> dict:
         admin_auth.update_user(uid, disabled=not data["active"])
 
     role = data.get("role")
-    if role in ("employee", "team_lead", "admin"):
+    if role in ("employee", "admin"):
         updates["role"] = role
         admin_auth.set_custom_user_claims(uid, {"role": role})
 
@@ -526,7 +526,7 @@ def update_employee_profile(req: https_fn.CallableRequest) -> dict:
             code=https_fn.FunctionsErrorCode.NOT_FOUND,
             message="No se encontró un perfil activo para tu cuenta.",
         )
-    if profile.get("role") not in {"employee", "team_lead"}:
+    if profile.get("role") not in {"employee"}:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.PERMISSION_DENIED,
             message="Esta función solo está disponible para colaboradores.",
@@ -763,7 +763,7 @@ def submit_survey_response(req: https_fn.CallableRequest) -> dict:
     db = _db()
     profile = db.collection("users").document(caller.uid).get().to_dict() or {}
     role = profile.get("role")
-    if profile.get("active", True) is False or role not in {"employee", "team_lead", "admin"}:
+    if profile.get("active", True) is False or role not in {"employee", "admin"}:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.PERMISSION_DENIED,
             message="Tu cuenta no tiene permiso para responder encuestas.",
@@ -891,7 +891,7 @@ def submit_leave_request(req: https_fn.CallableRequest) -> dict:
             code=https_fn.FunctionsErrorCode.FAILED_PRECONDITION,
             message="No se encontró un perfil activo para tu cuenta.",
         )
-    if profile.get("role") not in {"employee", "team_lead"}:
+    if profile.get("role") not in {"employee"}:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.PERMISSION_DENIED,
             message="Solo un colaborador puede solicitar permisos.",
