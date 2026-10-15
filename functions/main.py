@@ -859,12 +859,11 @@ def submit_survey_response(req: https_fn.CallableRequest) -> dict:
 
     @admin_firestore.transactional
     def commit_response(transaction):
-        completion_exists = next(transaction.get(completion_ref)).exists
-        legacy_completion_exists = (
-            next(transaction.get(legacy_completion_ref)).exists
-            if legacy_completion_ref else False
-        )
-        if completion_exists or legacy_completion_exists:
+        completion_refs = [completion_ref]
+        if legacy_completion_ref is not None:
+            completion_refs.append(legacy_completion_ref)
+        completion_snapshots = transaction.get_all(completion_refs)
+        if any(snapshot.exists for snapshot in completion_snapshots):
             raise https_fn.HttpsError(
                 code=https_fn.FunctionsErrorCode.ALREADY_EXISTS,
                 message="Ya respondiste esta encuesta durante el periodo vigente.",

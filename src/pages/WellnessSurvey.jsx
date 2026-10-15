@@ -83,7 +83,10 @@ export default function WellnessSurvey({ templateId = null, fixedDepartmentId = 
       setStatus("done");
     } catch (err) {
       console.error("No se pudo enviar la respuesta de la encuesta:", err);
-      setSubmitError(err?.message || "No se pudo enviar tu respuesta. Intenta de nuevo.");
+      const message = err?.code === "functions/internal"
+        ? "El servidor no pudo registrar tu respuesta. Intenta de nuevo en unos minutos."
+        : err?.message || "No se pudo enviar tu respuesta. Intenta de nuevo.";
+      setSubmitError(message);
       setStatus("error");
     }
   }, [canAdvance, isLast, activeDepartmentId, answers, status, template]);
