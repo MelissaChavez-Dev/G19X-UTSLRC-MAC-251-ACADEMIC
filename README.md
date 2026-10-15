@@ -119,39 +119,6 @@ El sistema utiliza los roles `admin` y `employee`; no hay autorregistro abierto.
 
 Las cuentas `employee` responden encuestas para el departamento asignado a su perfil; la administración puede responder para un departamento seleccionado. La administración también puede revisar calidad de datos, actividad digital, permisos, equipos y reportes.
 
-
-### Credenciales de Acceso
-
-#### A. Cuenta de Administrador (Dirección / RH)
-- **Correo electrónico:** `admin@welfare.com`
-- **Contraseña de prueba actual:** `12345678`
-- **Pantalla a la que entra automáticamente:** `/dashboard` (Dashboard Ejecutivo principal).
-- **Funcionalidades exclusivas:**
-  - Visualización y filtrado del Dashboard Ejecutivo.
-  - Revisión de la calidad de datos (`/admin/calidad`).
-  - Asistencia digital (`/admin/asistencia`) y revisión de permisos (`/admin/permisos`).
-  - Exportación de reportes formales en **PDF** y **Excel** multipestaña.
-  - Generación de diagnósticos con IA (Gemini) y conversión a tareas.
-  - **Gestión de Usuarios** (`/admin/usuarios`): Alta de colaboradores, identificador, puesto, tipo de contratación, fecha de ingreso, gráfica por departamento, horarios y reseteo de contraseñas.
-  - **Directorio de Equipos** (`/equipos`): Creación de equipos y visualización de códigos de unión (`joinCode`).
-  - **Constructor de Encuestas** (`/survey-builder`): Creación visual y publicación de encuestas segmentadas por departamento con `@dnd-kit`.
-
-#### B. Cuenta de Empleado (Pruebas)
-- Inicia sesión con el correo de una cuenta personal de empleado que ya esté registrada en Firebase Authentication.
-  puede ser: 
- **Correo** `beatrizlozano@operaciones.com`
-- **Contraseña de prueba actual:** `12345678`
-- **Pantalla a la que entran automáticamente:** `/mi-espacio` (Espacio del Colaborador).
-- **Funcionalidades del empleado:**
-  - Ver y responder encuestas pendientes asignadas a su área (`/encuesta/:templateId`).
-  - Unirse a un equipo de trabajo mediante código con `JoinTeamCard`.
-  - Tablero Kanban colaborativo de su equipo (`/mis-proyectos`).
-  - Solicitud y seguimiento de vacaciones, incapacidades y otros permisos; edición de nombre y teléfono y carga de foto de perfil desde `/mi-espacio`.
-  - Su foto de perfil aparece en los comentarios del Kanban.
-  - Resumen de presencia y actividad digital personal.
-
-> **Nota de seguridad:** `12345678` es una contraseña compartida únicamente para el entorno de pruebas y evaluación del proyecto. 
-
 --- 
 
 ## 7. Estructura del Repositorio

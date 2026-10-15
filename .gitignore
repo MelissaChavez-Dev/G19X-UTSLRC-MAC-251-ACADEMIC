@@ -12,7 +12,7 @@ node_modules
 dist
 dist-ssr
 *.local
-KEYS.txt
+Credenciales-keys_DASHBOARD_EJECUTIVO_ORGANIZACIONAL
 .firebaserc
 # Variables de entorno y credenciales
 .env
