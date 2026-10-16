@@ -20,6 +20,8 @@ export default function Sidebar() {
   const { collapsed, toggleCollapsed } = useSidebarState();
 
   async function handleLogout() {
+    if (!window.confirm("¿Deseas cerrar sesión?")) return;
+
     try {
       await signOut(auth);
       navigate("/login");

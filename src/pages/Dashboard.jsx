@@ -169,43 +169,53 @@ const PULSE_ROWS = [
 /* ---------- Piezas pequeñas ---------- */
 
 const ENPS_LEVELS = [
-  { label: "Bajo", min: -100, max: -10, mood: "sad", color: "var(--error)", range: "< −10" },
-  { label: "Bueno", min: -10, max: 20, mood: "neutral", color: "var(--warning)", range: "−10 a 19" },
-  { label: "Muy bueno", min: 20, max: 40, mood: "smile", color: "var(--primary)", range: "20 a 39" },
-  { label: "Excelente", min: 40, max: 100, mood: "happy", color: "var(--success)", range: "≥ 40" },
+  { label: "Bajo", min: -100, max: -10, mood: "sad", color: "var(--enps-band-low)", range: "< −10" },
+  { label: "Bueno", min: -10, max: 20, mood: "neutral", color: "var(--enps-band-passive)", range: "−10 a 19" },
+  { label: "Muy bueno", min: 20, max: 40, mood: "smile", color: "var(--enps-band-good)", range: "20 a 39" },
+  { label: "Excelente", min: 40, max: 100, mood: "happy", color: "var(--enps-band-excellent)", range: "≥ 40" },
 ];
 
 function enpsLevel(score) {
   return ENPS_LEVELS.find((level) => score < level.max) ?? ENPS_LEVELS[ENPS_LEVELS.length - 1];
 }
 
-function enpsPoint(score, radius = 98) {
+function enpsPoint(score, radius = 92) {
   const progress = clamp01((score + 100) / 200);
   const angle = Math.PI * (1 - progress);
+
   return {
     x: 140 + radius * Math.cos(angle),
-    y: 132 - radius * Math.sin(angle),
+    y: 124 - radius * Math.sin(angle),
   };
 }
 
 function enpsArc(start, end) {
   const from = enpsPoint(start);
   const to = enpsPoint(end);
-  return `M ${from.x} ${from.y} A 98 98 0 0 1 ${to.x} ${to.y}`;
+
+  return `M ${from.x} ${from.y} A 92 92 0 0 1 ${to.x} ${to.y}`;
 }
 
 function EnpsFaceGlyph({ level }) {
+  const faceColor = level.label === "Bueno"
+    ? "var(--enps-face-on-amber)"
+    : "var(--enps-face-on-color)";
   const mouth = {
     sad: "M 8 16 Q 12 11 16 16",
     neutral: "M 8 15 H 16",
     smile: "M 8 13 Q 12 18 16 13",
-    happy: "M 7 12 Q 12 20 17 12",
+    happy: "M 6 11 Q 12 22 18 11",
   }[level.mood];
 
   return (
     <>
       <circle cx="12" cy="12" r="11" fill={level.color} />
-      <g fill="var(--on-accent)" stroke="var(--on-accent)" strokeLinecap="round" strokeWidth="1.5">
+      <g
+        fill={faceColor}
+        stroke={faceColor}
+        strokeLinecap="round"
+        strokeWidth="1.5"
+      >
         <circle cx="9" cy="9" r="0.9" />
         <circle cx="15" cy="9" r="0.9" />
         <path d={mouth} fill="none" />
@@ -215,17 +225,37 @@ function EnpsFaceGlyph({ level }) {
 }
 
 function EnpsThermometer({ score, sampleSize }) {
-  const level = enpsLevel(score);
-  const needleAngle = -90 + clamp01((score + 100) / 200) * 180;
+  const hasResponses = sampleSize > 0 && Number.isFinite(score);
+  const safeScore = Number.isFinite(score)
+    ? Math.max(-100, Math.min(100, score))
+    : 0;
+
+  const level = enpsLevel(safeScore);
+  const progress = clamp01((safeScore + 100) / 200);
+  const needleAngle = -90 + progress * 180;
 
   return (
-    <div className="w-full max-w-[320px] shrink-0">
+    <div className="flex w-full max-w-[520px] shrink-0 flex-col items-center">
       <svg
-        viewBox="0 0 280 184"
+        viewBox="0 0 280 166"
         className="h-auto w-full overflow-visible"
         role="img"
-        aria-label={`Medidor eNPS: ${score}, nivel ${sampleSize ? level.label : "sin respuestas"}`}
+        aria-label={
+          hasResponses
+            ? `Medidor eNPS: ${safeScore}, nivel ${level.label}`
+            : "Medidor eNPS sin respuestas suficientes"
+        }
       >
+        {/* Base neutra: separa visualmente los segmentos del fondo. */}
+        <path
+          d={enpsArc(-100, 100)}
+          fill="none"
+          stroke="var(--surface-container-highest)"
+          strokeWidth="31"
+          strokeLinecap="round"
+        />
+
+        {/* Segmentos del indicador. */}
         {ENPS_LEVELS.map((item, index) => {
           const gap = 2;
           const start = item.min + (index === 0 ? 0 : gap);
@@ -234,31 +264,95 @@ function EnpsThermometer({ score, sampleSize }) {
 
           return (
             <g key={item.label}>
-              <path d={enpsArc(start, end)} fill="none" stroke={item.color} strokeWidth="30" />
-              <g transform={`translate(${facePoint.x - 12} ${facePoint.y - 12})`}>
+              <path
+                d={enpsArc(start, end)}
+                fill="none"
+                stroke={item.color}
+                strokeWidth="25"
+                strokeLinecap="round"
+              />
+
+              <g
+                transform={`translate(${facePoint.x - 12} ${facePoint.y - 12})`}
+              >
                 <EnpsFaceGlyph level={item} />
               </g>
             </g>
           );
         })}
-        <g transform={`rotate(${needleAngle} 140 132)`} className="transition-transform duration-700 ease-out motion-reduce:transition-none">
-          <path d="M 140 50 L 134 134 L 140 126 L 146 134 Z" fill="var(--on-surface)" />
+
+        {/* Aguja con pivote central. */}
+        <g
+          transform={`rotate(${needleAngle} 140 124)`}
+          className="transition-transform duration-700 ease-out motion-reduce:transition-none"
+        >
+          <path
+            d="M 140 48 L 135 126 L 140 119 L 145 126 Z"
+            fill="var(--on-surface)"
+          />
         </g>
-        <circle cx="140" cy="132" r="9" fill="var(--on-surface)" />
-        <text x="140" y="177" fill="var(--on-surface)" fontSize="27" fontWeight="700" textAnchor="middle">
-          {score > 0 ? `+${score}` : score}
+
+        <circle
+          cx="140"
+          cy="124"
+          r="10"
+          fill="var(--surface-container)"
+        />
+        <circle
+          cx="140"
+          cy="124"
+          r="6"
+          fill="var(--on-surface)"
+        />
+
+        {/* Valor legible debajo de la aguja. */}
+        <text
+          x="140"
+          y="162"
+          fill="var(--on-surface)"
+          fontSize="25"
+          fontWeight="750"
+          textAnchor="middle"
+        >
+          {hasResponses
+            ? `${safeScore > 0 ? "+" : ""}${safeScore}`
+            : "—"}
         </text>
       </svg>
-      <div className="mt-1 flex flex-wrap justify-center gap-x-3 gap-y-1">
-        {ENPS_LEVELS.map((item) => (
-          <span key={item.label} className="inline-flex items-center gap-1 text-label-sm text-on-surface-variant">
-            <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0">
-              <EnpsFaceGlyph level={item} />
-            </svg>
-            {item.label}
-          </span>
-        ))}
+
+      {/* Leyenda compacta y adaptable. */}
+      <div className="mt-1 grid w-full grid-cols-2 gap-x-2 gap-y-2 sm:grid-cols-4">
+        {ENPS_LEVELS.map((item) => {
+          const isActive = hasResponses && item === level;
+
+          return (
+            <span
+              key={item.label}
+              className={`inline-flex min-w-0 items-center justify-center gap-1 rounded-full px-1.5 py-1 text-label-sm transition-colors ${
+                isActive
+                  ? "bg-surface-container-high text-on-surface font-semibold"
+                  : "text-on-surface-variant"
+              }`}
+              aria-current={isActive ? "true" : undefined}
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="h-4 w-4 shrink-0"
+              >
+                <EnpsFaceGlyph level={item} />
+              </svg>
+              <span className="truncate">{item.label}</span>
+            </span>
+          );
+        })}
       </div>
+
+      {!hasResponses && (
+        <p className="mt-2 text-center text-label-sm text-on-surface-variant">
+          Aún no hay respuestas para evaluar el eNPS.
+        </p>
+      )}
     </div>
   );
 }
@@ -313,8 +407,15 @@ function LevelBadge({ level }) {
 }
 
 /* Protagonista del bloque: un medidor eNPS semicircular. */
-const HeroTile = memo(function HeroTile({ def, metrics, previousMetrics, onExpand }) {
-  const diff = previousMetrics ? change(metrics.enps, previousMetrics.enps) : null;
+const HeroTile = memo(function HeroTile({
+  def,
+  metrics,
+  previousMetrics,
+  onExpand,
+}) {
+  const diff = previousMetrics
+    ? change(metrics.enps, previousMetrics.enps)
+    : null;
 
   return (
     <motion.button
@@ -322,34 +423,64 @@ const HeroTile = memo(function HeroTile({ def, metrics, previousMetrics, onExpan
       layoutId={def.id}
       onClick={() => onExpand(def)}
       aria-label={`${def.label}: ${metrics.enps}. Ver análisis`}
-      style={{ borderRadius: 40, background: "var(--surface-container-high)" }}
-      className="motion-press relative flex flex-col items-center gap-space-lg overflow-hidden p-space-lg text-left sm:flex-row"
+      style={{
+        borderRadius: 32,
+      }}
+      className="enps-hero-tile group motion-press relative flex min-w-0 flex-col items-center gap-space-md overflow-hidden p-space-md text-center sm:p-space-lg"
     >
-      {/* mancha orgánica de fondo, mismo lenguaje que el canvas */}
+      {/* Acento discreto, sin degradados. */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -right-12 -top-12 h-52 w-52"
-        style={{ background: "var(--primary)", opacity: 0.08, borderRadius: "60% 40% 55% 45% / 50% 60% 40% 50%" }}
+        className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full"
+        style={{
+          background: "var(--primary)",
+          opacity: 0.07,
+        }}
       />
 
-      <EnpsThermometer score={metrics.enps} sampleSize={metrics.sampleSize} />
-
-      <span className="relative flex min-w-0 flex-1 flex-col items-center gap-space-xs text-center sm:items-start sm:text-left">
-        <span className="block text-headline-sm text-on-surface">{def.label}</span>
-        <span className="block text-body-sm text-on-surface-variant">
-          Escala de −100 a +100, sobre {metrics.sampleSize} respuestas
+      <span className="relative flex w-full flex-col items-center gap-space-xs">
+        <span className="block text-headline-md font-semibold text-on-surface">
+          {def.label}
         </span>
+        <span className="block text-body-sm text-on-surface-variant">
+          Escala de −100 a +100
+        </span>
+      </span>
+
+      <EnpsThermometer
+        score={metrics.enps}
+        sampleSize={metrics.sampleSize}
+      />
+
+      <span className="relative flex w-full flex-col items-center gap-space-sm">
         {metrics.sampleSize < MIN_SAMPLE.responses && (
-          <span className="text-label-sm text-on-surface-variant">
-            Resultado preliminar · mínimo {MIN_SAMPLE.responses} respuestas
+          <span className="rounded-xl bg-surface-container-low px-space-sm py-1 text-label-sm text-on-surface-variant">
+            Resultado preliminar · {metrics.sampleSize}/{MIN_SAMPLE.responses} respuestas
           </span>
         )}
-        <DeltaNote diff={diff} unit="" hasPrevious={Boolean(previousMetrics)} />
-        <span className="mt-space-sm inline-flex items-center gap-2 rounded-full bg-surface-container-low px-space-md py-2 text-label-md text-on-surface">
-          <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
+
+        {previousMetrics && (
+          <DeltaNote
+            diff={diff}
+            unit=""
+            hasPrevious
+          />
+        )}
+
+        <span className="inline-flex items-center justify-center gap-2 rounded-full bg-surface-container-low px-space-lg py-space-sm text-label-md font-medium text-on-surface">
+          <span
+            aria-hidden="true"
+            className="material-symbols-outlined text-[18px]"
+          >
             auto_awesome
           </span>
           Ver análisis
+          <span
+            aria-hidden="true"
+            className="material-symbols-outlined text-[18px]"
+          >
+            arrow_forward
+          </span>
         </span>
       </span>
     </motion.button>
@@ -368,16 +499,15 @@ const PulseRow = memo(function PulseRow({ config, metrics, previousMetrics, head
       layoutId={def.id}
       onClick={() => onExpand(def)}
       aria-label={`${def.label}: ${value}. Ver análisis`}
-      style={{ 
+      style={{
+        "--pulse-accent": config.color,
         borderRadius: 32,
-        background: `color-mix(in srgb, ${config.color} 18%, var(--surface-container))`
       }}
-      className="motion-press group flex flex-1 items-center gap-space-md px-space-lg py-space-md text-left hover:brightness-95 transition-all"
+      className="pulse-kpi-card motion-press group flex flex-1 items-center gap-space-md px-space-lg py-space-md text-left transition-all hover:brightness-95"
     >
       <span
         aria-hidden="true"
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full shadow-sm"
-        style={{ background: config.color, color: "var(--on-accent)" }}
+        className="pulse-kpi-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-full shadow-sm"
       >
         <span className="material-symbols-outlined text-[22px]">{def.icon}</span>
       </span>
@@ -427,12 +557,7 @@ const PulseRow = memo(function PulseRow({ config, metrics, previousMetrics, head
   );
 });
 
-const PulseSection = memo(function PulseSection({
-  metrics,
-  previousMetrics,
-  headcount,
-  onExpand,
-}) {
+const PulseSection = memo(function PulseSection({ metrics, previousMetrics, headcount, onExpand }) {
   return (
     <section aria-labelledby="pulse-heading" className="flex flex-col gap-space-sm">
       <SectionHeading
@@ -864,20 +989,18 @@ export default function Dashboard() {
             </p>
           )}
 
-          {/* 5. Análisis interactivo de fuentes de fricción */}
-          <FrictionSourceChart
-            items={frictionSources}
-            loading={frictionSourcesLoading}
-            error={frictionSourcesError}
-          />
-
-          {/* 6. Qué dicen los comentarios */}
+          {/* 5. Qué dicen los comentarios */}
           {trend && hotspots && (
             <div className="grid grid-cols-1 gap-space-md lg:grid-cols-2">
               <MemoDepartmentSentimentTrend rows={trend} />
               <MemoFrictionHotspots items={hotspots} />
             </div>
           )}
+          <FrictionSourceChart
+            items={frictionSources}
+            loading={frictionSourcesLoading}
+            error={frictionSourcesError}
+          />
           {sentimentLoading && (
             <p role="status" className="text-body-md text-on-surface-variant">
               Analizando sentimiento de comentarios...

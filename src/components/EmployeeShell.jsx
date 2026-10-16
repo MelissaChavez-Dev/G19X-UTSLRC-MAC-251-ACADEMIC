@@ -18,8 +18,14 @@ export default function EmployeeShell({ badge, actions, nav, children }) {
   const { collapsed, toggleCollapsed } = useSidebarState();
 
   async function handleLogout() {
-    await signOut(auth);
-    navigate("/login");
+    if (!window.confirm("¿Deseas cerrar sesión?")) return;
+
+    try {
+      await signOut(auth);
+      navigate("/login");
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
   }
 
   return (

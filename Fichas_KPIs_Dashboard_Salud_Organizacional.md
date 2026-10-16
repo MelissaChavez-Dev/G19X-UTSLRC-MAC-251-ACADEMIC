@@ -99,7 +99,7 @@ Las cinco reglas se evalúan al cargar el dashboard; todas las alertas activas a
 - **Fórmula:** promedio de `workLifeBalance` en escala de 1 a 10.
 - **Fuente:** `responses.workLifeBalance`.
 - **Frecuencia y ventana:** se recalcula al cargar el dashboard con respuestas de los últimos 30 días.
-- **Visualización:** el valor numérico se muestra desde la primera respuesta y se etiqueta como preliminar si hay menos de cinco; no se asigna nivel porque este indicador aún no tiene umbrales definidos.
+- **Visualización:** el KPI conserva la escala de la encuesta (1 a 10); en la matriz departamental el valor se normaliza a 1 a 5 según el rango configurado en la pregunta. Se muestra desde la primera respuesta y se etiqueta como preliminar si hay menos de cinco; no se asigna nivel porque este indicador aún no tiene umbrales definidos.
 
 ### 4.2 Índice de presión laboral
 
@@ -135,7 +135,7 @@ Las cinco reglas se evalúan al cargar el dashboard; todas las alertas activas a
 - **Fuente:** `psychosocialFactors` de respuestas con `instrumentVersion: 2`, agrupado por `departmentId`.
 - **Frecuencia y ventana:** se calcula con las respuestas de los últimos 30 días, igual que los demás KPIs del pulso.
 - **Umbrales:** Crítico 4 o más; Elevado 3 a 3.9; Controlado 2 a 2.9; Bajo riesgo menor a 2; "Sin datos" para el nivel cuando el departamento tiene menos de 5 respuestas recientes con el instrumento actual o no hay factores válidos. Los niveles Elevado y Crítico aparecen entre las alertas activas de la campana del TopBar.
-- **Limitaciones:** son autoinformes y no una evaluación normativa o clínica. Los umbrales son propuestos y deben calibrarse con datos reales. Los valores de factores se muestran como preliminares con menos de 5 respuestas y sin color de riesgo; los niveles y colores se habilitan al alcanzar la muestra mínima. Balance vida-trabajo se muestra aparte y no forma parte del promedio de riesgo psicosocial.
+- **Limitaciones:** son autoinformes y no una evaluación normativa o clínica. Los umbrales son propuestos y deben calibrarse con datos reales. Los valores de factores se muestran como preliminares con menos de 5 respuestas y sin color de riesgo; los niveles y colores se habilitan al alcanzar la muestra mínima. Balance vida-trabajo se muestra en una columna aparte, normalizado a 1–5 según la escala configurada, y no forma parte del promedio de riesgo psicosocial.
 
 ### 4.6 Actividad digital no registrada (proxy)
 
