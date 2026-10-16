@@ -16,6 +16,43 @@ const FACTOR_KEYS = [
   "psychSafety",
 ];
 const PROTECTIVE_FACTORS = ["autonomy", "psychSafety"];
+const DEFAULT_WORK_LIFE_SCALE = { min: 1, max: 10 };
+
+function workLifeBalanceScale(template) {
+  const question = template?.questions?.find(
+    (item) => item.mapsTo === "workLifeBalance"
+  );
+  if (!question) return DEFAULT_WORK_LIFE_SCALE;
+
+  if (
+    question.type === "scale"
+    && Number.isFinite(question.min)
+    && Number.isFinite(question.max)
+    && question.max > question.min
+  ) {
+    return { min: question.min, max: question.max };
+  }
+
+  if (question.type === "choice") {
+    const values = (question.options || [])
+      .map((option) => toFiniteNumber(option.value))
+      .filter((value) => value !== null);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    if (values.length > 1 && max > min) return { min, max };
+  }
+
+  return DEFAULT_WORK_LIFE_SCALE;
+}
+
+function normalizeWorkLifeBalance(value, scale) {
+  const numericValue = toFiniteNumber(value);
+  if (numericValue === null) return null;
+
+  const boundedValue = Math.min(scale.max, Math.max(scale.min, numericValue));
+  const normalized = 1 + ((boundedValue - scale.min) / (scale.max - scale.min)) * 4;
+  return Math.round(normalized * 10) / 10;
+}
 
 function riskTier(avgRisk, sampleSize) {
   return getKpiLevelForSample("psychosocialRisk", avgRisk, sampleSize);
@@ -30,7 +67,7 @@ export function filterRecentResponses(responses, now = new Date()) {
   });
 }
 
-export function calculateDepartmentRisk(responses, headcount) {
+export function calculateDepartmentRisk(responses, headcount, templates = []) {
   const factors = {};
   const riskEquivalents = [];
   const promoters = responses.filter((response) => (toFiniteNumber(response.enps) ?? -Infinity) >= 9).length;
@@ -41,7 +78,14 @@ export function calculateDepartmentRisk(responses, headcount) {
   const enps = responses.length > 0
     ? Math.round(((promoters - detractors) / responses.length) * 100)
     : null;
+  const scalesByTemplate = new Map(
+    templates.map((template) => [template.id, workLifeBalanceScale(template)])
+  );
   const averageWorkLifeBalance = averageNumeric(responses.map((response) => response.workLifeBalance));
+  const averageWorkLifeBalanceFivePoint = averageNumeric(responses.map((response) => {
+    const scale = scalesByTemplate.get(response.templateId) || DEFAULT_WORK_LIFE_SCALE;
+    return normalizeWorkLifeBalance(response.workLifeBalance, scale);
+  }));
 
   FACTOR_KEYS.forEach((key) => {
     const values = measuredResponses
@@ -67,6 +111,9 @@ export function calculateDepartmentRisk(responses, headcount) {
     workLifeBalance: averageWorkLifeBalance === null
       ? null
       : Math.round(averageWorkLifeBalance * 10) / 10,
+    workLifeBalanceFivePoint: averageWorkLifeBalanceFivePoint === null
+      ? null
+      : Math.round(averageWorkLifeBalanceFivePoint * 10) / 10,
     tier: riskTier(avgRisk, measuredResponses.length),
     sampleSize: responses.length,
     psychosocialSampleSize: measuredResponses.length,

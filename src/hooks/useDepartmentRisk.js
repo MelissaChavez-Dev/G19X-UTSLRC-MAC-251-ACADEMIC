@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useHeadcount } from "./useHeadcount";
 import { useDepartments } from "./useDepartments";
 import { listRecentResponses } from "../services/responseService";
+import { listTemplates } from "../services/templateService";
 import { calculateDepartmentRisk, filterRecentResponses } from "../utils/departmentRiskUtils.js";
 
 export { calculateDepartmentRisk, filterRecentResponses };
@@ -19,7 +20,10 @@ export function useDepartmentRisk(departmentId = null) {
     async function load() {
       setLoading(true);
       try {
-        const all = await listRecentResponses(30);
+        const [all, templates] = await Promise.all([
+          listRecentResponses(30),
+          listTemplates(),
+        ]);
         const recent = filterRecentResponses(all);
 
         const result = departments.map((dept) => {
@@ -29,7 +33,7 @@ export function useDepartmentRisk(departmentId = null) {
             id: dept.id,
             name: dept.name,
             headcount: deptHeadcount,
-            ...calculateDepartmentRisk(deptResponses, deptHeadcount),
+            ...calculateDepartmentRisk(deptResponses, deptHeadcount, templates),
           };
         });
 
