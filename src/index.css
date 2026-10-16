@@ -33,6 +33,12 @@
   --aqua-soft: #A6CBC5;
   --aqua-deep: #3B7976;
   --aqua-ink: #264C4C;
+  --enps-band-low: #80566C;
+  --enps-band-passive: #F5C542;
+  --enps-band-good: #4F7598;
+  --enps-band-excellent: #4F765C;
+  --enps-face-on-color: #FFFFFF;
+  --enps-face-on-amber: #3B2F00;
 
   --lav-bg: var(--palette-canvas);   --lav-soft: var(--palette-lavender); --lav-deep: #806488;   --lav-ink: #4F4054;
   --peach-bg: var(--palette-canvas); --peach-soft: var(--palette-lavender); --peach-deep: #665477; --peach-ink: #4D405C;
@@ -53,12 +59,23 @@
   --risk-moderate: var(--sky-deep);   --risk-moderate-container: var(--sky-soft);
   --risk-high: var(--lav-deep);       --risk-high-container: var(--lav-soft);
   --risk-critical: var(--peach-deep); --risk-critical-container: var(--peach-soft);
+
+  --heatmap-low-bg: #DCEFE7;       --heatmap-low-fg: #205B48;       --heatmap-low-dot: #367D62;
+  --heatmap-controlled-bg: #F7EDC9; --heatmap-controlled-fg: #725713; --heatmap-controlled-dot: #B58B21;
+  --heatmap-elevated-bg: #F8E2D2;   --heatmap-elevated-fg: #8A461F;   --heatmap-elevated-dot: #C8753D;
+  --heatmap-critical-bg: #F4DCDD;   --heatmap-critical-fg: #8B343A;   --heatmap-critical-dot: #B94D55;
 }
 
 .dark {
   --aqua-soft: #294646;
   --aqua-deep: #9ACBC3;
   --aqua-ink: #E8F5F3;
+  --enps-band-low: #9F1239;
+  --enps-band-passive: #B45309;
+  --enps-band-good: #1D4ED8;
+  --enps-band-excellent: #15803D;
+  --enps-face-on-color: #FFFFFF;
+  --enps-face-on-amber: #2A1B00;
 
   --lav-bg: #292331;   --lav-soft: #403448; --lav-deep: #CDB4DB;   --lav-ink: #F5EEF8;
   --peach-bg: #292331; --peach-soft: #403448; --peach-deep: #B9A3CA; --peach-ink: #F5EEF8;
@@ -77,6 +94,11 @@
   --risk-moderate: var(--sky-deep);   --risk-moderate-container: #304763;
   --risk-high: var(--lav-deep);       --risk-high-container: #403448;
   --risk-critical: var(--peach-deep); --risk-critical-container: #403448;
+
+  --heatmap-low-bg: #123D2D;         --heatmap-low-fg: #D1FAE5;       --heatmap-low-dot: #34D399;
+  --heatmap-controlled-bg: #4B380D;   --heatmap-controlled-fg: #FEF3C7; --heatmap-controlled-dot: #FBBF24;
+  --heatmap-elevated-bg: #552A12;     --heatmap-elevated-fg: #FFEDD5;   --heatmap-elevated-dot: #FB923C;
+  --heatmap-critical-bg: #4C1D24;     --heatmap-critical-fg: #FFE4E6;   --heatmap-critical-dot: #FB7185;
 }
 
 /* ------------------------------------------------------------
@@ -144,7 +166,7 @@
   --surface-tint: var(--p-deep);
 
   --on-surface: var(--p-ink);
-  --on-surface-variant: color-mix(in oklab, var(--p-ink) 75%, var(--p-bg));
+  --on-surface-variant: color-mix(in oklab, var(--p-ink) 90%, var(--p-bg));
   --inverse-surface: var(--p-ink);
   --inverse-on-surface: var(--p-bg);
 
@@ -372,11 +394,11 @@
 .text-headline-lg        { font: 650 27px/34px var(--font-display); letter-spacing: -0.03em; text-wrap: balance; }
 .text-headline-md        { font: 650 21px/28px var(--font-display); letter-spacing: -0.02em; }
 .text-headline-sm        { font: 650 17px/24px var(--font-display); letter-spacing: -0.01em; }
-.text-body-lg            { font: 400 17px/28px var(--font-sans); text-wrap: pretty; }
-.text-body-md            { font: 400 15px/24px var(--font-sans); text-wrap: pretty; }
-.text-body-sm            { font: 400 13.5px/20px var(--font-sans); }
-.text-label-md           { font: 600 13px/18px var(--font-sans); letter-spacing: 0.01em; }
-.text-label-sm           { font: 600 12px/16px var(--font-sans); letter-spacing: 0.015em; }
+.text-body-lg            { font: 400 18px/28px var(--font-sans); text-wrap: pretty; }
+.text-body-md            { font: 400 16px/25px var(--font-sans); text-wrap: pretty; }
+.text-body-sm            { font: 400 15px/22px var(--font-sans); }
+.text-label-md           { font: 600 14px/20px var(--font-sans); letter-spacing: 0.01em; }
+.text-label-sm           { font: 600 13px/18px var(--font-sans); letter-spacing: 0.01em; }
 .text-metric-val         { font: 700 40px/44px var(--font-display); letter-spacing: -0.04em; }
 
 body {
@@ -393,6 +415,32 @@ html {
 }
 .dark {
   color-scheme: dark;
+}
+
+.pulse-kpi-card {
+  background: color-mix(in srgb, var(--pulse-accent) 18%, var(--surface-container));
+}
+
+.dark .pulse-kpi-card {
+  background: var(--surface-container-low);
+}
+
+.enps-hero-tile {
+  background: var(--surface-container-high);
+}
+
+.dark .enps-hero-tile {
+  background: var(--surface-container-low);
+}
+
+.pulse-kpi-icon {
+  background: var(--pulse-accent);
+  color: var(--on-accent);
+}
+
+.dark .pulse-kpi-icon {
+  background: color-mix(in srgb, var(--pulse-accent) 38%, var(--surface-container-lowest));
+  color: var(--on-surface);
 }
 
 .theme-select {
