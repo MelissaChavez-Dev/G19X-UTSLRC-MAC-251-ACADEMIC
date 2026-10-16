@@ -427,7 +427,12 @@ const PulseRow = memo(function PulseRow({ config, metrics, previousMetrics, head
   );
 });
 
-const PulseSection = memo(function PulseSection({ metrics, previousMetrics, headcount, onExpand }) {
+const PulseSection = memo(function PulseSection({
+  metrics,
+  previousMetrics,
+  headcount,
+  onExpand,
+}) {
   return (
     <section aria-labelledby="pulse-heading" className="flex flex-col gap-space-sm">
       <SectionHeading
@@ -859,18 +864,20 @@ export default function Dashboard() {
             </p>
           )}
 
-          {/* 5. Qué dicen los comentarios */}
+          {/* 5. Análisis interactivo de fuentes de fricción */}
+          <FrictionSourceChart
+            items={frictionSources}
+            loading={frictionSourcesLoading}
+            error={frictionSourcesError}
+          />
+
+          {/* 6. Qué dicen los comentarios */}
           {trend && hotspots && (
             <div className="grid grid-cols-1 gap-space-md lg:grid-cols-2">
               <MemoDepartmentSentimentTrend rows={trend} />
               <MemoFrictionHotspots items={hotspots} />
             </div>
           )}
-          <FrictionSourceChart
-            items={frictionSources}
-            loading={frictionSourcesLoading}
-            error={frictionSourcesError}
-          />
           {sentimentLoading && (
             <p role="status" className="text-body-md text-on-surface-variant">
               Analizando sentimiento de comentarios...
