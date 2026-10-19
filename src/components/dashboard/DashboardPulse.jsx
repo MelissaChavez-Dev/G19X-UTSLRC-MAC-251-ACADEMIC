@@ -269,7 +269,7 @@ const HeroTile = memo(function HeroTile({
       type="button"
       layoutId={def.id}
       onClick={() => onExpand(def)}
-      aria-label={`${def.label}: ${metrics.enps}. Ver análisis`}
+      aria-label={`${def.label}: ${metrics.enps ?? "sin datos"}. Ver análisis`}
       style={{
         borderRadius: 32,
       }}
