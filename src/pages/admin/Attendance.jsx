@@ -17,6 +17,7 @@ import { useProfiles } from "../../hooks/useProfiles";
 import { useSidebarState } from "../../hooks/useSidebarState";
 import {
   classifyAttendance,
+  classifyDailyAttendance,
   formatLocalDateInTimeZone,
   isMexicanPublicHoliday,
 } from "../../utils/leaveUtils";
@@ -50,6 +51,8 @@ function StatCard({ icon, label, value, tone }) {
     success: "bg-success-container text-on-success-container",
     secondary: "bg-secondary-container text-on-secondary-container",
     error: "bg-error-container text-on-error-container",
+    warning: "bg-warning-container text-on-warning-container",
+    neutral: "bg-surface-container text-on-surface-variant",
   };
   return (
     <div className={`flex flex-col gap-space-xs rounded-2xl p-space-md ${tones[tone]}`}>
@@ -93,13 +96,13 @@ export default function Attendance() {
       const approvedLeaves = leaveRequests.filter(
         (leave) => leave.userId === employee.id && leave.status === "approved"
       );
-      const status = !isScheduled
-        ? "not_scheduled"
-        : record
-          ? classifyAttendance(record, approvedLeaves)
-          : selectedDate === today
-            ? "in_progress"
-            : "no_record";
+      const status = classifyDailyAttendance({
+        date: selectedDate,
+        today,
+        scheduled: isScheduled,
+        record,
+        approvedLeaves,
+      });
       return { ...employee, record, status, scheduled: isScheduled };
     })
     .filter((employee) => employee.scheduled);
@@ -114,18 +117,23 @@ export default function Attendance() {
 
   const monthlyTrend = useMemo(() => {
     const months = [];
-    const now = new Date();
+    const [year, monthNumber] = formatLocalDateInTimeZone().slice(0, 7).split("-").map(Number);
     for (let offset = 5; offset >= 0; offset -= 1) {
-      const month = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+      const month = new Date(year, monthNumber - 1 - offset, 1);
       const key = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`;
       months.push({ key, month: monthLabel(key), present: 0, justified: 0, unjustified: 0 });
     }
     const byMonth = new Map(months.map((month) => [month.key, month]));
+    const employeeDepartmentById = new Map(employees.map((employee) => [employee.id, employee.departmentId]));
     records.forEach((record) => {
       if (!record.workDay || isMexicanPublicHoliday(record.date) || !byMonth.has(monthKey(record.date))) return;
+      const recordDepartmentId = record.departmentId || employeeDepartmentById.get(record.userId);
+      if (departmentFilter !== "all" && recordDepartmentId !== departmentFilter) return;
       const result = byMonth.get(monthKey(record.date));
       const approvedLeaves = leaveRequests.filter(
-        (leave) => leave.userId === record.userId && leave.status === "approved"
+        (leave) => leave.userId === record.userId
+          && leave.status === "approved"
+          && (departmentFilter === "all" || leave.departmentId === departmentFilter)
       );
       const status = classifyAttendance(record, approvedLeaves);
       if (status === "present") result.present += 1;
@@ -133,7 +141,7 @@ export default function Attendance() {
       if (status === "unjustified_absence") result.unjustified += 1;
     });
     return months;
-  }, [leaveRequests, records]);
+  }, [departmentFilter, employees, leaveRequests, records]);
 
   const statusCounts = Object.values(daySummary).reduce((sum, value) => sum + value, 0);
 
@@ -166,16 +174,18 @@ export default function Attendance() {
             </label>
           </header>
 
-          <div className="grid grid-cols-1 gap-space-md sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-space-md sm:grid-cols-2 xl:grid-cols-5">
             <StatCard icon="person_check" label="Con actividad registrada" value={daySummary.present} tone="success" />
             <StatCard icon="event_available" label="Permisos justificados" value={daySummary.justified} tone="secondary" />
             <StatCard icon="person_off" label="Sin actividad digital" value={daySummary.unjustified} tone="error" />
+            <StatCard icon="schedule" label="Horario en curso" value={daySummary.inProgress} tone="warning" />
+            <StatCard icon="help" label="Sin registro" value={daySummary.noRecord} tone="neutral" />
           </div>
 
           <section className="flex flex-col gap-space-sm rounded-2xl bg-surface-container-lowest p-space-lg">
             <div>
               <h2 className="text-headline-sm text-on-surface">Actividad digital por mes</h2>
-              <p className="text-body-sm text-on-surface-variant">Últimos seis meses · las jornadas sin actividad se separan de los permisos aprobados.</p>
+              <p className="text-body-sm text-on-surface-variant">Últimos seis meses · las jornadas sin actividad se separan de los permisos aprobados; “sin registro” no se cuenta como ausencia confirmada.</p>
             </div>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   classifyAttendance,
+  classifyDailyAttendance,
   countBusinessDays,
   findLeaveOverlap,
   getCurrentAttendanceStatus,
@@ -69,6 +70,27 @@ test("clasifica ausencias justificadas solo si existe permiso aprobado", () => {
     { status: "pending", startDate: "2025-09-15", endDate: "2025-09-17" },
   ]), "unjustified_absence");
   assert.equal(classifyAttendance({ ...record, present: true }), "present");
+});
+
+test("clasifica permisos aprobados aunque aún no exista resumen diario", () => {
+  assert.equal(classifyDailyAttendance({
+    date: "2025-10-13",
+    today: "2025-10-13",
+    scheduled: true,
+    record: null,
+    approvedLeaves: [{ status: "approved", startDate: "2025-10-13", endDate: "2025-10-13" }],
+  }), "justified_absence");
+});
+
+test("separa actividad confirmada, horario en curso y resumen faltante", () => {
+  const day = { date: "2025-10-13", today: "2025-10-13", scheduled: true };
+  assert.equal(classifyDailyAttendance({ ...day, record: { present: true } }), "present");
+  assert.equal(classifyDailyAttendance({ ...day, record: null }), "in_progress");
+  assert.equal(classifyDailyAttendance({ ...day, date: "2025-10-10", record: null }), "no_record");
+  assert.equal(classifyDailyAttendance({
+    ...day,
+    record: { workDay: true, present: false },
+  }), "unjustified_absence");
 });
 
 test("no marca como ausencia una jornada de hoy aún sin actividad", () => {

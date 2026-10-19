@@ -8,11 +8,11 @@
 
 | Validación | Comando | Resultado |
 |---|---|---|
-| Pruebas frontend | `npm test` | **Aprobado:** 25 pruebas, 25 pasaron. |
-| Pruebas Python de Cloud Functions | `functions\venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py"` | **Aprobado:** 11 pruebas, 11 pasaron. |
-| Sintaxis de módulos Python | `functions\venv\Scripts\python.exe -m py_compile functions\main.py functions\common.py functions\accounts.py functions\surveys.py functions\permissions.py functions\teams.py functions\presence.py` | **Aprobado:** módulos compilados sin errores de sintaxis. |
+| Pruebas frontend | `npm test` | **Aprobado:** 27 pruebas, 27 pasaron. |
+| Pruebas Python de Cloud Functions | `functions\venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py"` | **Aprobado:** 15 pruebas, 15 pasaron. |
+| Sintaxis del backend de presencia | `functions\venv\Scripts\python.exe -m py_compile functions\presence.py` | **Aprobado:** módulo compilado sin errores de sintaxis. |
 | Reglas de Firestore | `npm run test:rules` | **Aprobado:** 9 pruebas en el emulador, 9 pasaron. Incluye rechazo sin motivo o con menos de 10 caracteres, validación de actividad y esquema de tareas. |
-| Lint del test de reglas | `npx eslint tests/firestore.rules.test.js` | **Aprobado:** sin errores. |
+| Lint de interfaz y pruebas | `npx eslint src\pages\admin\Attendance.jsx src\hooks\useAttendance.js src\utils\leaveUtils.js tests\leaveUtils.test.js` | **Aprobado:** sin errores. |
 | Build frontend | `npm run build` | **Aprobado:** Vite completó la compilación de producción. |
 
 Los mensajes `PERMISSION_DENIED` que aparecen en la salida del emulador corresponden a solicitudes inválidas que las pruebas comprueban que las reglas rechacen; no son fallos del conjunto.
@@ -22,6 +22,7 @@ Los mensajes `PERMISSION_DENIED` que aparecen en la salida del emulador correspo
 - Se probaron utilidades de encuestas, métricas, permisos y evaluación de riesgo en el conjunto frontend.
 - Las pruebas Python cubrieron validación de entradas de IA, autenticación administrativa y lógica de envío de encuestas.
 - Las pruebas de reglas comprobaron permisos de lectura/escritura de colecciones y escenarios negativos para notas de rechazo, eventos de actividad y tareas.
+- Se añadieron pruebas para permisos aprobados sin resumen diario, distinción entre actividad, jornada en curso, ausencia confirmada y resumen faltante, y compatibilidad con horarios heredados.
 - El build y las pruebas no equivalen a una prueba de aceptación visual ni a una verificación de servicios desplegados.
 - No se adjuntan capturas simuladas. Para cerrar la evidencia de aceptación visual, realizar recorridos autenticados con cuentas autorizadas y añadir capturas que no expongan claves, contraseñas ni información personal.
 

@@ -174,6 +174,14 @@ export function classifyAttendance(record, approvedLeaves = []) {
     : "unjustified_absence";
 }
 
+export function classifyDailyAttendance({ date, today, scheduled, record, approvedLeaves = [] }) {
+  if (!scheduled) return "not_scheduled";
+  if (record?.present) return "present";
+  if (isCoveredByApprovedLeave(date, approvedLeaves)) return "justified_absence";
+  if (record?.workDay) return "unjustified_absence";
+  return date === today ? "in_progress" : "no_record";
+}
+
 export function getCurrentAttendanceStatus({ date, schedule, activityCount = 0 }) {
   const day = parseDate(date);
   const workDays = Array.isArray(schedule?.days) ? schedule.days : [];

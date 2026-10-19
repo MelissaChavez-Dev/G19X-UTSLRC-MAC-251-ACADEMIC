@@ -1,7 +1,29 @@
 if __package__:
-    from .common import admin_firestore, datetime, dt_time, firestore_fn, scheduler_fn, timezone, _db, _local_tz, _mexican_public_holidays
+    from .common import admin_firestore, datetime, dt_time, firestore_fn, scheduler_fn, timezone, _db, _is_active_record, _local_tz, _mexican_public_holidays
 else:
-    from common import admin_firestore, datetime, dt_time, firestore_fn, scheduler_fn, timezone, _db, _local_tz, _mexican_public_holidays
+    from common import admin_firestore, datetime, dt_time, firestore_fn, scheduler_fn, timezone, _db, _is_active_record, _local_tz, _mexican_public_holidays
+
+DEFAULT_WORK_DAYS = ("mon", "tue", "wed", "thu", "fri")
+
+
+def _scheduled_days(schedule):
+    days = schedule.get("days")
+    if days is None:
+        return DEFAULT_WORK_DAYS
+    return days if isinstance(days, (list, tuple, set)) else ()
+
+
+def _work_schedule_bounds(schedule):
+    try:
+        start_parts = [int(part) for part in (schedule.get("startTime") or "09:00").split(":")]
+        end_parts = [int(part) for part in (schedule.get("endTime") or "18:00").split(":")]
+        if len(start_parts) != 2 or len(end_parts) != 2:
+            return None
+        start = dt_time(*start_parts)
+        end = dt_time(*end_parts)
+    except (TypeError, ValueError):
+        return None
+    return (start, end) if start < end else None
 
 @scheduler_fn.on_schedule(
     schedule="every day 23:30",
@@ -20,23 +42,21 @@ def compute_daily_presence(event: scheduler_fn.ScheduledEvent) -> None:
     if now.date() in _mexican_public_holidays(now.year):
         return
 
-    users = db.collection("users").where("active", "==", True).get()
-
-    for user_doc in users:
-        profile = user_doc.to_dict()
+    for user_doc in db.collection("users").stream():
+        profile = user_doc.to_dict() or {}
+        if profile.get("role") != "employee" or not _is_active_record(profile):
+            continue
         schedule = profile.get("workSchedule") or {}
-        days = schedule.get("days") or []
+        days = _scheduled_days(schedule)
         if today_key not in days:
             continue
 
-        try:
-            start_parts = [int(p) for p in schedule.get("startTime", "09:00").split(":")]
-            end_parts = [int(p) for p in schedule.get("endTime", "18:00").split(":")]
-        except ValueError:
+        bounds = _work_schedule_bounds(schedule)
+        if not bounds:
             continue
 
-        window_start = datetime.combine(now.date(), dt_time(*start_parts), tzinfo=local_tz)
-        window_end = datetime.combine(now.date(), dt_time(*end_parts), tzinfo=local_tz)
+        window_start = datetime.combine(now.date(), bounds[0], tzinfo=local_tz)
+        window_end = datetime.combine(now.date(), bounds[1], tzinfo=local_tz)
 
         logs = (
             db.collection("activityLogs")
@@ -81,22 +101,24 @@ def publish_digital_attendance(event) -> None:
 
     db = _db()
     profile = db.collection("users").document(user_id).get().to_dict() or {}
-    if not profile or profile.get("active", True) is False:
+    if (
+        not profile
+        or profile.get("role") != "employee"
+        or not _is_active_record(profile)
+    ):
         return
 
     schedule = profile.get("workSchedule") or {}
     weekday_key = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"][local_event.weekday()]
-    if weekday_key not in (schedule.get("days") or []):
+    if weekday_key not in _scheduled_days(schedule):
         return
-    try:
-        start_parts = [int(part) for part in schedule.get("startTime", "09:00").split(":")]
-        end_parts = [int(part) for part in schedule.get("endTime", "18:00").split(":")]
-    except (TypeError, ValueError):
+    bounds = _work_schedule_bounds(schedule)
+    if not bounds:
         return
 
     event_minutes = local_event.hour * 60 + local_event.minute
-    start_minutes = start_parts[0] * 60 + start_parts[1]
-    end_minutes = end_parts[0] * 60 + end_parts[1]
+    start_minutes = bounds[0].hour * 60 + bounds[0].minute
+    end_minutes = bounds[1].hour * 60 + bounds[1].minute
     if not start_minutes <= event_minutes <= end_minutes:
         return
 

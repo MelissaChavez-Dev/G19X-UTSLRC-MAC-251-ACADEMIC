@@ -25,21 +25,19 @@ export function useAttendance() {
     let recordsLoaded = false;
     let currentEmployees = [];
     let currentRecords = [];
-    let currentError = null;
+    let employeeError = null;
+    let recordsError = null;
 
     function publish() {
       setState({
         employees: currentEmployees,
         records: currentRecords,
         loading: !employeesLoaded || !recordsLoaded,
-        error: currentError,
+        error: employeeError || recordsError,
       });
     }
 
-    const employeeQuery = query(
-      collection(db, "users"),
-      where("active", "==", true)
-    );
+    const employeeQuery = collection(db, "users");
     const recordsQuery = query(
       collection(db, "presenceSummary"),
       where("date", ">=", startDate)
@@ -50,14 +48,14 @@ export function useAttendance() {
       (snapshot) => {
         currentEmployees = snapshot.docs
           .map((item) => ({ id: item.id, ...item.data() }))
-          .filter((employee) => employee.role === "employee")
+          .filter((employee) => employee.role === "employee" && employee.active !== false)
           .sort((first, second) => (first.displayName || "").localeCompare(second.displayName || "", "es"));
         employeesLoaded = true;
-        currentError = null;
+        employeeError = null;
         publish();
       },
       (error) => {
-        currentError = error;
+        employeeError = error;
         employeesLoaded = true;
         publish();
       }
@@ -67,11 +65,11 @@ export function useAttendance() {
       (snapshot) => {
         currentRecords = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
         recordsLoaded = true;
-        currentError = null;
+        recordsError = null;
         publish();
       },
       (error) => {
-        currentError = error;
+        recordsError = error;
         recordsLoaded = true;
         publish();
       }
