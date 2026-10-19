@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useHeadcount } from "./useHeadcount";
 import { calculateWeeklyMetrics } from "../utils/metricUtils";
-import { listRecentResponses } from "../services/responseService";
+import { listDashboardResponses } from "../services/responseService";
 
 export function useWeeklyTrends(departmentId = null) {
   const [trends, setTrends] = useState(null);
@@ -13,7 +13,7 @@ export function useWeeklyTrends(departmentId = null) {
       setLoading(true);
       try {
         const headcount = departmentId ? forDepartment(departmentId) : totalHeadcount;
-        const all = (await listRecentResponses(365))
+        const all = (await listDashboardResponses(365))
           .filter((r) => !departmentId || r.departmentId === departmentId);
 
         const byWeek = {};

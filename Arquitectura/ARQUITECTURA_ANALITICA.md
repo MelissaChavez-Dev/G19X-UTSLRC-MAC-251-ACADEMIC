@@ -17,7 +17,7 @@ Documentos relacionados: `Fichas_KPIs_Dashboard_Salud_Organizacional.md` (defini
 2. **Umbrales y reglas fuera de la interfaz.** Los niveles de riesgo están en `src/data/kpiThresholds.js` y las reglas de calidad en `src/data/dataQualityRules.js`. Las tarjetas solo los leen.
 3. **Funciones puras para calcular.** Las fórmulas (`metricUtils.js`, `dataQualityRules.js`) reciben datos y devuelven resultados sin tocar Firestore, lo que permite probarlas por separado.
 4. **Desidentificación de respuestas.** Todas las encuestas requieren sesión. La Cloud Function aplica unicidad por persona/ciclo, pero omite el UID de `responses`; el control de completado queda separado, sin hora de respuesta y solo es legible por su propietario. Las reglas bloquean lectura de respuestas para colaboradores y escritura directa desde cliente. El texto libre puede incluir información identificable, por lo que se recomienda no escribir nombres ni datos personales.
-5. **La calidad es parte de la arquitectura.** El módulo `/admin/calidad` evalúa respuestas recientes antes de confiar en los KPIs. No hay datos sintéticos ni controles de origen en la aplicación.
+5. **La calidad es parte de la arquitectura.** El módulo `/admin/calidad` evalúa respuestas recientes antes de confiar en los KPIs. Las consultas analíticas filtran `source == "live"` en `responseService.js`; hay registros históricos sintéticos en Firestore y no se borran automáticamente. El campo `source` identifica la vía de captura, no la identidad real de quien respondió.
 6. **La IA es un complemento.** Gemini interpreta y resume datos ya agregados; si falla, los KPIs se siguen mostrando.
 
 ## 2. Vista general
@@ -100,11 +100,8 @@ sequenceDiagram
 
   Adm->>UI: Abre /dashboard
   UI->>H: Monta los hooks de KPIs
-  par Lecturas independientes
-    H->>FS: responses (pulso)
-    H->>FS: responses (heatmap)
-    H->>FS: responses (tendencia semanal)
-    H->>FS: responses (comentarios)
+  par Lecturas de datos
+    H->>FS: responses (consulta compartida; source=live)
     H->>FS: presenceSummary
     H->>FS: departureLog
     H->>FS: tasks de todos los equipos
@@ -125,14 +122,14 @@ sequenceDiagram
   AI-->>UI: Explicación o 3 acciones recomendadas
 ```
 
-Los cálculos se hacen en el navegador porque el proyecto no tiene un servidor propio: Firestore y las Cloud Functions son el único backend. Esa decisión simplifica el despliegue, pero tiene un costo que se discute en la sección 9.
+Los KPIs se calculan en el navegador porque el proyecto no tiene un servidor propio. Los hooks del dashboard comparten en memoria una consulta de hasta 5,000 respuestas de los últimos 365 días durante 30 segundos; los filtros de periodos menores se aplican localmente. El caché se invalida después de enviar una respuesta. Esta optimización reduce lecturas repetidas dentro de una pestaña, pero no comparte datos entre pestañas/dispositivos y no elimina las lecturas de las demás colecciones.
 
 ## 7. La calidad de datos como compuerta
 
 El módulo `/admin/calidad` es el control de calidad de la arquitectura:
 
 - **Qué evalúa:** completitud, rangos válidos, muestra mínima por departamento, posibles duplicados y frescura de las respuestas, con un puntaje ponderado (90 o más es confiable; menos de 50 no debe usarse para decidir).
-- **Ventana de análisis:** los hooks usan consultas acotadas por fecha y límite de documentos; la calidad revisa hasta 5,000 respuestas de los últimos 12 meses. Los registros históricos marcados como sintéticos se excluyen de la analítica.
+- **Ventana de análisis:** `responseService.js` limita las consultas a `source == "live"` y hasta 5,000 respuestas de los últimos 365 días; los registros sintéticos históricos que no tienen esa marca quedan excluidos. La calidad evalúa hasta ese mismo límite.
 - **Qué informa de las demás fuentes:** si hay registros de presencia en los últimos 30 días y headcount suficiente para calcular rotación.
 - **Qué no hace:** no modifica ni elimina datos; explica cada hallazgo y cómo corregirlo.
 
@@ -153,7 +150,7 @@ La actividad digital no registrada es un proxy de actividad dentro de la aplicac
 | Decisión | Por qué | Compromiso |
 |---|---|---|
 | Firebase como único backend | Sin servidores que mantener; despliegue simple para un prototipo | La lógica de negocio está repartida entre navegador y Cloud Functions |
-| KPIs calculados en el navegador | Código sencillo y resultados al instante | En la versión revisada, cada carga del dashboard vuelve a leer colecciones completas (sobre todo `responses`, que se lee varias veces); el costo y el tiempo crecen con los datos |
+| KPIs calculados en el navegador | Código sencillo y resultados al instante; una lectura de respuestas compartida en memoria por 30 segundos en la pestaña | La caché queda limitada a 5,000 respuestas/365 días, no se comparte entre pestañas y otras colecciones todavía generan lecturas; el costo crece con los datos |
 | Asistencia por actividad en el sitio | El prototipo es de trabajo remoto y evita biometría | Mide presencia digital, no asistencia física ni horas exactas |
 | Resumen diario más actualización en tiempo real | Reduce lecturas masivas y permite ver actividad durante la jornada | La ausencia injustificada se confirma al cierre diario; permisos aprobados y feriados se descuentan del KPI |
 | Umbrales propuestos, no oficiales | No existe un estándar único aplicable a la organización | Deben calibrarse con datos reales |
@@ -199,6 +196,6 @@ flowchart LR
 | Una sola definición de cada fórmula | La función programada es el único lugar donde se calcula |
 | Rastro de la calidad en el tiempo | El puntaje de calidad se guarda junto a cada fotografía |
 
-**Paso intermedio sin función programada:** compartir una sola lectura de `responses` entre todos los hooks (por ejemplo con un contexto de React) elimina las lecturas repetidas sin cambiar la arquitectura.
+**Optimización implementada:** `listDashboardResponses` comparte una consulta limitada de `responses` entre los hooks del dashboard durante 30 segundos y la invalida al capturar una respuesta nueva. Como siguiente paso, medir las lecturas de las demás colecciones y evaluar resúmenes agregados si el uso o tamaño de datos crece.
 
 **Pendiente asociado:** pasar los cálculos de `metricUtils.js` y `dataQualityRules.js` a pruebas automáticas antes de moverlos a la función programada, para comprobar que el resultado no cambia.

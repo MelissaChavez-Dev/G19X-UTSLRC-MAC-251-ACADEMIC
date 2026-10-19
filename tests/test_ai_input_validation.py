@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from firebase_functions import https_fn
 
 from functions.ai_functions import _serialize_ai_input
-from functions.main import _require_admin
+from functions.shared import _require_admin
 
 
 class AiInputValidationTests(unittest.TestCase):

@@ -3,7 +3,10 @@ import { useDepartments } from "./useDepartments";
 import { useAbsenceMetrics } from "./usePresence";
 import { useTurnoverMetrics } from "./useTurnoverMetrics";
 import { runQualityChecks } from "../data/dataQualityRules";
-import { listRecentResponses } from "../services/responseService";
+import {
+  invalidateDashboardResponses,
+  listDashboardResponses,
+} from "../services/responseService";
 
 /**
  * Evalúa hasta 5,000 respuestas del último año. Solo lee: no modifica ni borra datos.
@@ -24,7 +27,8 @@ export function useDataQuality() {
       setLoading(true);
       setError(null);
       try {
-        const recentResponses = await listRecentResponses(365);
+        if (reloadKey > 0) invalidateDashboardResponses();
+        const recentResponses = await listDashboardResponses(365);
         if (!cancelled) setResponses(recentResponses);
       } catch (err) {
         console.error("No se pudieron cargar las respuestas para evaluar su calidad:", err);

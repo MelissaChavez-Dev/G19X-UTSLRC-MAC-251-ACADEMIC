@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { calculateDepartmentRisk } from "../src/utils/departmentRiskUtils.js";
+import { calculateEnps } from "../src/utils/metricUtils.js";
 import { CURRENT_INSTRUMENT_VERSION } from "../src/data/surveyTemplate.js";
 
 test("calcula y muestra valores preliminares de una respuesta actual sin asignar nivel de riesgo", () => {
@@ -55,4 +56,10 @@ test("normaliza el balance a la misma escala cuando la encuesta ya usa 1 a 5", (
 
   assert.equal(row.workLifeBalance, 4);
   assert.equal(row.workLifeBalanceFivePoint, 4);
+});
+
+test("el eNPS departamental usa la fórmula compartida y no inventa un cero sin respuestas", () => {
+  const responses = [{ enps: 10 }, { enps: 6 }, { enps: 8 }];
+  assert.equal(calculateDepartmentRisk(responses, 3).enps, calculateEnps(responses));
+  assert.equal(calculateDepartmentRisk([], 0).enps, null);
 });

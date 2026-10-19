@@ -1,6 +1,7 @@
 import { getKpiLevelForSample, MIN_SAMPLE } from "../data/kpiThresholds.js";
 import {
   averageNumeric,
+  calculateEnps,
   computeWeeklyParticipation,
   toFiniteNumber,
   workPressureIndex,
@@ -70,14 +71,10 @@ export function filterRecentResponses(responses, now = new Date()) {
 export function calculateDepartmentRisk(responses, headcount, templates = []) {
   const factors = {};
   const riskEquivalents = [];
-  const promoters = responses.filter((response) => (toFiniteNumber(response.enps) ?? -Infinity) >= 9).length;
-  const detractors = responses.filter((response) => (toFiniteNumber(response.enps) ?? Infinity) <= 6).length;
   const measuredResponses = responses.filter(
     (response) => response.instrumentVersion === CURRENT_INSTRUMENT_VERSION
   );
-  const enps = responses.length > 0
-    ? Math.round(((promoters - detractors) / responses.length) * 100)
-    : null;
+  const enps = calculateEnps(responses);
   const scalesByTemplate = new Map(
     templates.map((template) => [template.id, workLifeBalanceScale(template)])
   );

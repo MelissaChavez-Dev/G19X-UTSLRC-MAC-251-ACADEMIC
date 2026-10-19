@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { listRecentResponses } from "../services/responseService";
+import { listDashboardResponses } from "../services/responseService";
 import { listTemplates } from "../services/templateService";
 import { summarizeFrictionSources } from "../utils/surveySourceUtils.js";
 
@@ -16,7 +16,7 @@ export function useFrictionSources(departmentId = null) {
       setError(null);
       try {
         const [responses, templates] = await Promise.all([
-          listRecentResponses(30),
+          listDashboardResponses(30),
           listTemplates(),
         ]);
         const filteredResponses = responses.filter(

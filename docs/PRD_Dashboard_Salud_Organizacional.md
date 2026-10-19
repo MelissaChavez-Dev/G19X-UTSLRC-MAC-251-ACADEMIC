@@ -138,7 +138,7 @@ Las respuestas solo pueden crearse mediante `submit_survey_response`; las reglas
 ### 6.2 Motor de Encuestas (`SurveyBuilder` y `SurveyRunner`)
 - **RF-E01: Constructor de Encuestas (`SurveyBuilder`):** Creación visual de encuestas con biblioteca de preguntas (Likert 1-5, escala 1-10, eNPS 0-10, opción múltiple y texto abierto) con reordenamiento arrastrable (`@dnd-kit`) y configuración de departamentos destino.
 - **RF-E02: Ejecutor de Encuestas (`SurveyRunner` / `WellnessSurvey`):** Interfaz enfocada (paso a paso), responsiva y con progreso visual. Requiere autenticación; la Cloud Function valida esquema, rol, departamento, plantilla y ciclo y registra atómicamente una respuesta desidentificada y el control de unicidad.
-- **RF-E03: Datos operativos:** No se generan respuestas sintéticas. Las respuestas analíticas se capturan mediante la aplicación; las pruebas unitarias usan datos aislados y no escriben en Firestore.
+- **RF-E03: Datos operativos:** La aplicación no genera respuestas sintéticas automáticamente. Las respuestas enviadas por la aplicación se etiquetan `source: "live"` y las consultas analíticas filtran ese valor. Se conservan registros históricos sintéticos y cuentas ficticias de demostración en Firestore; la marca de origen no certifica que el perfil pertenezca a una persona real. Las pruebas unitarias usan datos aislados y no escriben en Firestore.
 
 ### 6.3 Espacio Colaborativo y Tableros Kanban (`/mi-espacio` y `/mis-proyectos`)
 - **RF-C01: Mi Espacio:** Vista del empleado que reúne encuestas pendientes, actividad y proyectos; incluye saldo e historial de permisos, formulario para solicitar/cancelar permisos pendientes y edición propia de nombre, teléfono y foto.

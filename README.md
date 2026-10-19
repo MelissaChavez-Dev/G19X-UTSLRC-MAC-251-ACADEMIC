@@ -17,7 +17,7 @@ permite hacer todas las funciones, solo inicie sesion con las credenciales que s
 
 ## Herramientas y recursos utilizados
 
-- **GitHub Copilot:** apoyo para redactar, revisar y desarrollar código y funcionalidades; las decisiones técnicas se validan y explican desde el propio código del proyecto.
+- **Uso de IA durante el desarrollo:** GitHub Copilot y asistencia conversacional de programación en VS Code apoyaron la exploración, refactorización, depuración, preparación/revisión de pruebas y redacción de documentación y mensajes de commit. La autora conserva la responsabilidad de revisar las propuestas, entender las fórmulas y poder mantener el código. La integración de Gemini descrita abajo pertenece al producto en ejecución y es distinta del apoyo de IA usado durante el desarrollo.
 - **Figma y Stitch:** diseño y exploración de interfaces.
 - **Firebase y Google Cloud:** autenticación, base de datos y servicios en la nube.
 - **Google AI Studio y Gemini:** experimentación e integración de la API de Gemini para las explicaciones y recomendaciones de IA del producto.
@@ -84,7 +84,13 @@ Para desplegar el backend en un proyecto propio se requiere Firebase CLI, Python
 
 Las rutas para responder encuestas requieren una cuenta activa. `submit_survey_response` valida plantilla, periodo, departamento y respuestas, y en una transacción registra la respuesta y el control de unicidad por colaborador y ciclo. El documento analítico no contiene el UID; el control de completado, que sí contiene el UID, solo puede leerlo su propietario. Las reglas bloquean la lectura de respuestas para colaboradores y toda escritura directa desde el navegador; la administración consulta las respuestas desidentificadas para analítica.
 
-No se generan respuestas sintéticas ni se incluyen filtros de origen en la aplicación. Las respuestas nuevas solo se etiquetan como versión actual cuando contienen los seis factores directos; los registros anteriores se excluyen de las métricas psicosociales. Los registros históricos sintéticos también se excluyen de las consultas analíticas y no se eliminan automáticamente de Firestore.
+La aplicación no genera respuestas automáticamente. Las respuestas enviadas por el flujo normal reciben `source: "live"` en la Cloud Function y `responseService.js` limita las consultas analíticas a `source == "live"`. Este campo identifica el canal de captura; no prueba por sí solo que el perfil corresponda a una persona real. Hay registros históricos sintéticos en Firestore; no se borran automáticamente y los que no tienen `source: "live"` quedan fuera de estas consultas.
+
+### Procedencia de la demostración
+
+Los perfiles de prueba son ficticios. Las respuestas que aparecen en las capturas fueron capturadas manualmente en el despliegue de Netlify por **cinco personas reales que apoyaron la prueba**, usando esas cuentas ficticias y siguiendo comportamientos definidos para cada ID. La matriz de IDs y escenarios está en el archivo de apoyo `MANUAL DE USUARIO PARA PRUEBAS DE ENCUESTAS Y VISUALIZACIÓN DE DATOS EN WELFARE.docx`, entregado por separado; no se publican aquí los IDs ni las credenciales.
+
+En las capturas actuales aparecen 25 perfiles (cinco por departamento), 25 respuestas, participación de 100 % y calidad de datos de 100/100. Son resultados de ese escenario de demostración controlado, no una muestra representativa de 25 empleados ni evidencia de resultados poblacionales. La etiqueta `source: "live"` tampoco debe interpretarse como certificación de que las personas perfiladas sean empleados reales.
 
 ---
 
@@ -115,7 +121,7 @@ Para acceder al despliegue de evaluación, usa las cuentas autenticadas de `CRED
 ```text
 ├── Arquitectura/              # Diagramas y documentación de arquitectura
 ├── docs/                      # PRD y especificación del MVP
-├── Evidencias/                # Reporte QA y evidencia verificable de pruebas
+├── Evidencias/                # Reporte QA y 29 capturas PNG de la interfaz
 ├── Fichas_KPIs_Dashboard_Salud_Organizacional.md # Definiciones y fichas de KPIs
 ├── functions/
 │   ├── main.py                # Reexporta los endpoints para Firebase y compatibilidad de imports
@@ -168,7 +174,7 @@ Las reglas de Firestore se prueban contra el emulador (requiere Firebase CLI y J
 npm run test:rules
 ```
 
-El reporte QA con las validaciones ejecutadas está en `Evidencias/REPORTE_QA.md`. Las capturas de interfaz deben añadirse solo cuando se obtengan de una ejecución real; no se incluyen imágenes simuladas.
+El reporte QA con las validaciones automatizadas está en `Evidencias/REPORTE_QA.md`; `Evidencias/` ya contiene 29 capturas PNG de los flujos de la interfaz. Las capturas ilustran el estado visible durante la demostración y no sustituyen las pruebas automatizadas ni una medición real de la población.
 
 La guía de primer uso y operación está en [`docs/MANUAL_DE_USUARIO.md`](docs/MANUAL_DE_USUARIO.md); el plan de trabajo y el plan de mantenimiento y soporte están en `docs/`.
 
@@ -185,6 +191,9 @@ La guía de primer uso y operación está en [`docs/MANUAL_DE_USUARIO.md`](docs/
 La especificación de requisitos está en [`docs/PRD_Dashboard_Salud_Organizacional.md`](docs/PRD_Dashboard_Salud_Organizacional.md). El detalle de soporte, mantenimiento y planificación se documenta en:
 - [`docs/PLAN_MANTENIMIENTO_Y_SOPORTE.md`](docs/PLAN_MANTENIMIENTO_Y_SOPORTE.md)
 - [`docs/PLAN_DE_TRABAJO.md`](docs/PLAN_DE_TRABAJO.md)
+- [`docs/REGISTRO_RIESGOS_DEPENDENCIAS.md`](docs/REGISTRO_RIESGOS_DEPENDENCIAS.md)
+
+Para la defensa, la autora debe poder explicar las métricas, filtros de origen y límites de los datos y realizar un cambio pequeño sin asistencia generativa, conforme a la evaluación indicada.
 
 ---
 

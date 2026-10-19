@@ -1,11 +1,32 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calculateWeeklyMetrics, computeWeeklyParticipation } from "../src/utils/metricUtils.js";
+import {
+  calculateDashboardMetrics,
+  calculateEnps,
+  calculateWeeklyMetrics,
+  computeWeeklyParticipation,
+} from "../src/utils/metricUtils.js";
 import { CURRENT_INSTRUMENT_VERSION } from "../src/data/surveyTemplate.js";
 
 test("la participación semanal es cero cuando no hay headcount", () => {
   assert.equal(computeWeeklyParticipation([{ weekId: "2026-W42" }], 0).rate, 0);
   assert.equal(calculateWeeklyMetrics([{ enps: 10 }], 0).activePulseRate, 0);
+});
+
+test("eNPS sin respuestas queda sin datos en ambas rutas de cálculo", () => {
+  assert.equal(calculateEnps([]), null);
+  assert.equal(calculateWeeklyMetrics([], 10).enps, null);
+  assert.equal(calculateDashboardMetrics([], 10).enps, null);
+  assert.equal(calculateDashboardMetrics([], 10).sampleSize, 0);
+});
+
+test("el dashboard y la tendencia semanal comparten la fórmula de eNPS", () => {
+  const responses = [{ enps: 10 }, { enps: 9 }, { enps: 6 }, { enps: 7 }];
+  assert.equal(
+    calculateDashboardMetrics(responses, 10).enps,
+    calculateWeeklyMetrics(responses, 10).enps
+  );
+  assert.equal(calculateDashboardMetrics(responses, 10).enps, 25);
 });
 
 test("la seguridad psicológica semanal queda vacía si faltan respuestas para el factor", () => {

@@ -2,11 +2,11 @@ import unittest
 from datetime import date
 
 from firebase_functions import https_fn
-from functions.main import (
+from functions.common import _is_active_record
+from functions.surveys import (
     CURRENT_INSTRUMENT_VERSION,
     _DEFAULT_SURVEY_QUESTIONS,
     _current_survey_cycle,
-    _is_active_record,
     _normalize_survey_answers,
     _survey_instrument_version,
 )

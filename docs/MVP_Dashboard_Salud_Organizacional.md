@@ -45,7 +45,7 @@ Durante el proceso de desarrollo y validación, el MVP evolucionó de un "visual
 
 - Las encuestas requieren una sesión activa y se envían mediante `submit_survey_response`, que valida las respuestas en el servidor y limita a una respuesta por persona y ciclo.
 - El documento analítico no contiene el UID. El control de completado queda en `surveyCompletions`, es legible solo por su propietario y no guarda una hora que permita cruzarlo directamente con una respuesta.
-- Las reglas bloquean las escrituras directas de respuestas y limitan su lectura a la administración. No hay fuentes sintéticas ni cuentas o contraseñas compartidas en el repositorio.
+- Las reglas bloquean las escrituras directas de respuestas y limitan su lectura a la administración. La aplicación no genera respuestas automáticamente; las consultas analíticas filtran `source == "live"`. Existen registros históricos sintéticos en Firestore y cuentas ficticias de prueba; no se versionan IDs ni contraseñas.
 
 ---
 

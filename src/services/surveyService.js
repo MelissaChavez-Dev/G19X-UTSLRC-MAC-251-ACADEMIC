@@ -2,6 +2,7 @@ import { httpsCallable } from "firebase/functions";
 import { auth } from "./firebase";
 import { functions } from "./firebaseFunctions";
 import { logActivity } from "./activityService";
+import { invalidateDashboardResponses } from "./responseService";
 
 export async function submitSurveyResponse({ departmentId, answers, templateId = null, surveyTitle = "Encuesta" }) {
   if (!auth.currentUser) throw new Error("Inicia sesión para enviar tu respuesta.");
@@ -11,6 +12,7 @@ export async function submitSurveyResponse({ departmentId, answers, templateId =
     answers,
     ...(templateId ? { templateId } : {}),
   });
+  invalidateDashboardResponses();
   logActivity("survey_submit", { action: "survey_submitted", surveyTitle });
   return result.data;
 }

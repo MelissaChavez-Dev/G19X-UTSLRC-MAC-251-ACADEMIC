@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useHeadcount } from "./useHeadcount";
 import { useDepartments } from "./useDepartments";
-import { listRecentResponses } from "../services/responseService";
+import { listDashboardResponses } from "../services/responseService";
 import { listTemplates } from "../services/templateService";
 import { calculateDepartmentRisk, filterRecentResponses } from "../utils/departmentRiskUtils.js";
 
@@ -21,7 +21,7 @@ export function useDepartmentRisk(departmentId = null) {
       setLoading(true);
       try {
         const [all, templates] = await Promise.all([
-          listRecentResponses(30),
+          listDashboardResponses(30),
           listTemplates(),
         ]);
         const recent = filterRecentResponses(all);

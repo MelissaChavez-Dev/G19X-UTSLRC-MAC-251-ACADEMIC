@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { classifySentiment } from "../services/aiService";
 import { useDepartments } from "./useDepartments";
-import { listRecentResponses } from "../services/responseService";
+import { listDashboardResponses } from "../services/responseService";
 
 export function useWeeklySentiment(departmentId = null) {
   const [trend, setTrend] = useState(null);
@@ -21,7 +21,7 @@ export function useWeeklySentiment(departmentId = null) {
       setHotspots(null);
       setComments([]);
       try {
-        const withText = (await listRecentResponses(180, 500))
+        const withText = (await listDashboardResponses(180, 500))
           .filter((r) => r.openText && r.openText.trim().length > 0)
           .filter((r) => !departmentId || r.departmentId === departmentId);
 
