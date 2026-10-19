@@ -52,7 +52,7 @@ permite hacer todas las funciones, solo inicie sesion con las credenciales que s
 3. **Configurar variables de entorno:**
    Copia la plantilla `env.example` como `.env.local` en la raíz del proyecto y reemplaza cada valor con la configuración de la aplicación web de tu proyecto Firebase (Firebase Console → Configuración del proyecto → Tus apps). El repositorio no incluye claves ni credenciales de prueba; usa los valores de tu propio proyecto.
    ```bash
-   cp env.example .env.local
+   cp .env.example .env.local
    ```
 
 ---
