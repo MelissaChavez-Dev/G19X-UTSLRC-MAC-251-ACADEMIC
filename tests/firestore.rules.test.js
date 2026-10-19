@@ -8,6 +8,7 @@ import {
 import {
   doc,
   getDoc,
+  serverTimestamp,
   setDoc,
   updateDoc,
 } from "firebase/firestore";
@@ -111,6 +112,21 @@ test("las solicitudes de permiso solo se crean mediante Cloud Functions", async 
   }));
 });
 
+test("solo se rechazan permisos con motivo de al menos 10 caracteres", async () => {
+  const adminDb = testEnv.authenticatedContext("admin-1", { role: "admin" }).firestore();
+  const request = doc(adminDb, "leaveRequests/leave-1");
+  const review = {
+    status: "rejected",
+    reviewedBy: "admin-1",
+    reviewedAt: "2026-10-19T00:00:00Z",
+    updatedAt: "2026-10-19T00:00:00Z",
+  };
+
+  await assertFails(updateDoc(request, review));
+  await assertFails(updateDoc(request, { ...review, reviewNote: "No procede" }));
+  await assertSucceeds(updateDoc(request, { ...review, reviewNote: "No procede por ahora" }));
+});
+
 test("el resumen de presencia es de solo lectura para su propietario o admin", async () => {
   const ownerDb = testEnv.authenticatedContext("employee-1", { role: "employee" }).firestore();
   const otherDb = testEnv.authenticatedContext("employee-2", { role: "employee" }).firestore();
@@ -121,4 +137,52 @@ test("el resumen de presencia es de solo lectura para su propietario o admin", a
   await assertFails(getDoc(summary(otherDb)));
   await assertSucceeds(getDoc(summary(adminDb)));
   await assertFails(setDoc(doc(ownerDb, "presenceSummary/other"), { userId: "employee-1" }));
+});
+
+test("activityLogs solo admite tipos conocidos y hora del servidor", async () => {
+  const employeeDb = testEnv.authenticatedContext("employee-1", { role: "employee" }).firestore();
+  const validLog = {
+    userId: "employee-1",
+    type: "login",
+    timestamp: serverTimestamp(),
+  };
+
+  await assertFails(setDoc(doc(employeeDb, "activityLogs/invalid-type"), {
+    ...validLog,
+    type: "fake_presence",
+  }));
+  await assertFails(setDoc(doc(employeeDb, "activityLogs/backdated"), {
+    ...validLog,
+    timestamp: new Date("2020-01-01T00:00:00Z"),
+  }));
+  await assertSucceeds(setDoc(doc(employeeDb, "activityLogs/valid"), validLog));
+});
+
+test("las tareas requieren campos y tipos válidos", async () => {
+  const memberDb = testEnv.authenticatedContext("employee-1", { role: "employee" }).firestore();
+  const task = {
+    title: "Preparar actividad",
+    description: "",
+    status: "todo",
+    origin: "manual",
+    sourceMetric: null,
+    createdBy: "employee-1",
+    assignedTo: null,
+    assignedToIds: [],
+    dueDate: null,
+    dueTime: null,
+    activity: [],
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+
+  await assertFails(setDoc(doc(memberDb, "teams/team-1/tasks/missing-title"), {
+    ...task,
+    title: 123,
+  }));
+  await assertFails(setDoc(doc(memberDb, "teams/team-1/tasks/unknown-field"), {
+    ...task,
+    fakePresence: true,
+  }));
+  await assertSucceeds(setDoc(doc(memberDb, "teams/team-1/tasks/valid"), task));
 });

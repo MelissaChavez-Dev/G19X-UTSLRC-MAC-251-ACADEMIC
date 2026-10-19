@@ -156,7 +156,7 @@ Las respuestas solo pueden crearse mediante `submit_survey_response`; las reglas
 
 | ID | Dimensión | Criterio de Cumplimiento |
 |---|---|---|
-| **RNF-01** | **Seguridad** | Reglas de seguridad en Firestore por colección; protección de credenciales y APIs en entorno seguro; el Markdown de IA se muestra con `react-markdown` sin habilitar HTML crudo. `DOMPurify` está declarado como dependencia, pero no forma parte del render actual. |
+| **RNF-01** | **Seguridad** | Reglas de seguridad en Firestore por colección; protección de credenciales y APIs en entorno seguro; el Markdown de IA se muestra con `react-markdown` sin habilitar HTML crudo. |
 | **RNF-02** | **Rendimiento** | Build optimizado con Vite; carga reactiva de datos vía hooks desacoplados; componentes pesados memoizados para evitar re-renderizados innecesarios. |
 | **RNF-03** | **Diseño y Accesibilidad** | Sistema de diseño de acentos por zona ("Executive Pulse"): lienzo base `#FFFCF7`, acentos pastel funcionales (azul, salvia, lavanda, durazno y aqua para IA), tipografías legibles y soporte total para modo oscuro (`.dark`). |
 | **RNF-04** | **Usabilidad Móvil** | Interfaz totalmente responsiva en escritorio, tabletas y dispositivos móviles. |

@@ -15,6 +15,39 @@ service cloud.firestore {
       return isSignedIn()
         && request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.memberIds;
     }
+    function validTask(data) {
+      return data.keys().hasOnly([
+          "title", "description", "status", "origin", "sourceMetric", "createdBy",
+          "assignedTo", "assignedToIds", "dueDate", "dueTime", "activity",
+          "createdAt", "updatedAt", "completedAt", "comments"
+        ])
+        && data.keys().hasAll([
+          "title", "description", "status", "origin", "sourceMetric", "createdBy",
+          "assignedTo", "assignedToIds", "dueDate", "dueTime", "activity",
+          "createdAt", "updatedAt"
+        ])
+        && data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 200
+        && data.description is string
+        && data.description.size() <= 2000
+        && data.status is string
+        && data.status.matches("^[a-z0-9][a-z0-9_-]{0,79}$")
+        && data.origin in ["manual", "ai_recommendation"]
+        && (data.sourceMetric == null
+          || (data.sourceMetric is string && data.sourceMetric.size() <= 100))
+        && (data.createdBy == null || data.createdBy is string)
+        && (data.assignedTo == null || data.assignedTo is string)
+        && data.assignedToIds is list
+        && (data.dueDate == null || data.dueDate is string)
+        && (data.dueTime == null || data.dueTime is string)
+        && data.activity is list
+        && (!("completedAt" in data)
+          || data.completedAt == null || data.completedAt is timestamp)
+        && (!("comments" in data) || data.comments is list)
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
     function publicProfileNameMatches(uid) {
       let privateProfile = get(/databases/$(database)/documents/users/$(uid)).data;
       return request.resource.data.displayName is string
@@ -82,6 +115,11 @@ service cloud.firestore {
       allow update: if isAdmin()
           && resource.data.status == "pending"
           && request.resource.data.status in ["approved", "rejected"]
+          && (request.resource.data.status != "rejected"
+            || (request.resource.data.reviewNote is string
+              && request.resource.data.reviewNote.size() >= 10
+              && request.resource.data.reviewNote.size() <= 500
+              && request.resource.data.reviewNote.matches("(?s).*\\S.*")))
           && request.resource.data.reviewedBy == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             "status", "reviewedBy", "reviewedAt", "reviewNote", "updatedAt"
@@ -106,7 +144,13 @@ service cloud.firestore {
 
       match /tasks/{taskId} {
         allow read: if isAdmin() || isTeamMember(teamId);
-        allow create, update, delete: if isAdmin() || isTeamMember(teamId);
+        allow create: if (isAdmin() || isTeamMember(teamId))
+          && validTask(request.resource.data)
+          && request.resource.data.createdAt == request.time;
+        allow update: if (isAdmin() || isTeamMember(teamId))
+          && validTask(request.resource.data)
+          && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isAdmin() || isTeamMember(teamId);
       }
     }
 
@@ -116,6 +160,10 @@ service cloud.firestore {
 
     match /activityLogs/{logId} {
       allow create: if isSelf(request.resource.data.userId)
+        && request.resource.data.type in [
+          "login", "navigation", "kanban_action", "survey_submit"
+        ]
+        && request.resource.data.timestamp == request.time
         && request.resource.data.keys().hasOnly([
           "userId", "type", "timestamp", "action", "projectId", "projectName",
           "taskId", "taskTitle", "fromStatus", "toStatus", "surveyTitle"

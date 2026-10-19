@@ -50,7 +50,7 @@ permite hacer todas las funciones, solo inicie sesion con las credenciales que s
    ```
 
 3. **Configurar variables de entorno:**
-   Copia la plantilla `env.example` como `.env.local` en la raíz del proyecto y reemplaza cada valor con la configuración de la aplicación web de tu proyecto Firebase (Firebase Console → Configuración del proyecto → Tus apps). El repositorio no incluye claves ni credenciales de prueba; usa los valores de tu propio proyecto.
+   Copia la plantilla `.env.example` como `.env.local` en la raíz del proyecto y reemplaza cada valor con la configuración de la aplicación web de tu proyecto Firebase (Firebase Console → Configuración del proyecto → Tus apps). El repositorio no incluye claves ni credenciales de prueba; usa los valores de tu propio proyecto.
    ```bash
    cp .env.example .env.local
    ```
@@ -75,7 +75,7 @@ npm run preview
 
 ### Despliegue del backend (Firebase)
 
-El frontend usa Cloud Functions, reglas de Firestore y Storage. Las variables de `env.example` configuran el SDK web; no crean ni despliegan la base de datos.
+El frontend usa Cloud Functions, reglas de Firestore y Storage. Las variables de `.env.example` configuran el SDK web; no crean ni despliegan la base de datos.
 
 Para desplegar el backend en un proyecto propio se requiere Firebase CLI, Python 3.14 (runtime de `firebase.json`), un proyecto con el plan y servicios necesarios y el secreto `GEMINI_API_KEY` configurado en Firebase. Selecciona el proyecto con `firebase use --add` (esto crea un `.firebaserc` local, ignorado por Git) y despliega con `firebase deploy`. Las credenciales de servicio no deben guardarse en el repositorio.
 
@@ -88,13 +88,25 @@ No se generan respuestas sintéticas ni se incluyen filtros de origen en la apli
 
 ---
 
-## 6. Usuarios y Acceso al Sistema
+## 6. Primer uso, usuarios y acceso
 
-El sistema utiliza los roles `admin` y `employee`; no hay autorregistro abierto. Las cuentas y contraseñas se aprovisionan individualmente desde Firebase Authentication y Gestión de Usuarios. 
+### Preparación inicial
+
+1. Configura Authentication, Firestore y las variables del SDK web de tu proyecto Firebase siguiendo las secciones anteriores.
+2. El responsable del proyecto crea en Firebase Authentication la cuenta inicial autorizada (correo y contraseña) y entrega sus datos por un canal privado. No subas contraseñas, claves de servicio ni valores reales al repositorio.
+3. Inicia sesión con esa cuenta. Cuando una cuenta autenticada aún no tiene rol, la aplicación invoca `bootstrap_admin`; la función solo asigna el primer rol `admin` si todavía no existe ningún perfil administrador en Firestore. Este bootstrap es de un solo uso. Si ya existe un admin, el nuevo acceso debe ser aprovisionado desde **Gestión de Usuarios**.
+4. Ya como admin, abre **Gestión de Usuarios** (`/admin/usuarios`) y crea primero los departamentos desde la sección de departamentos. Se guardan en `departments` con un identificador derivado del nombre; después estarán disponibles al dar de alta personas y configurar encuestas. También puedes renombrar o desactivar departamentos sin borrar su historial.
+5. Crea las cuentas de colaboradores desde **Gestión de Usuarios**, asigna el departamento y entrega la contraseña temporal de forma privada; el usuario deberá cambiarla al entrar.
+
+**Archivos privados distintos:** `KEYS.txt` contiene la configuración/claves de Firebase que se entrega por separado y se referencia en `.env.example`; `CREDENCIALES DE ACCESO.md` contiene las cuentas para iniciar sesión y se entrega por privado al evaluador. No son el mismo archivo ni deben publicarse en el repositorio.
+
+### Roles y acceso
+
+El sistema utiliza los roles `admin` y `employee`; no hay autorregistro abierto. La primera cuenta se prepara como se explica arriba; las cuentas siguientes se aprovisionan desde Firebase Authentication y Gestión de Usuarios.
 
 Las cuentas `employee` responden encuestas para el departamento asignado a su perfil; la administración puede responder para un departamento seleccionado. La administración también puede revisar calidad de datos, actividad digital, permisos, equipos y reportes.
 
-Es necesario iniciar sesián con las cuentas autenticadas para correr el programa, estas se encuentran en CREDENCIALES DE ACCESO.md dentro de la carpeta privada que se le entregó al evaluador. 
+Para acceder al despliegue de evaluación, usa las cuentas autenticadas de `CREDENCIALES DE ACCESO.md`, entregado en la carpeta privada del evaluador. Ese archivo no contiene las claves de configuración descritas en `KEYS.txt`.
 
 --- 
 
@@ -103,10 +115,16 @@ Es necesario iniciar sesián con las cuentas autenticadas para correr el program
 ```text
 ├── Arquitectura/              # Diagramas y documentación de arquitectura
 ├── docs/                      # PRD y especificación del MVP
-├── Evidencias/                # Capturas de evidencia (vacía hasta agregar capturas)
+├── Evidencias/                # Reporte QA y evidencia verificable de pruebas
 ├── Fichas_KPIs_Dashboard_Salud_Organizacional.md # Definiciones y fichas de KPIs
 ├── functions/
-│   ├── main.py                # Cloud Functions: cuentas, encuestas, permisos, equipos y presencia
+│   ├── main.py                # Reexporta los endpoints para Firebase y compatibilidad de imports
+│   ├── accounts.py            # Bootstrap y administración de cuentas
+│   ├── surveys.py             # Validación y envío de encuestas
+│   ├── permissions.py         # Solicitudes de permisos y adjuntos
+│   ├── teams.py               # Equipos y tareas Kanban
+│   ├── presence.py            # Cálculo de presencia digital
+│   ├── common.py              # Utilidades compartidas del backend
 │   ├── ai_functions.py        # Funciones de Gemini, límites de entrada y validación de acceso
 │   └── shared.py              # Autenticación y acceso compartido a Firestore
 ├── public/                    # Archivos estáticos y logos
@@ -119,7 +137,7 @@ Es necesario iniciar sesián con las cuentas autenticadas para correr el program
 │   ├── services/              # Servicios de conexión a Firebase, Gemini IA y exportaciones
 │   └── utils/                 # Utilidades de fechas, métricas y estilos de riesgo
 ├── tests/                     # Pruebas JavaScript, Python y reglas de Firestore
-├── env.example                # Plantilla de variables de entorno web
+├── .env.example               # Plantilla de variables de entorno web
 ├── firestore.rules            # Reglas de seguridad de Firestore
 ├── storage.rules              # Reglas de seguridad de Storage
 ├── package.json               # Dependencias y scripts del proyecto
@@ -150,7 +168,9 @@ Las reglas de Firestore se prueban contra el emulador (requiere Firebase CLI y J
 npm run test:rules
 ```
 
-Las capturas reales de ejecución y validación pueden añadirse en `Evidencias/`; no se declaran resultados de compilación o advertencias sin una ejecución registrada.
+El reporte QA con las validaciones ejecutadas está en `Evidencias/REPORTE_QA.md`. Las capturas de interfaz deben añadirse solo cuando se obtengan de una ejecución real; no se incluyen imágenes simuladas.
+
+La guía de primer uso y operación está en [`docs/MANUAL_DE_USUARIO.md`](docs/MANUAL_DE_USUARIO.md); el plan de trabajo y el plan de mantenimiento y soporte están en `docs/`.
 
 ---
 
@@ -161,6 +181,10 @@ Las capturas reales de ejecución y validación pueden añadirse en `Evidencias/
 - **Base de Datos y Autenticación:** Firebase Authentication y Cloud Firestore.
 - **Inteligencia Artificial:** Google Gemini API (`gemini-3.8-flash`).
 - **Exportaciones:** `jspdf`, `jspdf-autotable`, `xlsx` (SheetJS).
+
+La especificación de requisitos está en [`docs/PRD_Dashboard_Salud_Organizacional.md`](docs/PRD_Dashboard_Salud_Organizacional.md). El detalle de soporte, mantenimiento y planificación se documenta en:
+- [`docs/PLAN_MANTENIMIENTO_Y_SOPORTE.md`](docs/PLAN_MANTENIMIENTO_Y_SOPORTE.md)
+- [`docs/PLAN_DE_TRABAJO.md`](docs/PLAN_DE_TRABAJO.md)
 
 ---
 

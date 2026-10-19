@@ -3,6 +3,45 @@ if __package__:
 else:
     from common import admin_firestore, https_fn, date, datetime, hashlib, math, options, _db, _require_auth, _local_tz, CURRENT_INSTRUMENT_VERSION, CURRENT_PSYCHOSOCIAL_FIELDS
 
+_SURVEY_FIELD_PATHS = {
+    "enps",
+    "mood",
+    "workLifeBalance",
+    "cognitiveLoad",
+    "openText",
+    "psychosocialFactors.cognitiveLoad",
+    "psychosocialFactors.roleAmbiguity",
+    "psychosocialFactors.emotionalLabor",
+    "psychosocialFactors.shiftFatigue",
+    "psychosocialFactors.autonomy",
+    "psychosocialFactors.psychSafety",
+}
+_SURVEY_NUMERIC_RANGES = {
+    "enps": (0, 10),
+    "workLifeBalance": (1, 10),
+    "psychosocialFactors.cognitiveLoad": (1, 5),
+    "psychosocialFactors.roleAmbiguity": (1, 5),
+    "psychosocialFactors.emotionalLabor": (1, 5),
+    "psychosocialFactors.shiftFatigue": (1, 5),
+    "psychosocialFactors.autonomy": (1, 5),
+    "psychosocialFactors.psychSafety": (1, 5),
+}
+_DEFAULT_SURVEY_QUESTIONS = [
+    {"id": "enps", "type": "scale", "min": 0, "max": 10, "mapsTo": "enps", "required": True},
+    {"id": "workLifeBalance", "type": "scale", "min": 1, "max": 10, "mapsTo": "workLifeBalance", "required": True},
+    {"id": "cognitiveLoad", "type": "choice", "mapsTo": "cognitiveLoad", "required": True, "options": [
+        {"value": "context-switching"}, {"value": "tool-delays"},
+        {"value": "unclear-priorities"}, {"value": "no-friction"},
+    ]},
+    {"id": "psych_cognitive_load", "type": "scale", "min": 1, "max": 5, "mapsTo": "psychosocialFactors.cognitiveLoad", "required": True},
+    {"id": "psych_role_ambiguity", "type": "scale", "min": 1, "max": 5, "mapsTo": "psychosocialFactors.roleAmbiguity", "required": True},
+    {"id": "psych_emotional_labor", "type": "scale", "min": 1, "max": 5, "mapsTo": "psychosocialFactors.emotionalLabor", "required": True},
+    {"id": "psych_shift_fatigue", "type": "scale", "min": 1, "max": 5, "mapsTo": "psychosocialFactors.shiftFatigue", "required": True},
+    {"id": "psych_autonomy", "type": "scale", "min": 1, "max": 5, "mapsTo": "psychosocialFactors.autonomy", "required": True},
+    {"id": "psychSafety", "type": "scale", "min": 1, "max": 10, "mapsTo": "psychosocialFactors.psychSafety", "required": True},
+    {"id": "openText", "type": "text", "mapsTo": "openText", "required": False},
+]
+
 def _survey_instrument_version(response: dict) -> int:
     factor_data = response.get("psychosocialFactors", {})
     return (

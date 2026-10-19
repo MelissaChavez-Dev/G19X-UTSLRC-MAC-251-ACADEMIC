@@ -13,6 +13,7 @@ node_modules
 dist
 dist-ssr
 *.local
+.netlify/
 Credenciales-keys_DASHBOARD_EJECUTIVO_ORGANIZACIONAL
 
 # Variables de entorno y credenciales
