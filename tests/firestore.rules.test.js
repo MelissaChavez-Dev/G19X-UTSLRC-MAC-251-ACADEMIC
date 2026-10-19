@@ -44,6 +44,10 @@ before(async () => {
         userId: "employee-1",
         status: "pending",
       }),
+      setDoc(doc(db, "leaveRequests/leave-review"), {
+        userId: "employee-1",
+        status: "pending",
+      }),
       setDoc(doc(db, "activityLogs/log-1"), { userId: "employee-1", type: "task" }),
     ]);
   });
@@ -114,7 +118,7 @@ test("las solicitudes de permiso solo se crean mediante Cloud Functions", async 
 
 test("solo se rechazan permisos con motivo de al menos 10 caracteres", async () => {
   const adminDb = testEnv.authenticatedContext("admin-1", { role: "admin" }).firestore();
-  const request = doc(adminDb, "leaveRequests/leave-1");
+  const request = doc(adminDb, "leaveRequests/leave-review");
   const review = {
     status: "rejected",
     reviewedBy: "admin-1",
@@ -123,7 +127,7 @@ test("solo se rechazan permisos con motivo de al menos 10 caracteres", async () 
   };
 
   await assertFails(updateDoc(request, review));
-  await assertFails(updateDoc(request, { ...review, reviewNote: "No procede" }));
+  await assertFails(updateDoc(request, { ...review, reviewNote: "No sirve" }));
   await assertSucceeds(updateDoc(request, { ...review, reviewNote: "No procede por ahora" }));
 });
 

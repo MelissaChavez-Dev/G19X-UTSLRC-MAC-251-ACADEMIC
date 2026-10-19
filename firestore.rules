@@ -119,7 +119,7 @@ service cloud.firestore {
             || (request.resource.data.reviewNote is string
               && request.resource.data.reviewNote.size() >= 10
               && request.resource.data.reviewNote.size() <= 500
-              && request.resource.data.reviewNote.matches("(?s).*\\S.*")))
+              && request.resource.data.reviewNote.matches(".*\\S.*")))
           && request.resource.data.reviewedBy == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             "status", "reviewedBy", "reviewedAt", "reviewNote", "updatedAt"
