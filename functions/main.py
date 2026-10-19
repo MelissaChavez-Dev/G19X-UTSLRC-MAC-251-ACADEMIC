@@ -4,7 +4,9 @@ from firebase_functions import firestore_fn, https_fn, options, scheduler_fn
 from firebase_functions.params import SecretParam
 from firebase_admin import auth as admin_auth
 from firebase_admin import firestore as admin_firestore
+from firebase_admin import storage as admin_storage
 from google import genai
+from google.api_core.exceptions import GoogleAPIError
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from datetime import date, datetime, time as dt_time, timedelta, timezone
 import secrets
@@ -26,6 +28,8 @@ CURRENT_PSYCHOSOCIAL_FIELDS = {
     "autonomy",
     "psychSafety",
 }
+MAX_LEAVE_DOCUMENT_SIZE = 10 * 1024 * 1024
+LEAVE_DOCUMENT_CONTENT_TYPES = {"application/pdf", "image/jpeg", "image/png"}
 
 
 def _local_tz():
@@ -597,8 +601,8 @@ _DEFAULT_SURVEY_QUESTIONS = [
     {"id": "enps", "type": "scale", "min": 0, "max": 10, "mapsTo": "enps", "required": True},
     {"id": "workLifeBalance", "type": "scale", "min": 1, "max": 10, "mapsTo": "workLifeBalance", "required": True},
     {"id": "cognitiveLoad", "type": "choice", "mapsTo": "cognitiveLoad", "required": True, "options": [
-        {"value": "shift-handoff"}, {"value": "emr-integration"},
-        {"value": "unclear-protocols"}, {"value": "balanced"},
+        {"value": "context-switching"}, {"value": "tool-delays"},
+        {"value": "unclear-priorities"}, {"value": "no-friction"},
     ]},
     {"id": "psych_cognitive_load", "type": "scale", "min": 1, "max": 5, "mapsTo": "psychosocialFactors.cognitiveLoad", "required": True},
     {"id": "psych_role_ambiguity", "type": "scale", "min": 1, "max": 5, "mapsTo": "psychosocialFactors.roleAmbiguity", "required": True},
@@ -907,10 +911,38 @@ def submit_leave_request(req: https_fn.CallableRequest) -> dict:
     start_value = data.get("startDate")
     end_value = data.get("endDate")
     reason = (data.get("reason") or "").strip()
+    document_path = data.get("documentPath")
     if leave_type not in {"annual", "sick", "other"}:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
             message="El tipo de permiso no es válido.",
+        )
+    proof_blob = None
+    if leave_type == "sick":
+        staging_prefix = f"leave-documents/{caller.uid}/pending/"
+        file_id = document_path[len(staging_prefix):] if isinstance(document_path, str) and document_path.startswith(staging_prefix) else ""
+        if not re.fullmatch(r"[0-9a-f-]{36}", file_id):
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+                message="Adjunta el comprobante médico para la solicitud de incapacidad.",
+            )
+        proof_bucket = admin_storage.bucket()
+        proof_blob = proof_bucket.get_blob(document_path)
+        if not proof_blob:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+                message="No se encontró el comprobante médico. Vuelve a adjuntarlo.",
+            )
+        if not 0 < (proof_blob.size or 0) <= MAX_LEAVE_DOCUMENT_SIZE \
+                or proof_blob.content_type not in LEAVE_DOCUMENT_CONTENT_TYPES:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+                message="El comprobante debe ser un PDF, JPG o PNG de hasta 10 MB.",
+            )
+    elif document_path:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="El comprobante solo se admite en solicitudes de incapacidad.",
         )
     if not isinstance(start_value, str) or not isinstance(end_value, str):
         raise https_fn.HttpsError(
@@ -1004,7 +1036,12 @@ def submit_leave_request(req: https_fn.CallableRequest) -> dict:
             )
 
     leave_ref = db.collection("leaveRequests").document()
-    leave_ref.set({
+    saved_document_path = None
+    if proof_blob:
+        saved_document_path = f"leave-documents/{caller.uid}/{leave_ref.id}"
+        proof_bucket.copy_blob(proof_blob, proof_bucket, new_name=saved_document_path)
+
+    leave_data = {
         "userId": caller.uid,
         "employeeId": profile.get("employeeId") or "",
         "employeeName": profile.get("displayName") or "",
@@ -1019,7 +1056,15 @@ def submit_leave_request(req: https_fn.CallableRequest) -> dict:
         "balanceAtRequest": balance_at_request,
         "createdAt": admin_firestore.SERVER_TIMESTAMP,
         "updatedAt": admin_firestore.SERVER_TIMESTAMP,
-    })
+    }
+    if saved_document_path:
+        leave_data["documentPath"] = saved_document_path
+    leave_ref.set(leave_data)
+    if proof_blob:
+        try:
+            proof_blob.delete()
+        except GoogleAPIError as cleanup_error:
+            print(f"No se pudo eliminar el comprobante temporal {document_path}: {cleanup_error}")
     return {"requestId": leave_ref.id, "businessDays": business_days}
 
 

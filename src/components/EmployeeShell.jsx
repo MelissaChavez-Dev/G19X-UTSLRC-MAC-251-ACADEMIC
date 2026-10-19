@@ -8,7 +8,7 @@ import { Icon } from "./EmployeeUi";
 import { useSidebarState } from "../hooks/useSidebarState";
 
 /**
- * Estructura de escritorio para colaborador y líder de equipo:
+ * Estructura de escritorio para colaboradores:
  * cabecera a todo el ancho (logo a la izquierda, acciones a la derecha),
  * menú lateral opcional (`nav`, solo en pantallas grandes) y contenido que aprovecha el ancho.
  * `badge` muestra el rol y `actions` agrega accesos en la cabecera.

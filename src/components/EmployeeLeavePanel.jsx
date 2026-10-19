@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useLeaves } from "../hooks/useLeaves";
 import { cancelLeaveRequest, LEAVE_STATUS, LEAVE_TYPES, submitLeaveRequest } from "../services/leaveService";
 import { countBusinessDays, getVacationBalance } from "../utils/leaveUtils";
+import {
+  validateLeaveDocumentFile,
+} from "../utils/leaveDocumentUtils";
 import { Card, EmptyState, fieldClass, Icon, Notice, SectionHeader, StatTile } from "./EmployeeUi";
 
 const EMPTY_FORM = { type: "annual", startDate: "", endDate: "", reason: "" };
@@ -26,10 +29,12 @@ export default function EmployeeLeavePanel() {
   const { user, profile } = useAuth();
   const { requests, loading, error: loadError } = useLeaves();
   const [form, setForm] = useState(EMPTY_FORM);
+  const [proofFile, setProofFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const [cancellingId, setCancellingId] = useState(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const proofInputRef = useRef(null);
 
   const balance = profile?.hireDate ? getVacationBalance(profile.hireDate, requests) : null;
   const requestedBusinessDays =
@@ -44,14 +49,42 @@ export default function EmployeeLeavePanel() {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
+  function handleTypeChange(value) {
+    updateField("type", value);
+    setError("");
+    if (value !== "sick") {
+      setProofFile(null);
+      if (proofInputRef.current) proofInputRef.current.value = "";
+    }
+  }
+
+  function handleProofChange(event) {
+    const file = event.target.files?.[0] || null;
+    if (!file) {
+      setProofFile(null);
+      return;
+    }
+    const validationError = validateLeaveDocumentFile(file);
+    if (validationError) {
+      setProofFile(null);
+      event.target.value = "";
+      setError(validationError);
+      return;
+    }
+    setError("");
+    setProofFile(file);
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setSaving(true);
     setError("");
     setNotice("");
     try {
-      await submitLeaveRequest({ user, profile, ...form, existingRequests: requests });
+      await submitLeaveRequest({ user, profile, ...form, existingRequests: requests, proofFile });
       setForm(EMPTY_FORM);
+      setProofFile(null);
+      if (proofInputRef.current) proofInputRef.current.value = "";
       setNotice("Tu solicitud se envió a RH para su revisión.");
     } catch (submitError) {
       console.error("No se pudo enviar la solicitud de permiso:", submitError);
@@ -109,11 +142,48 @@ export default function EmployeeLeavePanel() {
                 id="leave-type"
                 className={fieldClass}
                 value={form.type}
-                onChange={(event) => updateField("type", event.target.value)}
+                onChange={(event) => handleTypeChange(event.target.value)}
               >
                 {LEAVE_TYPES.map((type) => <option key={type.id} value={type.id}>{type.label}</option>)}
               </select>
             </label>
+            {form.type === "sick" && (
+              <div className="flex flex-col gap-space-xs">
+                <label htmlFor="leave-proof" className="flex flex-col gap-space-xs text-label-md text-on-surface">
+                  Comprobante médico <span className="text-label-sm font-normal text-on-surface-variant">Obligatorio · PDF, JPG o PNG · máximo 10 MB</span>
+                  <input
+                    ref={proofInputRef}
+                    id="leave-proof"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                    aria-describedby="leave-proof-selection"
+                    required
+                    disabled={saving}
+                    onChange={handleProofChange}
+                    className={`${fieldClass} file:mr-space-sm file:rounded-full file:border-0 file:bg-primary-container file:px-space-sm file:py-1.5 file:text-label-sm file:font-semibold file:text-on-primary-container`}
+                  />
+                </label>
+                <p id="leave-proof-selection" className="text-body-sm text-on-surface-variant">
+                  {proofFile
+                    ? `${proofFile.name} · ${(proofFile.size / (1024 * 1024)).toFixed(2)} MB`
+                    : "Adjunta el comprobante para enviar una solicitud de incapacidad."}
+                </p>
+                {proofFile && (
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => {
+                      setProofFile(null);
+                      if (proofInputRef.current) proofInputRef.current.value = "";
+                    }}
+                    className="motion-press inline-flex min-h-10 w-fit items-center gap-space-xs rounded-full px-space-sm text-label-sm font-semibold text-error hover:bg-error-container disabled:opacity-50"
+                  >
+                    <Icon name="delete" size={16} />
+                    Quitar archivo
+                  </button>
+                )}
+              </div>
+            )}
             <div className="grid grid-cols-1 gap-space-sm sm:grid-cols-2">
               <label htmlFor="leave-start" className="flex flex-col gap-space-xs text-label-md text-on-surface">
                 Desde
@@ -167,7 +237,7 @@ export default function EmployeeLeavePanel() {
 
             <button
               type="submit"
-              disabled={saving || requestedBusinessDays === 0}
+              disabled={saving || requestedBusinessDays === 0 || (form.type === "sick" && !proofFile)}
               className="motion-press inline-flex items-center justify-center gap-space-xs self-start rounded-full bg-primary px-space-lg py-2.5 text-label-md font-semibold text-on-primary disabled:opacity-50"
             >
               <Icon name="send" size={18} />

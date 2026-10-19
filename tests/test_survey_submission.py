@@ -65,7 +65,7 @@ class SurveySubmissionTests(unittest.TestCase):
         answers = {
             "enps": 8,
             "workLifeBalance": 7,
-            "cognitiveLoad": "balanced",
+            "cognitiveLoad": "no-friction",
             "psych_cognitive_load": 3,
             "psych_role_ambiguity": 2,
             "psych_emotional_labor": 3,

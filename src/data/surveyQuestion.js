@@ -1,8 +1,8 @@
 export const COGNITIVE_LOAD_OPTIONS = [
-  { value: "shift-handoff", label: "Cambios de contexto y entregas entre tareas" },
-  { value: "emr-integration", label: "Demoras de herramientas o sistemas" },
-  { value: "unclear-protocols", label: "Prioridades o protocolos poco claros" },
-  { value: "balanced", label: "Ninguno / ritmo balanceado" },
+  { value: "context-switching", label: "Cambios de contexto y entregas entre tareas" },
+  { value: "tool-delays", label: "Demoras de herramientas o sistemas" },
+  { value: "unclear-priorities", label: "Prioridades o protocolos poco claros" },
+  { value: "no-friction", label: "Ninguno / ritmo balanceado" },
 ];
 
 export const SURVEY_STEPS = [
@@ -90,8 +90,8 @@ export const SURVEY_STEPS = [
   {
     id: "psych_shift_fatigue",
     type: "scale",
-    category: "Fatiga laboral",
-    label: "Fatiga de turno",
+    category: "Bienestar laboral",
+    label: "Cansancio al finalizar la jornada",
     title: "¿Qué tan fatigado/a terminas tu jornada habitual?",
     helper: "Considera el cansancio relacionado con tu jornada de trabajo.",
     min: 1,

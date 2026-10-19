@@ -2,14 +2,37 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.role == "admin";
+    }
+
     match /profile-photos/{userId}/avatar {
       allow read: if request.auth != null;
       allow write: if request.auth != null
         && request.auth.uid == userId
-        && request.auth.token.role in ["employee", "team_lead"]
+        && request.auth.token.role == "employee"
         && (request.resource == null
           || (request.resource.size <= 5 * 1024 * 1024
             && request.resource.contentType.matches('image/(jpeg|png|webp)')));
+    }
+
+    match /leave-documents/{userId}/pending/{fileId} {
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && request.auth.token.role == "employee"
+        && request.resource.size > 0
+        && request.resource.size <= 10 * 1024 * 1024
+        && request.resource.contentType in ["application/pdf", "image/jpeg", "image/png"];
+      allow delete: if request.auth != null
+        && request.auth.uid == userId
+        && request.auth.token.role == "employee";
+      allow update: if false;
+    }
+
+    match /leave-documents/{userId}/{requestId} {
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      allow write: if false;
     }
   }
 }

@@ -96,7 +96,7 @@
 <text x="1153.0" y="76" font-size="12" fill="#333" text-anchor="middle">Firebase Authentication</text>
 <text x="1153.0" y="95" font-size="12" fill="#333" text-anchor="middle">Rol en el token</text>
 <text x="1153.0" y="114" font-size="12" fill="#333" text-anchor="middle">admin · employee ·</text>
-<text x="1153.0" y="133" font-size="12" fill="#333" text-anchor="middle">team_lead</text>
+<text x="1153.0" y="133" font-size="12" fill="#333" text-anchor="middle">employee</text>
 <text x="1153.0" y="152" font-size="12" fill="#333" text-anchor="middle"></text>
 <text x="1153.0" y="171" font-size="12" fill="#333" text-anchor="middle">Reglas de Firestore</text>
 <text x="1153.0" y="190" font-size="12" fill="#333" text-anchor="middle">por colección</text>

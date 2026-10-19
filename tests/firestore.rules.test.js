@@ -32,6 +32,7 @@ before(async () => {
       }),
       setDoc(doc(db, "users/employee-2"), { displayName: "Luis", role: "employee" }),
       setDoc(doc(db, "users/admin-1"), { displayName: "Admin", role: "admin" }),
+      setDoc(doc(db, "users/leader-1"), { displayName: "Líder" }),
       setDoc(doc(db, "responses/response-1"), { enps: 8 }),
       setDoc(doc(db, "teams/team-1"), { memberIds: ["employee-1"] }),
       setDoc(doc(db, "teams/team-1/tasks/task-1"), { title: "Tarea" }),
@@ -71,6 +72,18 @@ test("el perfil privado solo admite lectura propia y el cambio restringido de co
   }));
   await assertFails(updateDoc(doc(employeeDb, "users/employee-1"), {
     displayName: "Otro nombre",
+  }));
+});
+
+test("solo los dos roles habilitados pueden crear perfiles públicos", async () => {
+  const employeeDb = testEnv.authenticatedContext("employee-1", { role: "employee" }).firestore();
+  const legacyLeadDb = testEnv.authenticatedContext("leader-1", { role: "team_lead" }).firestore();
+  const profile = { displayName: "Ana", photoURL: "", updatedAt: "2026-10-19" };
+
+  await assertSucceeds(setDoc(doc(employeeDb, "publicProfiles/employee-1"), profile));
+  await assertFails(setDoc(doc(legacyLeadDb, "publicProfiles/leader-1"), {
+    ...profile,
+    displayName: "Líder",
   }));
 });
 

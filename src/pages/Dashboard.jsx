@@ -670,7 +670,7 @@ const OperationStrip = memo(function OperationStrip({
           {showAbsence && (
             <OpsTile
               icon="person_off"
-              label="Actividad digital no registrada"
+              label="Ausentismo"
               level={absenceLoading ? undefined : hasWorkdayRecords ? getKpiLevel("digitalAbsence", absence?.rate) : LEVELS.noData} // KPI-LEVEL
               period="30 días"
               value={absenceLoading ? "…" : Number.isFinite(absence?.rate) ? `${absence.rate}%` : "—"}

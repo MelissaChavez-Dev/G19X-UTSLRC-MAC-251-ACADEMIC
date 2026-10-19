@@ -79,7 +79,7 @@ function ProjectCard({ project }) {
     <Link
       to={`/mis-proyectos/${project.id}`}
       aria-label={`Abrir el tablero del proyecto ${project.name}`}
-      className="motion-card group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-outline-variant/40 bg-surface-container-lowest transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      className="motion-card group flex min-w-0 flex-col overflow-hidden rounded-[1.5rem] border border-outline-variant/50 bg-surface-container-lowest shadow-sm transition-[box-shadow,transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     >
       <div className={`flex items-center gap-space-sm p-space-md ${projectTheme(project.id)}`}>
         <span
@@ -398,25 +398,47 @@ export default function MiEspacio() {
 
   return (
     <EmployeeShell nav={nav}>
-      <div className="flex flex-wrap items-end justify-between gap-space-sm">
-        <div className="min-w-0">
-          <p className="text-label-md text-on-surface-variant first-letter:uppercase">
-            {tab === "resumen" ? todayLabel : "Mi espacio"}
-          </p>
-          <h1 className="text-headline-xl tracking-tight text-on-surface">
-            {tab === "resumen" ? `Hola, ${firstName}` : PAGE_COPY[tab].title}
-          </h1>
-          {tab !== "resumen" && (
-            <p className="mt-1 text-body-md text-on-surface-variant">{PAGE_COPY[tab].description}</p>
-          )}
-        </div>
-        {tab === "resumen" && streak > 0 && (
-          <span className="inline-flex w-fit items-center gap-space-xs rounded-full bg-tertiary-fixed px-space-md py-1.5 text-label-md text-on-tertiary-fixed-variant">
-            <Icon name="local_fire_department" size={16} />
-            {streak} {streak === 1 ? "semana" : "semanas"} seguidas participando
-          </span>
-        )}
-      </div>
+      {tab === "resumen" ? (
+        <section className="relative isolate overflow-hidden rounded-[1.75rem] border border-outline-variant/50 bg-primary-container p-space-lg text-on-primary-container sm:p-8">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-14 -z-10 h-48 w-48 rounded-full border-[24px] border-primary/10 sm:h-64 sm:w-64" />
+          <div aria-hidden="true" className="pointer-events-none absolute right-20 top-20 -z-10 h-16 w-16 rounded-full bg-secondary/10" />
+          <div className="flex flex-wrap items-center justify-between gap-space-md">
+            <div className="min-w-0 max-w-2xl">
+              <p className="mb-2 flex items-center gap-space-xs text-label-md font-semibold uppercase tracking-[0.12em] text-on-primary-container/75">
+                <Icon name="sunny" size={16} />
+                {todayLabel}
+              </p>
+              <h1 className="text-headline-xl font-semibold tracking-tight sm:text-[2.25rem]">
+                ¡Hola, {firstName}!
+              </h1>
+              <p className="mt-2 max-w-xl text-body-md leading-relaxed text-on-primary-container/85 sm:text-body-lg">
+                Este es tu espacio para organizarte, avanzar a tu ritmo y reconocer todo lo que vas logrando.
+              </p>
+            </div>
+            {streak > 0 && (
+              <div className="inline-flex items-center gap-space-sm rounded-2xl border border-outline-variant/50 bg-surface-container-lowest/75 px-space-md py-space-sm shadow-sm">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-tertiary-container text-on-tertiary-container">
+                  <Icon name="local_fire_department" size={23} />
+                </span>
+                <span>
+                  <span className="block text-title-lg font-semibold text-on-surface">{streak}</span>
+                  <span className="block text-label-sm text-on-surface-variant">{streak === 1 ? "semana participando" : "semanas participando"}</span>
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="mt-space-lg flex flex-wrap items-center gap-x-space-lg gap-y-space-xs border-t border-on-primary-container/15 pt-space-md text-label-md text-on-primary-container/80">
+            <span className="inline-flex items-center gap-space-xs"><Icon name="favorite" size={16} /> Cada avance cuenta</span>
+            <span className="inline-flex items-center gap-space-xs"><Icon name="groups" size={16} /> Tu trabajo suma al equipo</span>
+          </div>
+        </section>
+      ) : (
+        <header className="rounded-2xl border border-outline-variant/50 bg-surface-container-lowest p-space-lg">
+          <p className="text-label-md font-semibold text-primary">MI ESPACIO</p>
+          <h1 className="mt-1 text-headline-xl tracking-tight text-on-surface">{PAGE_COPY[tab].title}</h1>
+          <p className="mt-1 text-body-md text-on-surface-variant">{PAGE_COPY[tab].description}</p>
+        </header>
+      )}
 
       <div className="lg:hidden">
         <Tabs tabs={TABS} value={tab} onChange={selectTab} label="Secciones de mi espacio" />
@@ -424,19 +446,30 @@ export default function MiEspacio() {
 
       {tab === "resumen" && (
         <TabPanel id="resumen">
-          <div className="grid grid-cols-2 gap-space-sm xl:grid-cols-4">
-            <StatTile icon="view_kanban" label="Proyectos" value={projectsLoading ? "…" : myTeams.length} />
-            <StatTile
-              icon="quiz"
-              label="Encuestas pendientes"
-              value={surveysLoading ? "…" : pending.length}
-              highlight={!surveysLoading && pending.length > 0}
-            />
-            <StatTile icon="bolt" label="Movimientos hoy" value={presenceLoading ? "…" : todayActivityCount || 0} />
-            <StatTile icon="local_fire_department" label="Semanas de racha" value={surveysLoading ? "…" : streak || 0} />
-          </div>
+          <section aria-label="Tu resumen" className="rounded-[1.5rem] border border-outline-variant/50 bg-surface-container-low p-space-sm sm:p-space-md">
+            <div className="mb-space-sm flex flex-wrap items-center justify-between gap-space-xs px-space-xs pt-space-xs">
+              <div>
+                <h2 className="text-title-md font-semibold text-on-surface">Tu semana, en perspectiva</h2>
+                <p className="mt-0.5 text-body-sm text-on-surface-variant">Un vistazo rápido a tu actividad y tus próximos pasos.</p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary-container px-space-sm py-1 text-label-sm font-medium text-on-secondary-container">
+                <Icon name="auto_awesome" size={15} /> Vas avanzando
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-space-sm xl:grid-cols-4">
+              <StatTile icon="view_kanban" label="Proyectos" value={projectsLoading ? "…" : myTeams.length} />
+              <StatTile
+                icon="quiz"
+                label="Encuestas pendientes"
+                value={surveysLoading ? "…" : pending.length}
+                highlight={!surveysLoading && pending.length > 0}
+              />
+              <StatTile icon="bolt" label="Movimientos hoy" value={presenceLoading ? "…" : todayActivityCount || 0} />
+              <StatTile icon="local_fire_department" label="Semanas de racha" value={surveysLoading ? "…" : streak || 0} />
+            </div>
+          </section>
 
-          <div className="grid grid-cols-1 items-start gap-space-lg xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="grid grid-cols-1 items-start gap-space-lg xl:grid-cols-[minmax(0,1fr)_360px]">
             <ProjectsSection
               teams={myTeams}
               loading={projectsLoading}

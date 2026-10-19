@@ -1,7 +1,7 @@
 # MVP — Plataforma y Dashboard Ejecutivo de Salud Organizacional
 
 **Proyecto:** Dashboard Ejecutivo y Plataforma de Salud Organizacional  
-**Empresa:** Organización participante (nombre provisional)  
+**Empresa:** PluriOne / Develop Talent & Technology  
 **Autora:** Melissa Alejandra Chávez  
 **Programa:** Memoria de Estadía de TSU — UTSLRC  
 **Repositorio:** github.com/MelissaChavez-Dev/G19X-UTSLRC-MAC-251-ACADEMIC
@@ -30,12 +30,12 @@ Durante el proceso de desarrollo y validación, el MVP evolucionó de un "visual
 | **Composición Visual y Minimizado** | Panel de IA minimizable/expandible con despliegue de ilustraciones dinámicas (`ilust3.png` al minimizar, `ilust4.png` bajo el heatmap al expandir con análisis). | **Completado** |
 | **Métricas Operativas** | Proxies de actividad digital no registrada a 30 días (permisos aprobados y feriados excluidos), bajas de plataforma a 90 días y ejecución de tareas Kanban, filtrables por departamento cuando aplica; no equivalen a asistencia física o desempeño individual. | **Completado** |
 | **Actividad digital (`/admin/asistencia`)** | Resumen por fecha y departamento de eventos registrados, permisos aprobados y jornadas sin actividad digital; no mide asistencia física, entrada/salida ni productividad. | **Completado** |
-| **Gestión de permisos (`/admin/permisos`)** | Revisión administrativa de vacaciones, incapacidades y otros permisos; aprobación/rechazo y calendario de permisos. Las solicitudes aprobadas justifican los días cubiertos. | **Completado** |
+| **Gestión de permisos (`/admin/permisos`)** | Solicitud de incapacidad con comprobante PDF/JPG/PNG de hasta 10 MB; detalle con motivo completo, navegación por pendientes filtrados, aprobación confirmada y rechazo con motivo obligatorio; muestra comprobante, saldo vacacional y traslapes aprobados del departamento, además del calendario. Solo permisos aprobados justifican los días cubiertos. | **Completado** |
 | **Filtro Departamental y Exportación** | Filtro dinámico en cabecera (`TopBar`), exportación de reporte ejecutivo formal a PDF y exportación de libro de cálculo en Excel (hojas múltiples). | **Completado** |
 | **Constructor de Encuestas (`SurveyBuilder`)** | Editor visual de preguntas con biblioteca de componentes, arrastre interactivo con `@dnd-kit`, ciclos de encuesta y asignación por departamento. | **Completado** |
 | **Ejecutor de Encuestas (`SurveyRunner`)** | Interfaz paso a paso y responsiva; requiere sesión y usa una Cloud Function que valida la entrada y evita duplicados por persona/ciclo en servidor. | **Completado** |
 | **Espacio del Empleado (`/mi-espacio`)** | Encuestas pendientes, proyectos, resumen personal de actividad, saldo e historial de permisos, formulario de solicitud, edición de nombre/teléfono y carga de foto. | **Completado** |
-| **Tableros Kanban por Equipo** | Tableros colaborativos (`/mis-proyectos` y `/equipos/:teamId`) con 3 columnas y comentarios con foto pública del autor o iniciales. | **Completado** |
+| **Tableros Kanban por Equipo** | Tableros colaborativos (`/mis-proyectos` y `/equipos/:teamId`) con tres listas iniciales (*Por hacer*, *En progreso* y *Hecho*), opción de agregar, renombrar y eliminar listas vacías, y comentarios con foto pública del autor o iniciales. | **Completado** |
 | **Directorio de Equipos (`TeamDirectory`)** | Administración de equipos, integrantes destacados con badges aqua y códigos únicos de unión (`joinCode`). | **Completado** |
 | **Gestión de Usuarios y Seguridad** | Directorio con distribución por departamento, identificador, puesto, contratación, fecha de ingreso y foto; creación administrativa y acceso por rol. | **Completado** |
 | **Monitoreo de Presencia Digital** | Registro no invasivo de actividad (`activityLogs`) contrastado contra horario y solicitudes aprobadas; es un proxy de uso de la app, no asistencia física. | **Completado** |

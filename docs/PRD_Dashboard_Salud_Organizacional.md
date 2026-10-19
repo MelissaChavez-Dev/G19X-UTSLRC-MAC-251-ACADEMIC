@@ -1,7 +1,7 @@
 # PRD — Plataforma y Dashboard Ejecutivo de Salud Organizacional
 
 **Proyecto:** Dashboard Ejecutivo y Plataforma de Salud Organizacional  
-**Empresa:** Organización participante (nombre provisional)  
+**Empresa:** PluriOne / Develop Talent & Technology  
 **Autora:** Melissa Alejandra Chávez  
 **Programa:** Memoria de Estadía de TSU — UTSLRC  
 **Repositorio:** github.com/MelissaChavez-Dev/G19X-UTSLRC-MAC-251-ACADEMIC 
@@ -38,9 +38,9 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
 1. **Centralización de KPIs:** Integrar en un solo panel métricas de salud neta (eNPS), presión laboral, seguridad psicológica, participación, rotación y presencia digital.
 2. **Diagnóstico Psicosocial Continuo:** Proveer una matriz de riesgo (heatmap) clasificada por departamento y factores organizacionales críticos.
 3. **Asesoría Estratégica con IA (Gemini):** Automatizar el análisis cualitativo y cuantitativo con recomendaciones ejecutivas estructuradas y vinculables directamente a planes de trabajo.
-4. **Cierre de Ciclo Diagnóstico-Acción (Kanban):** Permitir a la dirección y a los líderes convertir recomendaciones de IA o acuerdos internos en tarjetas de trabajo asignables y rastreables.
+4. **Cierre de Ciclo Diagnóstico-Acción (Kanban):** Permitir a la dirección y a los equipos convertir recomendaciones de IA o acuerdos internos en tarjetas de trabajo asignables y rastreables.
 5. **Gestión Flexible de Encuestas:** Brindar un constructor visual de encuestas (`SurveyBuilder`) y un ejecutor interactivo (`SurveyRunner`) con segmentación departamental y ciclos programados.
-6. **Seguridad y Control de Acceso por Roles:** Garantizar autenticación robusta, cambio obligatorio de credenciales temporales y permisos delimitados para Administradores, Líderes de Equipo y Empleados.
+6. **Seguridad y Control de Acceso por Roles:** Garantizar autenticación robusta, cambio obligatorio de credenciales temporales y permisos delimitados para Administradores y Empleados.
 7. **Reportes y Usabilidad Ejecutiva:** Ofrecer exportación formal a PDF y Excel multipestaña, así como un sistema de diseño con paleta accesible, modo oscuro y visualizaciones intuitivas.
 
 ---
@@ -52,13 +52,12 @@ Desarrollar e implementar una plataforma web con dashboard ejecutivo y módulos 
 | Rol | Usuario | Propósito y Alcance de Acceso |
 |---|---|---|
 | **`admin`** | Dirección / propietaria del entorno | Acceso al Dashboard Ejecutivo (`/dashboard`), Gestión de Usuarios (`/admin/usuarios`), Asistencia (`/admin/asistencia`), Gestión de Permisos (`/admin/permisos`), Directorio de Equipos (`/equipos`), tableros, encuestas, reportes y descargas PDF/Excel. |
-
 | **`employee`** | Colaborador | Portal personal (`/mi-espacio`) para solicitar/cancelar permisos pendientes, consultar saldo e historial, editar nombre y teléfono, subir foto de perfil, contestar encuestas y consultar actividad; puede unirse a equipos y usar sus tableros. |
 
 ### 4.2 Flujo de Alta y Autenticación
 1. **Alta centralizada por Administrador:** No existe autorregistro abierto. La administradora crea las cuentas necesarias desde `/admin/usuarios`.
 2. **Control de roles:** El sistema utiliza `admin` y `employee`, con rutas protegidas según cada rol.
-3. **Redirección condicional (`RoleBasedRedirect`):** Según el rol asignado, el sistema conduce al administrador a `/dashboard`, al líder a `/mi-equipo` y al empleado a `/mi-espacio`.
+3. **Redirección condicional (`RoleBasedRedirect`):** Según el rol asignado, el sistema conduce al administrador a `/dashboard` y al empleado a `/mi-espacio`.
 
 Las cuentas se aprovisionan individualmente mediante Firebase Authentication y Gestión de Usuarios. El repositorio no documenta contraseñas ni cuentas compartidas.
 
@@ -79,8 +78,9 @@ Las cuentas se aprovisionan individualmente mediante Firebase Authentication y G
 ### 5.2 Modelo de Colecciones en Firestore
 - **`users/{uid}`**: Perfil privado (`displayName`, `email`, `phone`, `employeeId`, `jobTitle`, `employmentType`, `hireDate`, `role`, `departmentId`, `teamId`, `workSchedule`, `mustChangePassword`, `active`).
 - **`publicProfiles/{uid}`**: Nombre visible y URL de foto de perfil; lectura para usuarios autenticados, escritura limitada a la propia persona y a administración.
-- **`leaveRequests/{requestId}`**: Solicitud de permiso con tipo, rango de fechas, días hábiles, motivo, estado, revisión administrativa e identidad del solicitante.
+- **`leaveRequests/{requestId}`**: Solicitud de permiso con tipo, rango de fechas, días hábiles, motivo, estado, revisión administrativa e identidad del solicitante; incapacidad puede referenciar su comprobante privado.
 - **Firebase Storage `profile-photos/{uid}/avatar`**: Foto del perfil, con escritura limitada a su propietario, formatos JPG/PNG/WebP y máximo de 5 MB.
+- **Firebase Storage `leave-documents/{uid}/{requestId}`**: Comprobantes de incapacidad en PDF/JPG/PNG, máximo 10 MB; lectura para la persona solicitante y administración, escritura final exclusiva de Cloud Functions.
 - **`teams/{teamId}/tasks/{taskId}`**: Tarjetas de trabajo del Kanban (`title`, `description`, `status`, `origin: "ai_recommendation" | "manual"`, `sourceMetric`, `assignedTo`, `createdAt`, `updatedAt`).
 - **`surveyTemplates/{templateId}`**: Plantillas creadas (`title`, `status`, `targetDepartments`, `cycle`, `questions[]`).
 - **`responses/{responseId}`**: Respuestas desidentificadas validadas por Cloud Function (`enps`, factores medidos, comentario abierto, `departmentId`, `weekId`, `submittedAt`, `source`, `instrumentVersion`), sin UID del colaborador.
@@ -129,17 +129,20 @@ Las respuestas solo pueden crearse mediante `submit_survey_response`; las reglas
   - Este proxy reutiliza actividad de la aplicación (`activityLogs`) contrastada contra el horario; actualiza el resumen en tiempo real y lo concilia diariamente.
   - No mide asistencia física, horas trabajadas ni productividad; excluye feriados federales mexicanos y permisos aprobados del porcentaje de jornadas sin actividad digital.
 - **RF-D10: Gestión de Permisos (`/admin/permisos`):**
-  - Permite a administración revisar, aprobar o rechazar solicitudes de vacaciones, incapacidad y otros permisos.
+  - Permite a administración abrir el detalle de solicitudes de vacaciones, incapacidad y otros permisos desde la fila; muestra identidad, periodo, días hábiles, motivo completo y datos de resolución.
+  - La ventana permite navegar entre solicitudes pendientes de la vista filtrada, aprobar con confirmación y rechazar con un motivo obligatorio de 10 a 500 caracteres.
+  - La solicitud de incapacidad requiere adjuntar comprobante PDF/JPG/PNG de hasta 10 MB; administración puede abrirlo desde el detalle. Para vacaciones muestra el saldo registrado al solicitar.
+  - Presenta las solicitudes aprobadas de otras personas del mismo departamento que se traslapan con el periodo, como ayuda para valorar la disponibilidad.
   - Muestra calendario y días aprobados por tipo; solo una solicitud aprobada justifica la ausencia.
 
 ### 6.2 Motor de Encuestas (`SurveyBuilder` y `SurveyRunner`)
-- **RF-E01: Constructor de Encuestas (`SurveyBuilder`):** Creación visual de encuestas con biblioteca de preguntas (Likert 1-5, eNPS 0-10, opción múltiple y texto abierto) con reordenamiento arrastrable (`@dnd-kit`) y configuración de departamentos destino.
+- **RF-E01: Constructor de Encuestas (`SurveyBuilder`):** Creación visual de encuestas con biblioteca de preguntas (Likert 1-5, escala 1-10, eNPS 0-10, opción múltiple y texto abierto) con reordenamiento arrastrable (`@dnd-kit`) y configuración de departamentos destino.
 - **RF-E02: Ejecutor de Encuestas (`SurveyRunner` / `WellnessSurvey`):** Interfaz enfocada (paso a paso), responsiva y con progreso visual. Requiere autenticación; la Cloud Function valida esquema, rol, departamento, plantilla y ciclo y registra atómicamente una respuesta desidentificada y el control de unicidad.
 - **RF-E03: Datos operativos:** No se generan respuestas sintéticas. Las respuestas analíticas se capturan mediante la aplicación; las pruebas unitarias usan datos aislados y no escriben en Firestore.
 
 ### 6.3 Espacio Colaborativo y Tableros Kanban (`/mi-espacio` y `/mis-proyectos`)
 - **RF-C01: Mi Espacio:** Vista del empleado que reúne encuestas pendientes, actividad y proyectos; incluye saldo e historial de permisos, formulario para solicitar/cancelar permisos pendientes y edición propia de nombre, teléfono y foto.
-- **RF-C02: Tableros Kanban (`TeamKanban` / `TeamBoard`):** Flujo de trabajo en 3 estados (*Por hacer*, *En progreso*, *Completado*) con arrastre interactivo, filtros, soporte para tareas manuales o generadas por IA y fotos de perfil en comentarios.
+- **RF-C02: Tableros Kanban (`TeamKanban` / `TeamBoard`):** Tableros que comienzan con tres listas (*Por hacer*, *En progreso*, *Hecho*) y permiten agregar, renombrar o eliminar listas vacías, con arrastre interactivo, soporte para tareas manuales o generadas por IA y fotos de perfil en comentarios.
 - **RF-C03: Directorio de Equipos (`TeamDirectory`):** Módulo administrativo con tarjetas de equipos, integrantes destacados con badges tonales aqua y generación de códigos de invitación.
 - **RF-C04: Perfil laboral:** Administración asigna identificador de empleado, puesto, tipo de contratación y fecha de ingreso; el colaborador no puede editar estos datos organizacionales.
 

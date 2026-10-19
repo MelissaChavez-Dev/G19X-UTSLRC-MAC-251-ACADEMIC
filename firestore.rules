@@ -59,13 +59,13 @@ service cloud.firestore {
     match /publicProfiles/{uid} {
       allow read: if isSignedIn();
       allow create: if isSelf(uid)
-        && request.auth.token.role in ["employee", "team_lead"]
+        && request.auth.token.role == "employee"
         && request.resource.data.keys().hasOnly(["displayName", "photoURL", "updatedAt"])
         && request.resource.data.displayName.size() <= 100
         && publicProfileNameMatches(uid)
         && profilePhotoBelongsTo(uid);
       allow update: if isSelf(uid)
-        && request.auth.token.role in ["employee", "team_lead"]
+        && request.auth.token.role == "employee"
         && request.resource.data.keys().hasOnly(["displayName", "photoURL", "updatedAt"])
         && request.resource.data.displayName.size() <= 100
         && request.resource.data.displayName == resource.data.displayName

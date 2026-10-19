@@ -22,9 +22,9 @@ Documentos relacionados: `Fichas_KPIs_Dashboard_Salud_Organizacional.md` (defini
 
 ## 2. Vista general
 
-![Arquitectura analítica por capas: fuentes, ingesta, almacén, capa analítica, presentación, con IA y seguridad transversales](img/arquitectura_capas.svg)
+![Arquitectura analítica por capas: fuentes, ingesta, almacén, capa analítica, presentación, con IA y seguridad transversales](./arquitectura_capas.svg)
 
-*Figura 1. Arquitectura analítica por capas. La flecha roja punteada es el cierre del ciclo diagnóstico-acción. Si tu visor no muestra SVG, usa `img/arquitectura_capas.png`.*
+*Figura 1. Arquitectura analítica por capas. La flecha roja punteada es el cierre del ciclo diagnóstico-acción.*
 
 *Lectura de la figura:* de arriba hacia abajo se pasa de la captura al indicador. La flecha roja cierra el ciclo diagnóstico-acción: una recomendación de la IA se convierte en tarea Kanban y esas tareas alimentan, a su vez, el KPI de desempeño operativo. Qué hook usa cada colección se detalla en la sección 5.
 
@@ -34,7 +34,7 @@ Documentos relacionados: `Fichas_KPIs_Dashboard_Salud_Organizacional.md` (defini
 |---|---|---|
 | 1. Fuentes | Captura respuestas, actividad, permisos, perfiles públicos y tareas. | `src/pages/SurveyRunner.jsx`, `src/pages/MiEspacio.jsx`, `src/components/TeamKanban.jsx`, `src/pages/admin/UserManagement.jsx` |
 | 2. Ingesta y transformación | Valida solicitudes en el navegador y en Cloud Functions, asigna datos laborales, resume presencia digital y sube fotos con acceso controlado. | `src/services/leaveService.js`, `src/services/profileService.js`, `src/services/activityService.js`, `functions/main.py` |
-| 3. Almacén | Guarda datos de negocio en Firestore y fotos de perfil en Firebase Storage con reglas por usuario y rol. | `firestore.rules`, `storage.rules`, `firebase.json` |
+| 3. Almacén | Guarda datos de negocio en Firestore, fotos y comprobantes de incapacidad en Firebase Storage con reglas por usuario y rol. | `firestore.rules`, `storage.rules`, `firebase.json` |
 | 4. Capa analítica | Calcula KPIs, asigna niveles y evalúa la calidad. | `src/hooks/`, `src/utils/metricUtils.js`, `src/data/kpiThresholds.js`, `src/data/dataQualityRules.js` |
 | 5. IA | Clasifica sentimiento, explica métricas y propone acciones, solo con datos agregados. | `functions/main.py`, `src/services/aiService.js` |
 | 6. Presentación | Muestra tableros, alertas, calidad y reportes; permite actuar sobre los hallazgos. | `src/pages/Dashboard.jsx`, `src/pages/DataQuality.jsx`, `src/components/`, `src/services/exportService.js` |
@@ -53,7 +53,7 @@ Documentos relacionados: `Fichas_KPIs_Dashboard_Salud_Organizacional.md` (defini
 | `teams/{id}/tasks` | Tarjetas Kanban: estado, fecha límite, `completedAt`, origen y comentarios con `authorId` | Cliente y Cloud Functions | Ejecución de tareas del equipo y avatares de comentarios |
 | `users` | Perfil privado, `employeeId`, puesto, contratación, ingreso, rol, departamento, horario y estado | Cloud Functions de usuarios; el colaborador solo puede cambiar nombre/teléfono mediante callable | Headcount, horario y saldo de vacaciones |
 | `publicProfiles` | Solo nombre visible y `photoURL`; no contiene correo ni departamento y requiere sesión para leerse | Cloud Functions de usuarios y propietario del perfil para la foto | Avatares del directorio y comentarios Kanban |
-| Firebase Storage | Foto en `profile-photos/{uid}/avatar` | El propio usuario, con límite de tamaño y MIME; lectura autenticada | Foto del perfil |
+| Firebase Storage | Foto en `profile-photos/{uid}/avatar` y comprobantes en `leave-documents/{uid}/{requestId}` | El propio usuario sube la foto; los comprobantes se validan por MIME y tamaño en Storage y Cloud Functions y la copia final la realiza la función | Foto del perfil y comprobantes de incapacidad |
 | `departments` | Catálogo de áreas | Administración | Agrupación de todos los KPIs por departamento |
 | `surveyTemplates` | Plantillas de encuesta y su mapeo a indicadores (`mapsTo`) | Constructor de encuestas | Define qué campos llegan a `responses` |
 
@@ -80,7 +80,7 @@ Cada fila responde a la pregunta *¿de dónde sale este número?*
 1. La persona autenticada contesta una encuesta. `submit_survey_response` verifica perfil activo, departamento, plantilla publicada, ciclo vigente, respuestas obligatorias, tipos y rangos. En una transacción crea una respuesta sin UID y un control de ciclo legible solo por su propietario. Los reintentos duplicados se rechazan en servidor. Los documentos de respuesta solo los puede leer administración; el cliente no puede crearlos, modificarlos ni eliminarlos directamente.
 2. Cada inicio de sesión, envío de encuesta o acción en el Kanban genera un evento en `activityLogs`. La navegación se registra como máximo una vez cada 5 minutos para no saturar la base.
 3. Cuando la administración desactiva o elimina una cuenta, la Cloud Function correspondiente escribe la baja en `departureLog`.
-4. El colaborador envía una solicitud desde Mi Espacio. `leaveService.js` da validación inmediata; `submit_leave_request` vuelve a calcular los días hábiles, revisa saldo y traslapes y crea `leaveRequests`. Firestore bloquea la creación directa desde el cliente y restringe la cancelación a la persona propietaria mientras esté pendiente.
+4. Para solicitar una incapacidad, el colaborador sube un comprobante a una ruta temporal propia; `submit_leave_request` valida tipo y tamaño, mueve el archivo a su ruta definitiva, recalcula los días hábiles y crea `leaveRequests` con la referencia del comprobante. Firestore bloquea la creación directa desde el cliente y restringe la cancelación a la persona propietaria mientras esté pendiente.
 5. El colaborador sube su foto a su ruta asociada a UID en Storage; `publicProfiles` expone únicamente nombre visible y URL de foto para usuarios autenticados.
 
 ### 6.2 Proceso programado (cada noche)

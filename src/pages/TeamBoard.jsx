@@ -55,7 +55,7 @@ export default function TeamBoard() {
   );
 
   if (!isAdmin) {
-    // team_lead: layout simple sin el sidebar ejecutivo
+    // Los colaboradores usan un layout simple sin el sidebar ejecutivo.
     return (
       <div className="min-h-screen bg-surface">
         <header className="h-16 px-space-xl flex items-center justify-between bg-surface/80 backdrop-blur-xl sticky top-0 z-40">

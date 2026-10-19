@@ -1,5 +1,6 @@
 export const BLOCK_TYPES = [
   {
+    id: "scale-1-10",
     type: "scale",
     icon: "linear_scale",
     label: "Escala 1-10",
@@ -14,22 +15,39 @@ export const BLOCK_TYPES = [
     },
   },
   {
+    id: "likert-1-5",
+    type: "scale",
+    icon: "linear_scale",
+    label: "Likert 1-5",
+    description: "Escala de acuerdo o valoración de 1 a 5",
+    defaults: {
+      min: 1,
+      max: 5,
+      lowLabel: "Totalmente en desacuerdo",
+      highLabel: "Totalmente de acuerdo",
+      mapsTo: "psychosocialFactors.cognitiveLoad",
+      required: true,
+    },
+  },
+  {
+    id: "choice",
     type: "choice",
     icon: "check_circle",
     label: "Opción múltiple",
     description: "Selección única entre varias opciones",
     defaults: {
       options: [
-        { value: "shift-handoff", label: "Cambios de contexto y entregas entre tareas" },
-        { value: "emr-integration", label: "Demoras de herramientas o sistemas" },
-        { value: "unclear-protocols", label: "Prioridades o protocolos poco claros" },
-        { value: "balanced", label: "Ninguno / ritmo balanceado" },
+        { value: "context-switching", label: "Cambios de contexto y entregas entre tareas" },
+        { value: "tool-delays", label: "Demoras de herramientas o sistemas" },
+        { value: "unclear-priorities", label: "Prioridades o protocolos poco claros" },
+        { value: "no-friction", label: "Ninguno / ritmo balanceado" },
       ],
       mapsTo: "cognitiveLoad",
       required: true,
     },
   },
   {
+    id: "text",
     type: "text",
     icon: "short_text",
     label: "Texto abierto",
@@ -48,7 +66,7 @@ export const MAPPABLE_FIELDS = [
   { value: "psychosocialFactors.psychSafety", label: "Seguridad psicológica (1-10)" },
   { value: "psychosocialFactors.roleAmbiguity", label: "Ambigüedad de rol" },
   { value: "psychosocialFactors.emotionalLabor", label: "Carga emocional" },
-  { value: "psychosocialFactors.shiftFatigue", label: "Fatiga de turno" },
+  { value: "psychosocialFactors.shiftFatigue", label: "Cansancio al finalizar la jornada" },
   { value: "psychosocialFactors.autonomy", label: "Autonomía" },
   { value: "openText", label: "Comentario libre (text)" },
 ];

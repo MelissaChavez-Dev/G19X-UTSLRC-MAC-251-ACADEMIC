@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import {
 
@@ -19,7 +19,7 @@ import {
 } from "recharts";
 
 import Avatar from "../../components/Avatar";
-
+import LeaveDetailModal from "../../components/LeaveDetailModal";
 import Sidebar from "../../components/Sidebar";
 
 import TopBar from "../../components/TopBar";
@@ -27,6 +27,7 @@ import TopBar from "../../components/TopBar";
 import { useDepartments } from "../../hooks/useDepartments";
 
 import { useLeaves } from "../../hooks/useLeaves";
+import { useHeadcount } from "../../hooks/useHeadcount";
 
 import { useProfiles } from "../../hooks/useProfiles";
 
@@ -149,6 +150,7 @@ export default function LeaveManagement() {
   const { departments } = useDepartments();
 
   const { profiles } = useProfiles();
+  const { forDepartment } = useHeadcount();
 
   const [statusFilter, setStatusFilter] = useState("pending");
 
@@ -169,6 +171,8 @@ export default function LeaveManagement() {
   const [error, setError] = useState("");
 
   const [notice, setNotice] = useState("");
+  const [modalState, setModalState] = useState(null);
+  const returnFocusRef = useRef(null);
 
 
 
@@ -268,44 +272,50 @@ export default function LeaveManagement() {
 
   });
 
+  const pendingQueue = filteredRequests.filter((request) => request.status === "pending");
+  const modalRequest = modalState
+    ? requests.find((request) => request.id === modalState.request.id) || modalState.request
+    : null;
 
-
-  async function handleReview(request, status) {
-
-    let reviewNote = "";
-
-    if (status === "rejected") {
-
-      const note = window.prompt("Motivo del rechazo (opcional):");
-
-      if (note === null) return;
-
-      reviewNote = note;
-
-    } else if (!window.confirm(`¿Aprobar el permiso de ${request.employeeName || "este colaborador"}?`)) {
-
-      return;
-
-    }
-
-
-
-    setReviewingId(request.id);
-
+  function openRequest(request, mode, trigger) {
+    returnFocusRef.current = trigger;
     setError("");
-
     setNotice("");
+    setModalState({ request, initialMode: mode });
+  }
 
+  function closeRequest() {
+    if (reviewingId) return;
+    setModalState(null);
+    setError("");
+    setTimeout(() => {
+      if (returnFocusRef.current?.isConnected) returnFocusRef.current.focus();
+      returnFocusRef.current = null;
+    }, 0);
+  }
+
+  async function handleReview(request, status, reviewNote = "") {
+    setReviewingId(request.id);
+    setError("");
+    setNotice("");
     try {
-
       await reviewLeaveRequest(request.id, { status, reviewNote });
-
       setNotice(status === "approved" ? "Solicitud aprobada." : "Solicitud rechazada.");
-
+      const currentIndex = pendingQueue.findIndex((item) => item.id === request.id);
+      const nextRequest = currentIndex < 0
+        ? pendingQueue[0]
+        : pendingQueue[currentIndex + 1] || [...pendingQueue.slice(0, currentIndex)].at(-1);
+      if (nextRequest) {
+        setModalState({ request: nextRequest, initialMode: "view" });
+      } else {
+        setModalState(null);
+        setTimeout(() => {
+          if (returnFocusRef.current?.isConnected) returnFocusRef.current.focus();
+          returnFocusRef.current = null;
+        }, 0);
+      }
     } catch (reviewError) {
-
       console.error("No se pudo resolver la solicitud de permiso:", reviewError);
-
       setError(reviewError.message || "No se pudo guardar la resolución.");
 
     } finally {
@@ -424,7 +434,19 @@ export default function LeaveManagement() {
                   <tbody className="divide-y divide-outline-variant">
                     {filteredRequests.map((request) => {
                       const status = LEAVE_STATUS[request.status] || LEAVE_STATUS.pending;
-                      return <tr key={request.id} className="transition-colors hover:bg-surface-container-low">
+                      return <tr
+                        key={request.id}
+                        tabIndex={0}
+                        aria-label={`Ver detalle de la solicitud de ${request.employeeName || "colaborador"}`}
+                        onClick={(event) => openRequest(request, "view", event.currentTarget)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            openRequest(request, "view", event.currentTarget);
+                          }
+                        }}
+                        className="cursor-pointer transition-colors hover:bg-surface-container-low focus-visible:outline-primary"
+                      >
                         <td className="px-5 py-3"><span className="flex items-center gap-3"><Avatar name={request.employeeName} photoURL={profiles[request.userId]?.photoURL} size={38} /><span className="min-w-0"><span className="block font-semibold text-on-surface">{request.employeeName || "—"}</span><span className="block font-mono text-label-sm text-on-surface-variant">{request.employeeId || "Sin ID"}</span></span></span></td>
                         <td className="px-4 py-3 text-body-sm text-on-surface-variant">{departmentName(request.departmentId, departments)}</td>
                         <td className="px-4 py-3"><span className="inline-flex rounded-lg bg-surface-container-high px-2.5 py-1 text-label-sm font-medium text-on-surface">{LEAVE_TYPES.find((type) => type.id === request.type)?.label || request.type}</span></td>
@@ -432,7 +454,49 @@ export default function LeaveManagement() {
                         <td className="px-4 py-3"><span className="inline-flex min-w-8 justify-center rounded-lg bg-primary-container px-2 py-1 text-label-md font-bold text-on-primary-container">{request.businessDays}</span></td>
                         <td className="max-w-56 px-4 py-3 text-body-sm text-on-surface-variant"><span className="line-clamp-2">{request.reason || "Sin motivo"}</span></td>
                         <td className="px-4 py-3"><span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-label-sm font-semibold ${status.tone === "success" ? "bg-secondary-container text-on-secondary-container" : status.tone === "error" ? "bg-error-container text-on-error-container" : status.tone === "warning" ? "bg-tertiary-container text-on-tertiary-container" : "bg-surface-container-high text-on-surface-variant"}`}><i className={`h-1.5 w-1.5 rounded-full ${status.tone === "success" ? "bg-secondary" : status.tone === "error" ? "bg-error" : status.tone === "warning" ? "bg-tertiary" : "bg-outline"}`} />{status.label}</span></td>
-                        <td className="px-5 py-3">{request.status === "pending" ? <div className="flex justify-end gap-2"><button type="button" onClick={() => handleReview(request, "approved")} disabled={reviewingId === request.id} className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-2 text-label-sm font-semibold text-on-secondary transition hover:brightness-95 disabled:opacity-50"><span className="material-symbols-outlined text-[16px]">check</span>Aprobar</button><button type="button" onClick={() => handleReview(request, "rejected")} disabled={reviewingId === request.id} className="inline-flex items-center gap-1.5 rounded-full border border-error/40 bg-error-container px-3 py-2 text-label-sm font-semibold text-on-error-container transition hover:border-error disabled:opacity-50"><span className="material-symbols-outlined text-[16px]">close</span>Rechazar</button></div> : <span className="block text-right text-label-sm text-on-surface-variant">{request.reviewedAt?.toDate?.().toLocaleDateString("es-MX") || "Resuelta"}</span>}</td>
+                        <td className="px-5 py-3" onClick={(event) => event.stopPropagation()}>
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                openRequest(request, "view", event.currentTarget);
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant bg-surface-container-low px-3 py-2 text-label-sm font-semibold text-on-surface transition hover:bg-surface-container"
+                            >
+                              <span aria-hidden="true" className="material-symbols-outlined text-[16px]">visibility</span>
+                              Ver detalle
+                            </button>
+                            {request.status === "pending" && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    openRequest(request, "approve", event.currentTarget);
+                                  }}
+                                  disabled={reviewingId === request.id}
+                                  className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-2 text-label-sm font-semibold text-on-secondary transition hover:brightness-95 disabled:opacity-50"
+                                >
+                                  <span aria-hidden="true" className="material-symbols-outlined text-[16px]">check</span>
+                                  Aprobar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    openRequest(request, "reject", event.currentTarget);
+                                  }}
+                                  disabled={reviewingId === request.id}
+                                  className="inline-flex items-center gap-1.5 rounded-full border border-error/40 bg-error-container px-3 py-2 text-label-sm font-semibold text-on-error-container transition hover:border-error disabled:opacity-50"
+                                >
+                                  <span aria-hidden="true" className="material-symbols-outlined text-[16px]">close</span>
+                                  Rechazar
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
                       </tr>;
                     })}
                   </tbody>
@@ -442,6 +506,28 @@ export default function LeaveManagement() {
           </section>
         </div>
       </main>
+      {modalRequest && (
+        <LeaveDetailModal
+          request={modalRequest}
+          allRequests={requests}
+          departments={departments}
+          profiles={profiles}
+          queue={pendingQueue}
+          initialMode={modalState.initialMode}
+          busy={reviewingId === modalRequest.id}
+          error={error}
+          headcount={forDepartment(modalRequest.departmentId)}
+          returnFocusRef={returnFocusRef}
+          onClose={closeRequest}
+          notice={notice}
+          onNavigate={(request) => {
+            setError("");
+            setModalState({ request, initialMode: "view" });
+          }}
+          onApprove={(request) => handleReview(request, "approved")}
+          onReject={(request, note) => handleReview(request, "rejected", note)}
+        />
+      )}
     </div>
   );
 }

@@ -91,7 +91,7 @@ function StatusPill({ status }) {
 
 function DraggableBlockButton({ block, onAdd }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `library:${block.type}`,
+    id: `library:${block.id || block.type}`,
   });
 
   return (
@@ -100,7 +100,7 @@ function DraggableBlockButton({ block, onAdd }) {
       {...attributes}
       {...listeners}
       type="button"
-      onClick={() => onAdd(block.type)}
+      onClick={() => onAdd(block.id || block.type)}
       className={`group flex w-full select-none items-center gap-3 rounded-xl px-3 py-2.5 text-left touch-none transition-colors hover:bg-surface-container-low ${
         isDragging ? "opacity-40" : ""
       }`}
@@ -176,12 +176,12 @@ export default function SurveyBuilder() {
     init();
   }, [paramId, navigate]);
 
-  function addBlock(blockType, insertAt = null) {
-    const def = BLOCK_TYPES.find((b) => b.type === blockType);
+  function addBlock(blockId, insertAt = null) {
+    const def = BLOCK_TYPES.find((b) => (b.id || b.type) === blockId);
     if (!def) return;
     const newQuestion = {
       id: `q-${Date.now()}-${nextId++}`,
-      type: blockType,
+      type: def.type,
       category: "Custom",
       label: def.label,
       title: "",
@@ -598,7 +598,7 @@ export default function SurveyBuilder() {
                 </div>
                 <div className="flex flex-col gap-0.5">
                   {BLOCK_TYPES.map((block) => (
-                    <DraggableBlockButton key={block.type} block={block} onAdd={addBlock} />
+                    <DraggableBlockButton key={block.id || block.type} block={block} onAdd={addBlock} />
                   ))}
                 </div>
               </aside>

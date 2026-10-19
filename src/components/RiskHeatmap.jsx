@@ -4,7 +4,7 @@ const COLUMNS = [
   { key: "cognitiveLoad", label: "Carga mental", invert: false },
   { key: "roleAmbiguity", label: "Claridad del rol", invert: true },
   { key: "emotionalLabor", label: "Exigencia emocional", invert: false },
-  { key: "shiftFatigue", label: "Fatiga del turno", invert: false },
+  { key: "shiftFatigue", label: "Cansancio al finalizar la jornada", invert: false },
   { key: "autonomy", label: "Autonomía", invert: true },
   { key: "psychSafety", label: "Seguridad psicológica", invert: true },
   {

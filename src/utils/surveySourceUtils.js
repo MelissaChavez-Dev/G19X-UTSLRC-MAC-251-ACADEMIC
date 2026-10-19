@@ -1,5 +1,12 @@
 import { COGNITIVE_LOAD_OPTIONS } from "../data/surveyQuestion.js";
 
+const LEGACY_FRICTION_LABELS = {
+  "shift-handoff": "Cambios de contexto y entregas entre tareas",
+  "emr-integration": "Demoras de herramientas o sistemas",
+  "unclear-protocols": "Prioridades o protocolos poco claros",
+  balanced: "Ninguno / ritmo balanceado",
+};
+
 export function summarizeFrictionSources(responses, templates) {
   const optionLabels = new Map(
     COGNITIVE_LOAD_OPTIONS.map((option) => [`default:${option.value}`, option.label])
@@ -23,6 +30,7 @@ export function summarizeFrictionSources(responses, templates) {
     const templateKey = response.templateId || "default";
     const rawValue = String(value);
     const label = optionLabels.get(`${templateKey}:${rawValue}`)
+      || LEGACY_FRICTION_LABELS[rawValue]
       || rawValue.replace(/[-_]+/g, " ").trim()
       || "Sin categoría";
     counts.set(label, (counts.get(label) || 0) + 1);

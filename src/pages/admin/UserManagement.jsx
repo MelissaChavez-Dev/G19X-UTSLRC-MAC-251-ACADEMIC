@@ -701,7 +701,7 @@ export default function UserManagement() {
               <div className="min-w-0">
                 <h3 className="text-sm font-semibold text-on-surface">Colaboradores por departamento</h3>
                 <p className="mt-1 text-xs leading-5 text-on-surface-variant">
-                  Distribución de cuentas activas de colaboradores y líderes de equipo.
+                  Distribución de cuentas activas de colaboradores.
                 </p>
                 {allDepartments.length === 0 ? (
                   <p className="mt-4 rounded-lg border border-dashed border-outline-variant bg-surface-container-lowest px-3 py-4 text-sm text-on-surface-variant">

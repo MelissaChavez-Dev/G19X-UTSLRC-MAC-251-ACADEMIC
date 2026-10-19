@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "node --test tests/leaveUtils.test.js tests/metricUtils.test.js tests/departmentRiskUtils.test.js tests/surveySourceUtils.test.js",
+    "test": "node --test tests/leaveUtils.test.js tests/leaveDepartmentOverlaps.test.js tests/metricUtils.test.js tests/departmentRiskUtils.test.js tests/surveySourceUtils.test.js tests/surveyBlocks.test.js",
     "test:rules": "firebase emulators:exec --only firestore --project demo-rules-tests \"node --test tests/firestore.rules.test.js\"",
     "lint": "eslint .",
     "preview": "vite preview"

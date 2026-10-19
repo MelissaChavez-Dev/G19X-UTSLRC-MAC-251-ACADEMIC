@@ -139,6 +139,25 @@ export function findLeaveOverlap(request, existingRequests = []) {
   }) || null;
 }
 
+export function findDepartmentOverlaps(request, allRequests = []) {
+  if (!request?.departmentId || !request?.startDate || !request?.endDate) return [];
+  const requestStart = parseDate(request.startDate);
+  const requestEnd = parseDate(request.endDate);
+  if (requestStart > requestEnd) return [];
+
+  return allRequests.filter((existing) => {
+    if (existing.status !== "approved" || existing.departmentId !== request.departmentId) return false;
+    if (request.id && request.id === existing.id) return false;
+    if (request.userId && request.userId === existing.userId) return false;
+    if (request.employeeId && request.employeeId === existing.employeeId) return false;
+    if (!existing.startDate || !existing.endDate) return false;
+
+    const existingStart = parseDate(existing.startDate);
+    const existingEnd = parseDate(existing.endDate);
+    return requestStart <= existingEnd && requestEnd >= existingStart;
+  });
+}
+
 export function isCoveredByApprovedLeave(dateValue, requests = []) {
   const date = parseDate(dateValue);
   return requests.some((request) => {

@@ -30,6 +30,13 @@ test("resume opciones de fuente de fricción usando sus etiquetas de plantilla",
 
 test("usa las etiquetas de las opciones de la encuesta predeterminada", () => {
   assert.deepEqual(
+    summarizeFrictionSources([{ cognitiveLoad: "no-friction" }], []),
+    [{ label: "Ninguno / ritmo balanceado", count: 1, percentage: 100 }]
+  );
+});
+
+test("conserva etiquetas legibles para respuestas históricas", () => {
+  assert.deepEqual(
     summarizeFrictionSources([{ cognitiveLoad: "balanced" }], []),
     [{ label: "Ninguno / ritmo balanceado", count: 1, percentage: 100 }]
   );
