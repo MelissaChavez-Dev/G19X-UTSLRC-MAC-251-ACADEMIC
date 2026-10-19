@@ -1,6 +1,7 @@
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { db, storage } from "./firebase";
+import { db } from "./firebaseFirestore";
+import { storage } from "./firebaseStorage";
 import { updateEmployeeProfile } from "./userService";
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;

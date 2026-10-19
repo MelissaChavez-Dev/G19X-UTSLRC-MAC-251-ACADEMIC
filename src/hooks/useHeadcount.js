@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "../services/firebase";
+import { db } from "../services/firebaseFirestore";
 
 /**
  * Headcount real: usuarios activos employee agrupados por departamento.

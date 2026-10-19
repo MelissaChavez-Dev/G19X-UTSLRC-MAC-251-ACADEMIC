@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "../services/firebase";
+import { db } from "../services/firebaseFirestore";
 import { useHeadcount } from "./useHeadcount";
 
 function daysAgo(n) {

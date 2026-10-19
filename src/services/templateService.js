@@ -1,7 +1,7 @@
 import {
   collection, doc, addDoc, deleteDoc, updateDoc, getDocs, getDoc, query, where, orderBy, Timestamp,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { db } from "./firebaseFirestore";
 import { validateSurveyTemplate } from "../data/surveyTemplate";
 import { getISOWeek } from "../utils/dateUtils";
 

@@ -1,5 +1,4 @@
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "./firebase";
+import { auth } from "./firebase";
 
 /**
  * Registro de presencia digital (Fase E).
@@ -30,10 +29,14 @@ export async function logActivity(type, details = {}) {
       .map((field) => [field, details[field].trim().slice(0, 160)])
   );
   try {
-    await addDoc(collection(db, "activityLogs"), {
+    const [firestore, { db }] = await Promise.all([
+      import("firebase/firestore"),
+      import("./firebaseFirestore"),
+    ]);
+    await firestore.addDoc(firestore.collection(db, "activityLogs"), {
       userId: user.uid,
       type,
-      timestamp: serverTimestamp(),
+      timestamp: firestore.serverTimestamp(),
       ...safeDetails,
     });
   } catch (err) {

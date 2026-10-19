@@ -1,10 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, onSnapshot } from "firebase/firestore";
-import { auth, db } from "../services/firebase";
+import { auth } from "../services/firebase";
 import { logLogin } from "../services/activityService";
-import { syncAdminClaim } from "../services/userService";
 
 const AuthContext = createContext(null);
 
@@ -56,49 +54,62 @@ export function AuthProvider({ children }) {
       }
       if (generation !== authGeneration) return;
 
-      unsubscribeProfile = onSnapshot(
-        doc(db, "users", firebaseUser.uid),
-        (snap) => {
-          const profile = snap.exists() ? { id: snap.id, ...snap.data() } : null;
-          if (profile?.role === "admin" && token.claims.role !== "admin") {
-            setState({ user: firebaseUser, claims: token.claims, profile, loading: true });
-            if (syncingAdminClaimFor !== firebaseUser.uid) {
-              syncingAdminClaimFor = firebaseUser.uid;
-              syncAdminClaim()
-                .then(async () => {
-                  const refreshedToken = await firebaseUser.getIdTokenResult(true);
-                  if (generation !== authGeneration) return;
-                  token = refreshedToken;
-                  setState({
-                    user: firebaseUser,
-                    claims: refreshedToken.claims,
-                    profile,
-                    loading: false,
-                  });
-                })
-                .catch((error) => {
-                  console.error("No se pudo sincronizar el rol admin de la cuenta:", error);
-                  if (generation === authGeneration) {
-                    setState({ user: firebaseUser, claims: token.claims, profile, loading: false });
-                  }
-                });
-            }
-            return;
-          }
+      try {
+        const [firestore, { db }] = await Promise.all([
+          import("firebase/firestore"),
+          import("../services/firebaseFirestore"),
+        ]);
+        if (generation !== authGeneration) return;
 
-          setState({
-            user: firebaseUser,
-            claims: token.claims,
-            profile,
-            loading: false,
-          });
-        },
-        (error) => {
-          console.error("No se pudo cargar el perfil privado del usuario:", error);
-          // Si el perfil aún no existe, igual resolvemos con los claims
+        unsubscribeProfile = firestore.onSnapshot(
+          firestore.doc(db, "users", firebaseUser.uid),
+          (snap) => {
+            const profile = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+            if (profile?.role === "admin" && token.claims.role !== "admin") {
+              setState({ user: firebaseUser, claims: token.claims, profile, loading: true });
+              if (syncingAdminClaimFor !== firebaseUser.uid) {
+                syncingAdminClaimFor = firebaseUser.uid;
+                import("../services/userService")
+                  .then(({ syncAdminClaim }) => syncAdminClaim())
+                  .then(async () => {
+                    const refreshedToken = await firebaseUser.getIdTokenResult(true);
+                    if (generation !== authGeneration) return;
+                    token = refreshedToken;
+                    setState({
+                      user: firebaseUser,
+                      claims: refreshedToken.claims,
+                      profile,
+                      loading: false,
+                    });
+                  })
+                  .catch((error) => {
+                    console.error("No se pudo sincronizar el rol admin de la cuenta:", error);
+                    if (generation === authGeneration) {
+                      setState({ user: firebaseUser, claims: token.claims, profile, loading: false });
+                    }
+                  });
+              }
+              return;
+            }
+
+            setState({
+              user: firebaseUser,
+              claims: token.claims,
+              profile,
+              loading: false,
+            });
+          },
+          (error) => {
+            console.error("No se pudo cargar el perfil privado del usuario:", error);
+            setState({ user: firebaseUser, claims: token.claims, profile: null, loading: false });
+          }
+        );
+      } catch (error) {
+        console.error("No se pudo cargar el perfil privado del usuario:", error);
+        if (generation === authGeneration) {
           setState({ user: firebaseUser, claims: token.claims, profile: null, loading: false });
         }
-      );
+      }
     });
 
     return () => {

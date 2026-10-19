@@ -1,5 +1,6 @@
 import { httpsCallable } from "firebase/functions";
-import { auth, functions } from "./firebase";
+import { auth } from "./firebase";
+import { functions } from "./firebaseFunctions";
 import { logActivity } from "./activityService";
 
 export async function submitSurveyResponse({ departmentId, answers, templateId = null, surveyTitle = "Encuesta" }) {

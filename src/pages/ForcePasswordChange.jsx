@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { updatePassword } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
-import { auth, db } from "../services/firebase";
+import { auth } from "../services/firebase";
+import { db } from "../services/firebaseFirestore";
 import WelfareLogo from "../components/WelfareLogo";
 
 export default function ForcePasswordChange() {

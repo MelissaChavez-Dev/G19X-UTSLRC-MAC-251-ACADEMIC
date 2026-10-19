@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import { db } from "../services/firebase";
+import { db } from "../services/firebaseFirestore";
 
 /** Tareas del kanban de un equipo, en tiempo real. */
 export function useTeamTasks(teamId) {

@@ -1,5 +1,5 @@
 import { collection, getDocs, limit, orderBy, query, Timestamp, where } from "firebase/firestore";
-import { db } from "./firebase";
+import { db } from "./firebaseFirestore";
 
 const MAX_RESPONSE_ROWS = 5000;
 

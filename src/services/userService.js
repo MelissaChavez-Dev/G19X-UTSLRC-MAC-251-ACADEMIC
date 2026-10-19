@@ -1,6 +1,7 @@
 import { httpsCallable } from "firebase/functions";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
-import { db, functions } from "./firebase";
+import { db } from "./firebaseFirestore";
+import { functions } from "./firebaseFunctions";
 
 /** Crea una cuenta de empleado (solo admin). Devuelve { uid, temporaryPassword }. */
 export async function createEmployeeAccount(payload) {

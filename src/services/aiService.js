@@ -1,5 +1,5 @@
 import { httpsCallable } from "firebase/functions";
-import { functions } from "./firebase";
+import { functions } from "./firebaseFunctions";
 
 export async function generateStrategy({ orgMetrics, departmentRisk, openComments = [] }) {
   const callable = httpsCallable(functions, "generate_strategy");

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
-import { db } from "../services/firebase";
+import { db } from "../services/firebaseFirestore";
 import { useDepartmentRisk } from "../hooks/useDepartmentRisk";
 import { useTurnoverMetrics } from "../hooks/useTurnoverMetrics";
 import { usePendingSurveys } from "../hooks/usePendingSurveys";

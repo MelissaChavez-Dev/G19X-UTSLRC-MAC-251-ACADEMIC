@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { bootstrapAdmin } from "../services/userService";
 import LoadingScreen from "./LoadingScreen";
 
 /**
@@ -24,7 +23,8 @@ export default function RoleBasedRedirect() {
     if (!needsBootstrap || attempted.current) return;
     attempted.current = true;
     setBootstrapState("working");
-    bootstrapAdmin()
+    import("../services/userService")
+      .then(({ bootstrapAdmin }) => bootstrapAdmin())
       .then(() => refreshClaims())
       .catch(() => setBootstrapState("failed"));
   }, [needsBootstrap, refreshClaims]);

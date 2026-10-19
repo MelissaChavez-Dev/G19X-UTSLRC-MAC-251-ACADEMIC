@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { collection, collectionGroup, getDocs, query, where } from "firebase/firestore";
-import { db } from "../services/firebase";
+import { db } from "../services/firebaseFirestore";
 import { getKpiLevel, hasEnoughTasks, LEVELS } from "../data/kpiThresholds";
 
 // Fecha de cierre de una tarea. Usa completedAt; para tareas anteriores a ese campo

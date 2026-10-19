@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "../services/firebase";
+import { db } from "../services/firebaseFirestore";
 import { useLeaves } from "./useLeaves";
 import { formatLocalDateInTimeZone } from "../utils/leaveUtils";
 

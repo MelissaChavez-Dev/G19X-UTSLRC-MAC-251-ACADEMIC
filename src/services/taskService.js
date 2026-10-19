@@ -8,8 +8,9 @@ import {
   Timestamp,
   updateDoc,
 } from "firebase/firestore";
-import { auth, db } from "./firebase";
-import { functions } from "./firebase";
+import { auth } from "./firebase";
+import { db } from "./firebaseFirestore";
+import { functions } from "./firebaseFunctions";
 import { logActivity } from "./activityService";
 import { httpsCallable } from "firebase/functions";
 

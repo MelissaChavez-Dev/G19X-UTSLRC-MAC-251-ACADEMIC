@@ -9,7 +9,7 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { db } from "./firebaseFirestore";
 import { validateSurveyTemplate } from "../data/surveyTemplate";
 
 const templatesCollection = collection(db, "surveyTemplates");

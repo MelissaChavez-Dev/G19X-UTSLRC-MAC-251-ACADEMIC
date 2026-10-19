@@ -9,7 +9,10 @@ import {
 } from "firebase/firestore";
 import { deleteObject, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { httpsCallable } from "firebase/functions";
-import { auth, db, functions, storage } from "./firebase";
+import { auth } from "./firebase";
+import { db } from "./firebaseFirestore";
+import { functions } from "./firebaseFunctions";
+import { storage } from "./firebaseStorage";
 import { countBusinessDays, findLeaveOverlap, getVacationBalance } from "../utils/leaveUtils";
 import {
   getLeaveDocumentUrl,

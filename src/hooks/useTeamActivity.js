@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "../services/firebase";
+import { db } from "../services/firebaseFirestore";
 
 const PER_TASK = 5; // eventos más recientes que se toman de cada tarea
 const MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;

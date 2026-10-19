@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "../services/firebase";
+import { db } from "../services/firebaseFirestore";
 import { useAuth } from "./useAuth";
 import { isCoveredByApprovedLeave, isMexicanPublicHoliday } from "../utils/leaveUtils";
 

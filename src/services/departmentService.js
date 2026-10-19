@@ -6,7 +6,7 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { db } from "./firebaseFirestore";
 
 function slugifyDepartment(name) {
   return name

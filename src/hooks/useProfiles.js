@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { collection, documentId, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "../services/firebase";
+import { db } from "../services/firebaseFirestore";
 import { useAuth } from "./useAuth";
 
 const PROFILE_QUERY_LIMIT = 30;
