@@ -52,6 +52,10 @@ El colaborador solicita vacaciones, incapacidad u otro permiso desde su espacio 
 
 El admin crea proyectos y distribuye el código de invitación. Los integrantes pueden usar el tablero, gestionar tareas y listas y participar en comentarios según los permisos de la aplicación. La presencia digital resume eventos de uso permitidos y no mide presencia física.
 
+### Actividad digital y registro diario
+
+El registro diario cuenta actividad confirmada, permisos aprobados y jornadas cuya ausencia de actividad ya fue confirmada por el resumen diario. La actividad se refleja en tiempo real cuando ocurre dentro del horario configurado; el cierre de las jornadas sin actividad se calcula a las 23:30, hora de Hermosillo. Por eso, para la fecha actual puede aparecer **Horario en curso**. **Sin registro** indica que falta el resumen y no se interpreta como ausencia confirmada. Un permiso aprobado se muestra como justificado aunque el resumen del día todavía no se haya generado.
+
 ## 6. Archivos de configuración y credenciales
 
 - `.env.example`: plantilla pública con nombres de variables; cópiala a `.env.local` para configurar un proyecto propio.
