@@ -15,6 +15,16 @@ Cuenta con una **doble experiencia**:
 Nota: el proyecto se encuentra totalmente desplegado en: https://welfare-supra.netlify.app/login
 permite hacer todas las funciones, solo inicie sesion con las credenciales que se especifican en el documento CREDENCIALES DE ACCESO.md (se entregó por privado al evaluador)
 
+## Herramientas y recursos utilizados
+
+- **GitHub Copilot:** apoyo para redactar, revisar y desarrollar código y funcionalidades; las decisiones técnicas se validan y explican desde el propio código del proyecto.
+- **Figma y Stitch:** diseño y exploración de interfaces.
+- **Firebase y Google Cloud:** autenticación, base de datos y servicios en la nube.
+- **Google AI Studio y Gemini:** experimentación e integración de la API de Gemini para las explicaciones y recomendaciones de IA del producto.
+- **Freepik:** búsqueda y selección de recursos gráficos.
+- **Microsoft Power BI:** consulta de datos de referencia para conocer y definir los KPI representados en el dashboard. [Reporte de Power BI](https://app.powerbi.com/view?r=eyJrIjoiMGEyYzkyNjUtZjg0Yy00YmI5LThiYjktYmY4YjJiNTRjMGIzIiwidCI6IjFiMWY3NzkzLWU3NjUtNDhjYy04NmZmLTYzNGUwN2Q1NjhlNCJ9).
+- **Referencias de salud organizacional:** [Salud organizacional: qué es y cómo mejorarla (QuestionPro)](https://www.questionpro.com/blog/es/salud-organizacional/) y [ISO 45003: seguridad y salud psicológicas en el trabajo (DNV)](https://www.dnv.com.mx/services/iso-45003-seguridad-y-salud-psicologicas-en-el-trabajo-204058/).
+
 ---
 
 ## 2. Requisitos Previos
@@ -95,7 +105,10 @@ Es necesario iniciar sesián con las cuentas autenticadas para correr el program
 ├── docs/                      # PRD y especificación del MVP
 ├── Evidencias/                # Capturas de evidencia (vacía hasta agregar capturas)
 ├── Fichas_KPIs_Dashboard_Salud_Organizacional.md # Definiciones y fichas de KPIs
-├── functions/                 # Cloud Functions (Python): cuentas, encuestas, permisos, equipos/tareas, presencia e IA
+├── functions/
+│   ├── main.py                # Cloud Functions: cuentas, encuestas, permisos, equipos y presencia
+│   ├── ai_functions.py        # Funciones de Gemini, límites de entrada y validación de acceso
+│   └── shared.py              # Autenticación y acceso compartido a Firestore
 ├── public/                    # Archivos estáticos y logos
 ├── src/
 │   ├── assets/                # Ilustraciones y recursos gráficos

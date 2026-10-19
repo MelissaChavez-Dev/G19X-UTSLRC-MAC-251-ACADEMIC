@@ -33,11 +33,11 @@ Documentos relacionados: `Fichas_KPIs_Dashboard_Salud_Organizacional.md` (defini
 | Capa | Qué hace | Dónde está en el repositorio |
 |---|---|---|
 | 1. Fuentes | Captura respuestas, actividad, permisos, perfiles públicos y tareas. | `src/pages/SurveyRunner.jsx`, `src/pages/MiEspacio.jsx`, `src/components/TeamKanban.jsx`, `src/pages/admin/UserManagement.jsx` |
-| 2. Ingesta y transformación | Valida solicitudes en el navegador y en Cloud Functions, asigna datos laborales, resume presencia digital y sube fotos con acceso controlado. | `src/services/leaveService.js`, `src/services/profileService.js`, `src/services/activityService.js`, `functions/main.py` |
+| 2. Ingesta y transformación | Valida solicitudes en el navegador y en Cloud Functions, asigna datos laborales, resume presencia digital y sube fotos con acceso controlado. | `src/services/leaveService.js`, `src/services/profileService.js`, `src/services/activityService.js`, `functions/main.py`, `functions/shared.py` |
 | 3. Almacén | Guarda datos de negocio en Firestore, fotos y comprobantes de incapacidad en Firebase Storage con reglas por usuario y rol. | `firestore.rules`, `storage.rules`, `firebase.json` |
 | 4. Capa analítica | Calcula KPIs, asigna niveles y evalúa la calidad. | `src/hooks/`, `src/utils/metricUtils.js`, `src/data/kpiThresholds.js`, `src/data/dataQualityRules.js` |
-| 5. IA | Clasifica sentimiento, explica métricas y propone acciones, solo con datos agregados. | `functions/main.py`, `src/services/aiService.js` |
-| 6. Presentación | Muestra tableros, alertas, calidad y reportes; permite actuar sobre los hallazgos. | `src/pages/Dashboard.jsx`, `src/pages/DataQuality.jsx`, `src/components/`, `src/services/exportService.js` |
+| 5. IA | Clasifica sentimiento, explica métricas y propone acciones, solo con datos agregados. | `functions/ai_functions.py`, `src/services/aiService.js` |
+| 6. Presentación | Muestra tableros, alertas, calidad y reportes; permite actuar sobre los hallazgos. | `src/pages/Dashboard.jsx`, `src/pages/DataQuality.jsx`, `src/components/`, `src/services/pdfExportService.js`, `src/services/excelExportService.js` |
 | Transversal: seguridad | Autenticación, roles y rutas protegidas. | `useAuth.jsx`, `ProtectedRoute.jsx`, `firestore.rules`, claim `role` en Firebase Auth |
 
 ## 4. Modelo de datos analítico

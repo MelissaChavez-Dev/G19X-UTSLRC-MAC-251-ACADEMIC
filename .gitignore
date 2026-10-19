@@ -24,6 +24,8 @@ firebase-debug.log
 firestore-debug.log
 .firebase/
 .firebaserc
+__pycache__/
+*.py[cod]
 # Editor
 .vscode/*
 !.vscode/extensions.json
