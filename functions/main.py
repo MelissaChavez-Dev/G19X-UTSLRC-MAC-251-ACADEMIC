@@ -1,23 +1,24 @@
 import firebase_admin
 firebase_admin.initialize_app()
 from firebase_functions import firestore_fn, https_fn, options, scheduler_fn
-from firebase_functions.params import SecretParam
 from firebase_admin import auth as admin_auth
 from firebase_admin import firestore as admin_firestore
 from firebase_admin import storage as admin_storage
-from google import genai
 from google.api_core.exceptions import GoogleAPIError
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from datetime import date, datetime, time as dt_time, timedelta, timezone
 import secrets
 import string
-import json
 import re
 import hashlib
 import math
 
-GEMINI_API_KEY = SecretParam("GEMINI_API_KEY")
-MODEL_NAME = "gemini-3.8-flash"
+if __package__:
+    from .ai_functions import classify_sentiment, explain_metric, generate_strategy
+    from .shared import _db, _require_admin, _require_auth
+else:
+    from ai_functions import classify_sentiment, explain_metric, generate_strategy
+    from shared import _db, _require_admin, _require_auth
 EMPLOYMENT_TYPES = {"full_time", "part_time", "temporary", "contract", "intern"}
 CURRENT_INSTRUMENT_VERSION = 2
 CURRENT_PSYCHOSOCIAL_FIELDS = {
@@ -99,31 +100,8 @@ def _vacation_entitlement(years: int) -> int:
 # Utilidades internas
 # ============================================================
 
-def _db():
-    return admin_firestore.client()
-
-
-def _require_auth(req: https_fn.CallableRequest):
-    if req.auth is None:
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.UNAUTHENTICATED,
-            message="Debes iniciar sesión.",
-        )
-    return req.auth
-
-
 def _is_active_record(data: dict) -> bool:
     return data.get("active", True) is not False
-
-
-def _require_admin(req: https_fn.CallableRequest):
-    auth = _require_auth(req)
-    if auth.token.get("role") != "admin":
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.PERMISSION_DENIED,
-            message="Solo la administración puede realizar esta acción.",
-        )
-    return auth
 
 
 def _generate_temp_password(length: int = 10) -> str:
@@ -1585,202 +1563,3 @@ def publish_digital_attendance(event) -> None:
         "workDay": True,
         "computedAt": admin_firestore.SERVER_TIMESTAMP,
     }, merge=True)
-
-
-@https_fn.on_call(secrets=[GEMINI_API_KEY], region="us-central1")
-def generate_strategy(req: https_fn.CallableRequest) -> dict:
-    client = genai.Client(api_key=GEMINI_API_KEY.value)
-
-    org_metrics = req.data.get("orgMetrics", {})
-    department_risk = req.data.get("departmentRisk", [])
-    open_comments = req.data.get("openComments", [])
-
-    prompt = f"""
-Eres un consultor experto en salud organizacional y factores psicosociales
-en el trabajo (marco ISO 45003). Analiza los siguientes datos agregados de
-una empresa de desarrollo de software y capacitación tecnológica, y genera
-un análisis breve seguido de exactamente 3 recomendaciones accionables.
-
-DATOS AGREGADOS DE LA ORGANIZACION (ultimos 30 dias):
-{json.dumps(org_metrics, ensure_ascii=False, indent=2)}
-
-RIESGO POR DEPARTAMENTO (escala 1-5 por factor, tier de riesgo):
-{json.dumps(department_risk, ensure_ascii=False, indent=2)}
-
-COMENTARIOS ABIERTOS RECIENTES DEL PERSONAL:
-{json.dumps(open_comments[-40:], ensure_ascii=False, indent=2)}
-
-Responde en espanol, en formato Markdown, con esta estructura exacta:
-
-**Resumen ejecutivo:** (1-2 oraciones sobre el estado general y el tono de los comentarios)
-
-**Necesidades principales:** (2-4 necesidades concretas mencionadas o inferidas de los comentarios; indica el departamento cuando sea posible)
-
-**Acciones recomendadas:**
-1. **[Título corto]** — Acción concreta, responsable sugerido y área prioritaria (máximo 2 líneas).
-2. **[Título corto]** — Acción concreta, responsable sugerido y área prioritaria (máximo 2 líneas).
-3. **[Título corto]** — Acción concreta, responsable sugerido y área prioritaria (máximo 2 líneas).
-
-No inventes testimonios ni atribuyas comentarios a personas. No repitas los datos numéricos tal cual, interprétalos. No agregues introducciones ni despedidas.
-"""
-
-    try:
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=prompt,
-        )
-        return {"markdown": response.text}
-    except Exception as e:
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.UNAVAILABLE,
-            message="El modelo de IA está temporalmente saturado. Intenta de nuevo en unos momentos.",
-        ) from e
-
-
-@https_fn.on_call(secrets=[GEMINI_API_KEY], region="us-central1")
-def explain_metric(req: https_fn.CallableRequest) -> dict:
-    client = genai.Client(api_key=GEMINI_API_KEY.value)
-
-    label = req.data.get("label", "")
-    context_data = req.data.get("context", {})
-
-    prompt = f"""
-Eres un consultor de salud organizacional. Un directivo acaba de expandir
-la siguiente métrica en un dashboard ejecutivo y quiere una explicación breve.
-
-METRICA: {label}
-DATOS: {json.dumps(context_data, ensure_ascii=False, indent=2)}
-
-Responde en espanol, en 2-3 oraciones como maximo, en tono ejecutivo y directo.
-No repitas los numeros tal cual, interpretalos. No agregues titulos ni listas.
-"""
-
-    try:
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=prompt,
-        )
-        return {"explanation": response.text}
-    except Exception as e:
-        error_str = str(e)
-        if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-            return {"explanation": "Se alcanzó el límite diario de consultas a la IA en el nivel gratuito. Vuelve a intentar mañana, o activa facturación en Google AI Studio para límites más altos."}
-        return {"explanation": f"No se pudo generar la explicación en este momento ({error_str[:80]})."}
-
-
-@https_fn.on_call(secrets=[GEMINI_API_KEY], region="us-central1")
-def classify_sentiment(req: https_fn.CallableRequest) -> dict:
-    _require_admin(req)
-    comments = (req.data or {}).get("comments", [])
-    if not isinstance(comments, list):
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message="La lista de comentarios no es válida.",
-        )
-    comments = comments[:120]
-    if not comments:
-        return {"results": []}
-
-    db = _db()
-    response_refs = {}
-    for comment in comments:
-        response_id = comment.get("id") if isinstance(comment, dict) else None
-        if isinstance(response_id, str) and response_id.strip():
-            response_refs.setdefault(response_id, db.collection("responses").document(response_id))
-
-    response_snapshots = db.get_all(list(response_refs.values()))
-    sentiments = {}
-    pending = []
-    for snapshot in response_snapshots:
-        if not snapshot.exists:
-            continue
-        response_data = snapshot.to_dict() or {}
-        text = response_data.get("openText")
-        if not isinstance(text, str) or not text.strip():
-            continue
-        text_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
-        cached_sentiment = response_data.get("sentiment")
-        if (
-            response_data.get("sentimentTextHash") == text_hash
-            and cached_sentiment in {"positive", "neutral", "negative"}
-        ):
-            sentiments[snapshot.id] = cached_sentiment
-        else:
-            pending.append({
-                "id": snapshot.id,
-                "text": text,
-                "text_hash": text_hash,
-                "ref": snapshot.reference,
-            })
-
-    if not pending:
-        return {
-            "results": [
-                {"id": response_id, "sentiment": sentiments[response_id]}
-                for response_id in response_refs
-                if response_id in sentiments
-            ]
-        }
-
-    client = genai.Client(api_key=GEMINI_API_KEY.value)
-    numbered = "\n".join(f"{i}: {comment['text']}" for i, comment in enumerate(pending))
-    prompt = f"""
-Clasifica el sentimiento de cada comentario de empleados. Responde
-UNICAMENTE con un array JSON valido, sin texto adicional, con este formato:
-[{{"index": 0, "sentiment": "positive"}}, {{"index": 1, "sentiment": "negative"}}, ...]
-
-Los valores de "sentiment" deben ser exactamente: "positive", "neutral" o "negative".
-
-COMENTARIOS:
-{numbered}
-"""
-
-    try:
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=prompt,
-        )
-        cleaned = response.text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-        classifications = json.loads(cleaned)
-        if not isinstance(classifications, list):
-            raise ValueError("La respuesta del modelo no es una lista.")
-
-        pending_sentiments = {}
-        for c in classifications:
-            if not isinstance(c, dict):
-                continue
-            idx = c.get("index")
-            sentiment = c.get("sentiment")
-            if (
-                isinstance(idx, int)
-                and not isinstance(idx, bool)
-                and 0 <= idx < len(pending)
-                and sentiment in {"positive", "neutral", "negative"}
-            ):
-                pending_sentiments[idx] = sentiment
-        if len(pending_sentiments) != len(pending):
-            raise ValueError("La respuesta del modelo no clasificó todos los comentarios.")
-
-        cache_batch = db.batch()
-        for idx, sentiment in pending_sentiments.items():
-            comment = pending[idx]
-            sentiments[comment["id"]] = sentiment
-            cache_batch.set(comment["ref"], {
-                "sentiment": sentiment,
-                "sentimentTextHash": comment["text_hash"],
-                "sentimentUpdatedAt": admin_firestore.SERVER_TIMESTAMP,
-            }, merge=True)
-        cache_batch.commit()
-        return {
-            "results": [
-                {"id": response_id, "sentiment": sentiments[response_id]}
-                for response_id in response_refs
-                if response_id in sentiments
-            ]
-        }
-    except Exception as e:
-        # Los fallbacks no se guardan: un error temporal de Gemini no debe volverse un resultado persistente.
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INTERNAL,
-            message=f"No se pudo clasificar o guardar el sentimiento: {str(e)[:120]}",
-        ) from e
