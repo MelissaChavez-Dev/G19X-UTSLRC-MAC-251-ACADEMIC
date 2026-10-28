@@ -60,13 +60,14 @@ export function calculateWeeklyMetrics(responses, headcount) {
   const psychSafetyAverage = psychSafetyValues.length > 0
     ? averageNumeric(psychSafetyValues)
     : null;
+  const workLifeBalanceAverage = averageNumeric(responses.map((response) => response.workLifeBalance));
 
   return {
     enps: calculateEnps(responses),
     attritionRisk: workPressureIndex(measuredResponses),
     activePulseRate: headcount > 0 ? Math.min(100, Math.round((n / headcount) * 100)) : 0,
     psychSafety: psychSafetyAverage === null ? null : Math.round(psychSafetyAverage * 10) / 10,
-    workLifeBalance: averageNumeric(responses.map((response) => response.workLifeBalance)),
+    workLifeBalance: workLifeBalanceAverage === null ? null : Math.round(workLifeBalanceAverage * 10) / 10,
     psychosocialSampleSize: measuredResponses.length,
   };
 }

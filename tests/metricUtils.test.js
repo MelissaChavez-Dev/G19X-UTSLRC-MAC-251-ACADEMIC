@@ -53,6 +53,13 @@ test("muestra promedios psicosociales y balance como preliminares con una respue
   assert.equal(metrics.psychosocialSampleSize, 1);
 });
 
+test("redondea el balance vida-trabajo a un decimal", () => {
+  const responses = [7, 7, 7, 7, 7, 7, 7, 7, 6].map((workLifeBalance) => ({ enps: 8, workLifeBalance }));
+  assert.equal(calculateWeeklyMetrics(responses, 10).workLifeBalance, 6.9);
+  assert.equal(calculateDashboardMetrics(responses, 10).workLifeBalance, 6.9);
+  assert.equal(calculateWeeklyMetrics([{ enps: 8 }], 10).workLifeBalance, null);
+});
+
 test("no usa factores inferidos de versiones anteriores como mediciones directas", () => {
   const oldResponse = {
     enps: 9,

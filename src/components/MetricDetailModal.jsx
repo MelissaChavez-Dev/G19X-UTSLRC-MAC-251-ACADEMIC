@@ -65,6 +65,14 @@ const METRIC_CONFIG = {
   },
 };
 
+// Muestra como máximo un decimal; deja intactos textos como "72%" o "—".
+function formatHeadlineValue(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Number.isInteger(value) ? String(value) : String(Math.round(value * 10) / 10);
+  }
+  return value ?? "—";
+}
+
 const PAPER =
   "color-mix(in oklab, var(--h-bg) 45%, var(--surface-container-lowest, white))";
 
@@ -427,11 +435,11 @@ export default function MetricDetailModal({
                   {title || config.label}
                 </h2>
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                  <span className="text-5xl sm:text-6xl font-black tracking-[-0.06em] leading-none">
-                    {value ?? "—"}
+                  <span className="text-5xl sm:text-6xl font-black tracking-[-0.06em] leading-none tabular-nums">
+                    {formatHeadlineValue(value)}
                   </span>
                   {suffix && (
-                    <span className="text-sm font-bold text-on-surface-variant">
+                    <span className="text-sm font-bold text-on-surface-variant whitespace-nowrap">
                       {suffix}
                     </span>
                   )}

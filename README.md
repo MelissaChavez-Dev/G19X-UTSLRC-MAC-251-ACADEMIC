@@ -1,73 +1,76 @@
 # Dashboard Ejecutivo y Plataforma de Salud Organizacional
 
-Proyecto de estadía profesional desarrollado por **Melissa Alejandra Chávez** para la carrera de TSU en Desarrollo de Software Multiplataforma en la **Universidad Tecnológica de San Luis Río Colorado (UTSLRC)**.
+Proyecto de estadía profesional desarrollado por **Melissa Alejandra Chávez**, estudiante de la carrera de TSU en Desarrollo de Software Multiplataforma de la **Universidad Tecnológica de San Luis Río Colorado (UTSLRC)**.
+
+> **Estado del proyecto:** finalizado desde el **19 de octubre**; no se realizarán más cambios. Las credenciales de acceso y de la API ya se entregaron en la plataforma **TODO academy**, en la sección **«Mis documentos»**.
+
+**Aplicación desplegada:** [welfare-supra.netlify.app](https://welfare-supra.netlify.app/login)
 
 ---
 
 ## 1. Descripción del Proyecto
 
-Aplicación web integral que consolida indicadores de salud organizacional (bienestar laboral, eNPS, actividad digital registrada, rotación y ejecución de tareas Kanban) y factores psicosociales inspirados en dimensiones descritas por ISO 45003. No es una evaluación de conformidad con la norma; actividad digital y ejecución Kanban son indicadores proxy, no mediciones de asistencia física ni de desempeño individual.
+Aplicación web que integra indicadores de salud organizacional (bienestar laboral, eNPS, actividad digital registrada, rotación y ejecución de tareas Kanban) con factores psicosociales inspirados en las dimensiones de la norma ISO 45003. El sistema no evalúa el cumplimiento de dicha norma. La actividad digital y la ejecución de tareas Kanban son indicadores indirectos: no miden la asistencia física ni el desempeño individual.
 
-Cuenta con una **doble experiencia**:
-- **Experiencia Ejecutiva (Dirección / RH):** Tableros interactivos con KPIs en tiempo real, medidor de eNPS tipo termómetro semicircular con caras expresivas, matriz de riesgo departamental, tendencias históricas, exportación formal a PDF/Excel y un panel de asesoría estratégica impulsado por Inteligencia Artificial (Google Gemini) que convierte diagnósticos cualitativos en tareas de equipo.
-- **Experiencia Colaborativa (Empleados):** Portal de colaboradores (`/mi-espacio`), contestación ágil de encuestas segmentadas, seguimiento de tareas de bienestar en tableros Kanban (`/mis-proyectos`) y resumen transparente de presencia digital para esquemas de trabajo remoto e híbrido.
+La aplicación ofrece dos experiencias:
+- **Experiencia ejecutiva (Dirección y Recursos Humanos):** tableros interactivos con KPIs en tiempo real, medidor semicircular de eNPS con expresiones faciales, matriz de riesgos por departamento, tendencias históricas, exportación a PDF y Excel, y un panel de asesoría estratégica basado en Google Gemini que convierte diagnósticos cualitativos en tareas de equipo.
+- **Experiencia colaborativa (personal):** portal para colaboradores (`/mi-espacio`), encuestas segmentadas, seguimiento de tareas de bienestar en tableros Kanban (`/mis-proyectos`) y un resumen transparente de presencia digital para esquemas de trabajo remoto e híbrido.
 
-Nota: el proyecto se encuentra totalmente desplegado en: https://welfare-supra.netlify.app/login
-permite hacer todas las funciones, solo inicie sesion con las credenciales que se especifican en el documento CREDENCIALES DE ACCESO.md (se entregó por privado al evaluador)
+---
 
-## Herramientas y recursos utilizados
+## 2. Herramientas y recursos
 
-- **Uso de IA durante el desarrollo:** GitHub Copilot y asistencia conversacional de programación en VS Code apoyaron la exploración, refactorización, depuración, preparación/revisión de pruebas y redacción de documentación y mensajes de commit. La autora conserva la responsabilidad de revisar las propuestas, entender las fórmulas y poder mantener el código. La integración de Gemini descrita abajo pertenece al producto en ejecución y es distinta del apoyo de IA usado durante el desarrollo.
+- **IA durante el desarrollo:** GitHub Copilot y la asistencia conversacional de programación en VS Code apoyaron la exploración, refactorización y depuración del código, la preparación y revisión de pruebas, y la redacción de documentación y mensajes de commit. La autora es responsable de revisar las propuestas, comprender las fórmulas y mantener el código. La integración de Gemini que forma parte del producto es independiente de las herramientas de IA usadas durante el desarrollo.
 - **Figma y Stitch:** diseño y exploración de interfaces.
 - **Firebase y Google Cloud:** autenticación, base de datos y servicios en la nube.
-- **Google AI Studio y Gemini:** experimentación e integración de la API de Gemini para las explicaciones y recomendaciones de IA del producto.
+- **Google AI Studio y Gemini:** experimentación e integración de la API de Gemini para generar explicaciones y recomendaciones.
 - **Freepik:** búsqueda y selección de recursos gráficos.
-- **Microsoft Power BI:** consulta de datos de referencia para conocer y definir los KPI representados en el dashboard. [Reporte de Power BI](https://app.powerbi.com/view?r=eyJrIjoiMGEyYzkyNjUtZjg0Yy00YmI5LThiYjktYmY4YjJiNTRjMGIzIiwidCI6IjFiMWY3NzkzLWU3NjUtNDhjYy04NmZmLTYzNGUwN2Q1NjhlNCJ9).
-- **Referencias de salud organizacional:** [Salud organizacional: qué es y cómo mejorarla (QuestionPro)](https://www.questionpro.com/blog/es/salud-organizacional/) y [ISO 45003: seguridad y salud psicológicas en el trabajo (DNV)](https://www.dnv.com.mx/services/iso-45003-seguridad-y-salud-psicologicas-en-el-trabajo-204058/).
+- **Microsoft Power BI:** consulta de datos de referencia para definir los KPI del dashboard. [Reporte de Power BI](https://app.powerbi.com/view?r=eyJrIjoiMGEyYzkyNjUtZjg0Yy00YmI5LThiYjktYmY4YjJiNTRjMGIzIiwidCI6IjFiMWY3NzkzLWU3NjUtNDhjYy04NmZmLTYzNGUwN2Q1NjhlNCJ9).
+- **Referencias sobre salud organizacional:** [Salud organizacional: qué es y cómo mejorarla (QuestionPro)](https://www.questionpro.com/blog/es/salud-organizacional/) e [ISO 45003: seguridad y salud psicológicas en el trabajo (DNV)](https://www.dnv.com.mx/services/iso-45003-seguridad-y-salud-psicologicas-en-el-trabajo-204058/).
 
 ---
 
-## 2. Requisitos Previos
+## 3. Requisitos previos
 
-- **Node.js:** Versión 18.0 o superior (recomendada v20 o v24).
-- **npm:** Gestor de paquetes incluido con Node.js.
-- **Firebase:** Proyecto activo con Firebase Authentication y Cloud Firestore configurados (se refiere a las API en .env.local).
-- **Solo si se despliega el backend en un proyecto Firebase propio** (ver sección 4, "Despliegue del backend"): Firebase CLI, Python (la versión del runtime declarado en `firebase.json`), plan Blaze del proyecto y una clave de la API de Gemini. Si se evalúa contra el proyecto Firebase entregado, el backend ya está desplegado y este paso no es necesario.
+- **Node.js:** versión 18.0 o posterior (se recomienda la 20 o la 24).
+- **npm:** administrador de paquetes incluido con Node.js.
+- **Firebase:** proyecto activo con Firebase Authentication y Cloud Firestore. La configuración del SDK web se define en `.env.local`.
+- **Solo para desplegar el backend en un proyecto Firebase propio** (consulta «Despliegue del backend» en la sección 5): Firebase CLI, Python en la versión indicada en `firebase.json`, un proyecto con el plan Blaze y una clave de la API de Gemini. Si se utiliza el proyecto Firebase entregado para la evaluación, este paso no es necesario: el backend ya está desplegado.
 
 ---
 
-## 3. Instalación
+## 4. Instalación
 
-1. **Clonar o descargar el repositorio:**
+1. **Clona o descarga el repositorio:**
    ```bash
    git clone https://github.com/MelissaChavez-Dev/G19X-UTSLRC-MAC-251-ACADEMIC.git
    cd G19X-UTSLRC-MAC-251-ACADEMIC
    ```
 
-2. **Instalar dependencias:**
+2. **Instala las dependencias:**
    ```bash
    npm install
    ```
 
-3. **Configurar variables de entorno:**
-   Copia la plantilla `.env.example` como `.env.local` en la raíz del proyecto y reemplaza cada valor con la configuración de la aplicación web de tu proyecto Firebase (Firebase Console → Configuración del proyecto → Tus apps). El repositorio no incluye claves ni credenciales de prueba; usa los valores de tu propio proyecto.
+3. **Configura las variables de entorno:**
+   Copia `.env.example` en un archivo llamado `.env.local`, en la raíz del proyecto, y sustituye cada valor por la configuración de la aplicación web de tu proyecto Firebase (Firebase Console → Configuración del proyecto → Tus apps). El repositorio no incluye claves ni credenciales de prueba; utiliza los valores de tu propio proyecto.
    ```bash
    cp .env.example .env.local
    ```
 
 ---
 
-## 4. Ejecución del Proyecto
+## 5. Ejecución del proyecto
 
-### Modo Desarrollo
-Para iniciar el servidor de desarrollo local con Vite:
+### Modo de desarrollo
+Inicia el servidor local de Vite con:
 ```bash
 npm run dev
 ```
 La aplicación estará disponible en `http://localhost:5173`.
 
-### Compilación y Vista Previa para Producción
-Para validar y compilar el proyecto:
+### Compilación y vista previa de producción
+Para compilar el proyecto y previsualizar la versión de producción:
 ```bash
 npm run build
 npm run preview
@@ -75,48 +78,52 @@ npm run preview
 
 ### Despliegue del backend (Firebase)
 
-El frontend usa Cloud Functions, reglas de Firestore y Storage. Las variables de `.env.example` configuran el SDK web; no crean ni despliegan la base de datos.
+El frontend utiliza Cloud Functions y las reglas de Firestore y Storage. Las variables de `.env.example` configuran el SDK web, pero no crean ni despliegan la base de datos.
 
-Para desplegar el backend en un proyecto propio se requiere Firebase CLI, Python 3.14 (runtime de `firebase.json`), un proyecto con el plan y servicios necesarios y el secreto `GEMINI_API_KEY` configurado en Firebase. Selecciona el proyecto con `firebase use --add` (esto crea un `.firebaserc` local, ignorado por Git) y despliega con `firebase deploy`. Las credenciales de servicio no deben guardarse en el repositorio.
-
-
-## 5. Datos de encuestas y privacidad
-
-Las rutas para responder encuestas requieren una cuenta activa. `submit_survey_response` valida plantilla, periodo, departamento y respuestas, y en una transacción registra la respuesta y el control de unicidad por colaborador y ciclo. El documento analítico no contiene el UID; el control de completado, que sí contiene el UID, solo puede leerlo su propietario. Las reglas bloquean la lectura de respuestas para colaboradores y toda escritura directa desde el navegador; la administración consulta las respuestas desidentificadas para analítica.
-
-La aplicación no genera respuestas automáticamente. Las respuestas enviadas por el flujo normal reciben `source: "live"` en la Cloud Function y `responseService.js` limita las consultas analíticas a `source == "live"`. Este campo identifica el canal de captura; no prueba por sí solo que el perfil corresponda a una persona real. Hay registros históricos sintéticos en Firestore; no se borran automáticamente y los que no tienen `source: "live"` quedan fuera de estas consultas.
-
-### Procedencia de la demostración
-
-Los perfiles de prueba son ficticios. Las respuestas que aparecen en las capturas fueron capturadas manualmente en el despliegue de Netlify por **cinco personas reales que apoyaron la prueba**, usando esas cuentas ficticias y siguiendo comportamientos definidos para cada ID. La matriz de IDs y escenarios está en el archivo de apoyo `MANUAL DE USUARIO PARA PRUEBAS DE ENCUESTAS Y VISUALIZACIÓN DE DATOS EN WELFARE.docx`, entregado por separado; no se publican aquí los IDs ni las credenciales.
-
-En las capturas actuales aparecen 25 perfiles (cinco por departamento), 25 respuestas, participación de 100 % y calidad de datos de 100/100. Son resultados de ese escenario de demostración controlado, no una muestra representativa de 25 empleados ni evidencia de resultados poblacionales. La etiqueta `source: "live"` tampoco debe interpretarse como certificación de que las personas perfiladas sean empleados reales.
+Para desplegar el backend en un proyecto propio necesitas Firebase CLI, Python 3.14 (la versión indicada en `firebase.json`), un proyecto con el plan y los servicios requeridos, y el secreto `GEMINI_API_KEY` configurado en Firebase. Selecciona el proyecto con `firebase use --add`; este comando crea un archivo `.firebaserc` local que Git ignora. Después, ejecuta `firebase deploy`. No guardes credenciales de servicio en el repositorio.
 
 ---
 
-## 6. Primer uso, usuarios y acceso
+## 6. Datos de encuestas y privacidad
+
+Para responder encuestas se requiere una cuenta activa. La función `submit_survey_response` valida la plantilla, el periodo, el departamento y las respuestas. Después, dentro de una transacción, registra la respuesta y garantiza que cada colaborador responda una sola vez por ciclo. El documento analítico no incluye el UID; el registro de finalización sí lo contiene, pero solo su propietario puede leerlo. Las reglas impiden que los colaboradores lean las respuestas y bloquean toda escritura directa desde el navegador. El personal administrador consulta respuestas desidentificadas para el análisis.
+
+La aplicación no genera respuestas automáticamente. La Cloud Function asigna `source: "live"` a las respuestas recibidas por el flujo habitual, y `responseService.js` limita las consultas analíticas a los registros con `source == "live"`. Este campo identifica el canal de captura, pero no demuestra por sí solo que el perfil corresponda a una persona real. Firestore conserva registros históricos sintéticos: no se eliminan automáticamente y, al carecer de `source: "live"`, quedan fuera de esas consultas.
+
+### Procedencia de la demostración
+
+Los perfiles de prueba son ficticios. **Cinco personas que apoyaron las pruebas** enviaron manualmente, desde el despliegue de Netlify, las respuestas que aparecen en las capturas. Para ello usaron esas cuentas ficticias y siguieron los comportamientos definidos para cada ID. La matriz de IDs y escenarios está en el documento de apoyo `MANUAL DE USUARIO PARA PRUEBAS DE ENCUESTAS Y VISUALIZACIÓN DE DATOS EN WELFARE.docx`, entregado por separado. Los IDs y las credenciales no se publican aquí.
+
+Las capturas actuales muestran 25 perfiles (cinco por departamento), 25 respuestas, una participación del 100 % y una calidad de datos de 100/100. Son resultados de un escenario de demostración controlado: no representan una muestra de 25 empleados ni permiten inferir resultados de una población. La etiqueta `source: "live"` tampoco certifica que las personas asociadas a los perfiles sean empleados reales.
+
+---
+
+## 7. Primer uso, usuarios y acceso
 
 ### Preparación inicial
 
-1. Configura Authentication, Firestore y las variables del SDK web de tu proyecto Firebase siguiendo las secciones anteriores.
-2. El responsable del proyecto crea en Firebase Authentication la cuenta inicial autorizada (correo y contraseña) y entrega sus datos por un canal privado. No subas contraseñas, claves de servicio ni valores reales al repositorio.
-3. Inicia sesión con esa cuenta. Cuando una cuenta autenticada aún no tiene rol, la aplicación invoca `bootstrap_admin`; la función solo asigna el primer rol `admin` si todavía no existe ningún perfil administrador en Firestore. Este bootstrap es de un solo uso. Si ya existe un admin, el nuevo acceso debe ser aprovisionado desde **Gestión de Usuarios**.
-4. Ya como admin, abre **Gestión de Usuarios** (`/admin/usuarios`) y crea primero los departamentos desde la sección de departamentos. Se guardan en `departments` con un identificador derivado del nombre; después estarán disponibles al dar de alta personas y configurar encuestas. También puedes renombrar o desactivar departamentos sin borrar su historial.
-5. Crea las cuentas de colaboradores desde **Gestión de Usuarios**, asigna el departamento y entrega la contraseña temporal de forma privada; el usuario deberá cambiarla al entrar.
+1. Configura Firebase Authentication, Firestore y las variables del SDK web de tu proyecto, como se indica en las secciones anteriores.
+2. El responsable del proyecto crea en Firebase Authentication la cuenta inicial autorizada (correo y contraseña) y comparte sus datos por un canal privado. No incluyas contraseñas, claves de servicio ni valores reales en el repositorio.
+3. Inicia sesión con esa cuenta. Si una cuenta autenticada aún no tiene rol, la aplicación invoca `bootstrap_admin`, que asigna el primer rol `admin` solo cuando todavía no existe un perfil administrador en Firestore. Este proceso se puede usar una única vez; si ya existe un administrador, los accesos nuevos deben habilitarse desde **Gestión de Usuarios**.
+4. Desde la cuenta de administrador, abre **Gestión de Usuarios** (`/admin/usuarios`) y crea primero los departamentos. Se guardan en `departments` con un identificador derivado de su nombre y quedan disponibles para registrar personas y configurar encuestas. También puedes renombrarlos o desactivarlos sin perder su historial.
+5. Crea las cuentas de los colaboradores desde **Gestión de Usuarios**, asígnales un departamento y comparte la contraseña temporal de forma privada. Cada usuario deberá cambiarla al iniciar sesión.
 
-**Archivos privados distintos:** `KEYS.txt` contiene la configuración/claves de Firebase que se entrega por separado y se referencia en `.env.example`; `CREDENCIALES DE ACCESO.md` contiene las cuentas para iniciar sesión y se entrega por privado al evaluador. No son el mismo archivo ni deben publicarse en el repositorio.
+### Archivos de credenciales
+
+Las credenciales no forman parte del repositorio y no deben publicarse en él. Se manejan en dos archivos distintos, entregados en **TODO academy**, sección **«Mis documentos»**:
+
+- **`KEYS.txt`:** configuración y claves de Firebase y de la API, referenciadas en `.env.example`.
+- **`CREDENCIALES DE ACCESO.md`:** cuentas para iniciar sesión en el despliegue de evaluación. No contiene las claves de configuración de `KEYS.txt`.
 
 ### Roles y acceso
 
-El sistema utiliza los roles `admin` y `employee`; no hay autorregistro abierto. La primera cuenta se prepara como se explica arriba; las cuentas siguientes se aprovisionan desde Firebase Authentication y Gestión de Usuarios.
+El sistema utiliza los roles `admin` y `employee` y no permite el autorregistro. La primera cuenta se configura como se explicó antes; las siguientes se crean mediante Firebase Authentication y **Gestión de Usuarios**.
 
-Las cuentas `employee` responden encuestas para el departamento asignado a su perfil; la administración puede responder para un departamento seleccionado. La administración también puede revisar calidad de datos, actividad digital, permisos, equipos y reportes.
+Las cuentas `employee` responden encuestas del departamento asignado a su perfil. El personal administrador puede responder por un departamento seleccionado y consultar la calidad de los datos, la actividad digital, los permisos, los equipos y los reportes.
 
-Para acceder al despliegue de evaluación, usa las cuentas autenticadas de `CREDENCIALES DE ACCESO.md`, entregado en la carpeta privada del evaluador. Ese archivo no contiene las claves de configuración descritas en `KEYS.txt`.
+---
 
---- 
-
-## 7. Estructura del Repositorio
+## 8. Estructura del repositorio
 
 ```text
 ├── Arquitectura/              # Diagramas y documentación de arquitectura
@@ -152,9 +159,9 @@ Para acceder al despliegue de evaluación, usa las cuentas autenticadas de `CRED
 
 ---
 
-## 8. Pruebas y evidencias
+## 9. Pruebas y evidencias
 
-Las pruebas del frontend se ejecutan con:
+Ejecuta las pruebas del frontend con:
 ```bash
 npm test
 ```
@@ -169,34 +176,34 @@ python -m pip install -r functions/requirements.txt
 python -m unittest discover -s tests -p "test_*.py"
 ```
 
-Las reglas de Firestore se prueban contra el emulador (requiere Firebase CLI y Java):
+Las reglas de Firestore se prueban con el emulador (requiere Firebase CLI y Java):
 ```bash
 npm run test:rules
 ```
 
-El reporte QA con las validaciones automatizadas está en `Evidencias/REPORTE_QA.md`; `Evidencias/` ya contiene 29 capturas PNG de los flujos de la interfaz. Las capturas ilustran el estado visible durante la demostración y no sustituyen las pruebas automatizadas ni una medición real de la población.
+El reporte de QA con los resultados de las validaciones automatizadas está en `Evidencias/REPORTE_QA.md`. La carpeta `Evidencias/` también contiene 29 capturas PNG de los flujos de la interfaz. Estas muestran el estado de la aplicación durante la demostración y no sustituyen las pruebas automatizadas ni una medición de la población real.
 
-La guía de primer uso y operación está en [`docs/MANUAL_DE_USUARIO.md`](docs/MANUAL_DE_USUARIO.md); el plan de trabajo y el plan de mantenimiento y soporte están en `docs/`.
+La guía de primer uso y operación está en [`docs/MANUAL_DE_USUARIO.md`](docs/MANUAL_DE_USUARIO.md). En `docs/` también se encuentran el plan de trabajo y el plan de mantenimiento y soporte.
 
 ---
 
-## 9. Stack Tecnológico
+## 10. Stack tecnológico
 
 - **Frontend:** React 19, Vite 8, Tailwind CSS v4, Framer Motion.
-- **Gráficos e Interactividad:** Recharts, `@dnd-kit/core`, `@dnd-kit/sortable`, Medidores SVG reactivos a la medida.
-- **Base de Datos y Autenticación:** Firebase Authentication y Cloud Firestore.
-- **Inteligencia Artificial:** Google Gemini API (`gemini-3.8-flash`).
-- **Exportaciones:** `jspdf`, `jspdf-autotable`, `xlsx` (SheetJS).
+- **Gráficos e interactividad:** Recharts, `@dnd-kit/core`, `@dnd-kit/sortable` y medidores SVG personalizados.
+- **Base de datos y autenticación:** Firebase Authentication y Cloud Firestore.
+- **Inteligencia artificial:** API de Google Gemini (`gemini-3.8-flash`).
+- **Exportación de archivos:** `jspdf`, `jspdf-autotable` y `xlsx` (SheetJS).
 
-La especificación de requisitos está en [`docs/PRD_Dashboard_Salud_Organizacional.md`](docs/PRD_Dashboard_Salud_Organizacional.md). El detalle de soporte, mantenimiento y planificación se documenta en:
+La especificación de requisitos está en [`docs/PRD_Dashboard_Salud_Organizacional.md`](docs/PRD_Dashboard_Salud_Organizacional.md). La documentación de soporte, mantenimiento y planificación está disponible en:
 - [`docs/PLAN_MANTENIMIENTO_Y_SOPORTE.md`](docs/PLAN_MANTENIMIENTO_Y_SOPORTE.md)
 - [`docs/PLAN_DE_TRABAJO.md`](docs/PLAN_DE_TRABAJO.md)
 - [`docs/REGISTRO_RIESGOS_DEPENDENCIAS.md`](docs/REGISTRO_RIESGOS_DEPENDENCIAS.md)
 
-Para la defensa, la autora debe poder explicar las métricas, filtros de origen y límites de los datos y realizar un cambio pequeño sin asistencia generativa, conforme a la evaluación indicada.
+Como parte de la defensa, la autora deberá explicar las métricas, los filtros de origen y las limitaciones de los datos, además de realizar un cambio pequeño sin asistencia generativa, conforme a los criterios de evaluación.
 
 ---
 
-## 10. Notas Académicas
+## 11. Notas académicas
 
-Este repositorio forma parte de la documentación técnica y entregable de la **Memoria de Estadía Profesional** para la obtención del título de TSU en Desarrollo de Software Multiplataforma, desarrollada conforme al Manual Metodológico de la **UTSLRC**.
+Este repositorio forma parte de la documentación técnica y de los entregables de la **Memoria de Estadía Profesional**, elaborada para obtener el título de TSU en Desarrollo de Software Multiplataforma, conforme al Manual Metodológico de la **UTSLRC**.

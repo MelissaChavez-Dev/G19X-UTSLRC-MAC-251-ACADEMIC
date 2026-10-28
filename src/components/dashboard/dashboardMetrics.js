@@ -43,7 +43,7 @@ const KPI_DEFS = [
     label: "Índice de seguridad psicológica",
     dataKey: "psychSafety",
     getValue: (m) => (Number.isFinite(m.psychSafety) ? m.psychSafety : "—"),
-    getSuffix: (m) => (Number.isFinite(m.psychSafety) ? "/ 5,0" : null),
+    getSuffix: (m) => (Number.isFinite(m.psychSafety) ? "/ 5.0" : null),
   },
 ];
 
@@ -95,7 +95,7 @@ const PULSE_ROWS = [
     progress: (m) => clamp01(m.psychSafety / 5),
     level: (m) => getKpiLevelForSample("psychSafety", m.psychSafety, m.psychosocialSampleSize), // KPI-LEVEL
     color: "var(--secondary)",
-    unit: "/ 5,0",
+    unit: "/ 5.0",
     deltaUnit: "",
     hint: (m) => {
       if (!Number.isFinite(m.psychSafety)) return "Sin datos aún";
