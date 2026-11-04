@@ -5,18 +5,13 @@ import TopBar from "../../components/TopBar";
 import { useTeams } from "../../hooks/useTeams";
 import { useSidebarState } from "../../hooks/useSidebarState";
 import { useDepartments } from "../../hooks/useDepartments";
+import { departmentName } from "../../utils/departmentUtils";
 import {
   createTeam,
   deleteTeamProject,
   removeTeamMember,
   updateTeamProject,
 } from "../../services/userService";
-
-function departmentName(id, departments) {
-  return id
-    ? departments.find((department) => department.id === id)?.name || id
-    : "Interdepartamental";
-}
 
 export default function TeamDirectory() {
   const { teams, loading } = useTeams();
@@ -102,7 +97,7 @@ export default function TeamDirectory() {
   const queryText = searchTerm.trim().toLocaleLowerCase("es");
   const filteredTeams = teams.filter((team) => {
     const members = Object.values(team.memberNames || {}).join(" ");
-    const department = departmentName(team.departmentId, departments);
+    const department = departmentName(team.departmentId, departments, "Interdepartamental");
     const matchesSearch = !queryText ||
       `${team.name} ${members} ${department}`.toLocaleLowerCase("es").includes(queryText);
     const matchesDepartment = departmentFilter === "all"
@@ -313,7 +308,7 @@ export default function TeamDirectory() {
                             <span aria-hidden="true" className="material-symbols-outlined text-[16px]">
                               {team.departmentId ? "domain" : "diversity_3"}
                             </span>
-                            {departmentName(team.departmentId, departments)}
+                            {departmentName(team.departmentId, departments, "Interdepartamental")}
                           </p>
                         </div>
                         <button

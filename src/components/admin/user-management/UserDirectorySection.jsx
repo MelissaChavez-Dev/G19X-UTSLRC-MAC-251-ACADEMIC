@@ -1,5 +1,6 @@
 import Avatar from "../../Avatar";
-import { EMPLOYMENT_OPTIONS, inputClass, ROLE_LABELS, ROLE_OPTIONS, departmentName, employeeCode, formatDate } from "./userManagementConstants";
+import { EMPLOYMENT_OPTIONS, inputClass, ROLE_LABELS, ROLE_OPTIONS, employeeCode, formatDate } from "./userManagementConstants";
+import { departmentName } from "../../../utils/departmentUtils";
 import { Icon, IconButton, SectionHeader } from "./UserManagementUi";
 
 export default function UserDirectorySection({ filteredUsers, users, hasFilters, clearFilters, searchTerm, setSearchTerm, departmentFilter, setDepartmentFilter, roleFilter, setRoleFilter, statusFilter, setStatusFilter, allDepartments, directoryError, currentUser, profiles, openEditUser, handleToggleActive, handleResetPassword, handleDeleteUser, deletingUserId }) {

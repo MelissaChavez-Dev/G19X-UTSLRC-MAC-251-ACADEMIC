@@ -21,7 +21,7 @@ export async function exportResponsesExcel({
   const rawRows = responses.map((response) => ({
     semana: response.weekId || "",
     fecha: response.submittedAt?.toDate?.().toISOString?.() || "",
-    departamento: departmentName(response.departmentId, departments),
+    departamento: departmentName(response.departmentId, departments, "Todos los departamentos"),
     eNPS: response.enps ?? "",
     balanceVidaTrabajo: response.workLifeBalance ?? "",
     estadoAnimo: response.mood ?? "",

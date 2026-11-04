@@ -7,10 +7,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useSidebarState } from "../hooks/useSidebarState";
 import { useDepartments } from "../hooks/useDepartments";
 import WelfareLogo from "../components/WelfareLogo";
-
-function departmentName(id, departments) {
-  return departments.find((department) => department.id === id)?.name || id || "—";
-}
+import { departmentName } from "../utils/departmentUtils";
 
 /** Tablero de un equipo: vista admin (/equipos/:teamId) */
 export default function TeamBoard() {

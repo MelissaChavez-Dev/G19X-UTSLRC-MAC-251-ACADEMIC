@@ -21,6 +21,7 @@ import {
   formatLocalDateInTimeZone,
   isMexicanPublicHoliday,
 } from "../../utils/leaveUtils";
+import { departmentName } from "../../utils/departmentUtils";
 
 const DEFAULT_WORK_DAYS = ["mon", "tue", "wed", "thu", "fri"];
 const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
@@ -40,10 +41,6 @@ function monthKey(date) {
 function monthLabel(key) {
   const [year, month] = key.split("-").map(Number);
   return new Date(year, month - 1, 15).toLocaleDateString("es-MX", { month: "short" });
-}
-
-function departmentName(id, departments) {
-  return departments.find((department) => department.id === id)?.name || id || "—";
 }
 
 function StatCard({ icon, label, value, tone }) {

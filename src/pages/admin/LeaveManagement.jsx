@@ -46,6 +46,7 @@ import {
   isCoveredByApprovedLeave,
 
 } from "../../utils/leaveUtils";
+import { departmentName } from "../../utils/departmentUtils";
 
 
 
@@ -76,14 +77,6 @@ function formatDate(value) {
     year: "numeric",
 
   });
-
-}
-
-
-
-function departmentName(id, departments) {
-
-  return departments.find((department) => department.id === id)?.name || id || "—";
 
 }
 

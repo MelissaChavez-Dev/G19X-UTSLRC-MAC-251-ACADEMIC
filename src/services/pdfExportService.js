@@ -23,7 +23,7 @@ export function exportDashboardPdf({
   doc.setFontSize(14);
   doc.text("Welfare — Reporte ejecutivo", 14, 11);
   doc.setFontSize(9);
-  doc.text(`${departmentName(departmentId, departments)} · ${periodLabel} · Generado el ${todayLabel()}`, 14, 19);
+  doc.text(`${departmentName(departmentId, departments, "Todos los departamentos")} · ${periodLabel} · Generado el ${todayLabel()}`, 14, 19);
 
   let cursorY = 34;
   doc.setTextColor(29, 26, 36);

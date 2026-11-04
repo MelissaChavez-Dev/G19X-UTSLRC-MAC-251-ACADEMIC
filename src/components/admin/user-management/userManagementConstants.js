@@ -87,10 +87,6 @@ export const inputClass =
 
 export const accountInputClass = inputClass;
 
-export function departmentName(id, departments) {
-  return departments.find((department) => department.id === id)?.name || id || "—";
-}
-
 export function employeeCode(user) {
   return (
     user.employeeId ||

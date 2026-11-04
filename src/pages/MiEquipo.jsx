@@ -8,10 +8,7 @@ import { useTeam } from "../hooks/useTeams";
 import { useAuth } from "../hooks/useAuth";
 import { useSidebarState } from "../hooks/useSidebarState";
 import { useDepartments } from "../hooks/useDepartments";
-
-function departmentName(id, departments) {
-  return departments.find((department) => department.id === id)?.name || id || "—";
-}
+import { departmentName } from "../utils/departmentUtils";
 
 /** Tablero de un equipo: vista administrativa y colaborativa. */
 export default function TeamBoard() {

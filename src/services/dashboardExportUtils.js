@@ -1,8 +1,5 @@
 import { getKpiLevel, getKpiLevelForSample, LEVELS, MIN_SAMPLE } from "../data/kpiThresholds";
-
-export function departmentName(id, departments = []) {
-  return departments.find((department) => department.id === id)?.name || id || "Todos los departamentos";
-}
+export { departmentName } from "../utils/departmentUtils";
 
 export function todayLabel() {
   return new Date().toLocaleDateString("es-MX", {
