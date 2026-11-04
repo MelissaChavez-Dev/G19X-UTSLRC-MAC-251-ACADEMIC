@@ -20,6 +20,11 @@ test("eNPS sin respuestas queda sin datos en ambas rutas de cálculo", () => {
   assert.equal(calculateDashboardMetrics([], 10).sampleSize, 0);
 });
 
+test("las respuestas sin eNPS válido no cuentan en el total del eNPS", () => {
+  assert.equal(calculateEnps([{ enps: 10 }, { enps: 10 }, {}]), 100);
+  assert.equal(calculateEnps([{}, { enps: "no válido" }]), null);
+});
+
 test("el dashboard y la tendencia semanal comparten la fórmula de eNPS", () => {
   const responses = [{ enps: 10 }, { enps: 9 }, { enps: 6 }, { enps: 7 }];
   assert.equal(

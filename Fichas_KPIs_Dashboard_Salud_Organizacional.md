@@ -91,7 +91,7 @@ Las cinco reglas se evalúan al cargar el dashboard; todas las alertas activas a
 - **Fuente:** campo `enps` (0 a 10) de `responses`.
 - **Frecuencia y ventana:** se recalcula al cargar el dashboard con las respuestas de los últimos 30 días y se compara con los 30 días previos.
 - **Umbrales:** Bajo (menor a −10), Bueno (−10 a 19), Muy bueno (20 a 39), Excelente (40 o más).
-- **Limitaciones:** una respuesta de 7 u 8 es pasiva; por ejemplo, una respuesta individual de 8 produce eNPS 0, no un promedio de 8. La respuesta analítica no incluye UID y el control de completado está separado; los comentarios libres aún pueden contener información identificable. La participación se mide en respuestas, no en personas únicas. Si no hay respuestas en los últimos 30 días, se usa la muestra disponible de los últimos 60 días; no se presenta delta si falta el periodo anterior.
+- **Limitaciones:** una respuesta de 7 u 8 es pasiva; por ejemplo, una respuesta individual de 8 produce eNPS 0, no un promedio de 8. Las respuestas sin eNPS válido no cuentan en el total del eNPS. La respuesta analítica no incluye UID y el control de completado está separado; los comentarios libres aún pueden contener información identificable. La participación se mide en respuestas, no en personas únicas. Si no hay respuestas en los últimos 30 días, se usa la muestra disponible de los últimos 60 días; no se presenta delta si falta el periodo anterior.
 
 #### Indicador complementario: Balance vida-trabajo
 

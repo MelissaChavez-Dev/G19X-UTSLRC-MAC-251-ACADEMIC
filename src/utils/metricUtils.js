@@ -32,10 +32,14 @@ export function workPressureIndex(responses) {
 }
 
 export function calculateEnps(responses) {
-  if (responses.length === 0) return null;
-  const promoters = responses.filter((response) => (toFiniteNumber(response.enps) ?? -Infinity) >= 9).length;
-  const detractors = responses.filter((response) => (toFiniteNumber(response.enps) ?? Infinity) <= 6).length;
-  return Math.round(((promoters - detractors) / responses.length) * 100);
+  const scoredResponses = responses
+    .map((response) => toFiniteNumber(response.enps))
+    .filter((score) => score !== null);
+  if (scoredResponses.length === 0) return null;
+
+  const promoters = scoredResponses.filter((score) => score >= 9).length;
+  const detractors = scoredResponses.filter((score) => score <= 6).length;
+  return Math.round(((promoters - detractors) / scoredResponses.length) * 100);
 }
 
 export function calculateWeeklyMetrics(responses, headcount) {
