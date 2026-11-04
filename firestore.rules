@@ -184,7 +184,7 @@ service cloud.firestore {
     }
 
     match /departments/{deptId} {
-      allow read: if true;
+      allow read: if isSignedIn();
       allow write: if isAdmin();
     }
 

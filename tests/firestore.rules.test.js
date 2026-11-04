@@ -34,6 +34,7 @@ before(async () => {
       setDoc(doc(db, "users/employee-2"), { displayName: "Luis", role: "employee" }),
       setDoc(doc(db, "users/admin-1"), { displayName: "Admin", role: "admin" }),
       setDoc(doc(db, "users/leader-1"), { displayName: "Líder" }),
+      setDoc(doc(db, "departments/rh"), { name: "Recursos Humanos", active: true }),
       setDoc(doc(db, "responses/response-1"), { enps: 8 }),
       setDoc(doc(db, "teams/team-1"), { memberIds: ["employee-1"] }),
       setDoc(doc(db, "teams/team-1/tasks/task-1"), { title: "Tarea" }),
@@ -189,4 +190,12 @@ test("las tareas requieren campos y tipos válidos", async () => {
     fakePresence: true,
   }));
   await assertSucceeds(setDoc(doc(memberDb, "teams/team-1/tasks/valid"), task));
+});
+
+test("los departamentos sólo se leen con sesión iniciada", async () => {
+  const anonDb = testEnv.unauthenticatedContext().firestore();
+  const employeeDb = testEnv.authenticatedContext("employee-1", { role: "employee" }).firestore();
+
+  await assertFails(getDoc(doc(anonDb, "departments/rh")));
+  await assertSucceeds(getDoc(doc(employeeDb, "departments/rh")));
 });
