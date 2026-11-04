@@ -4,6 +4,8 @@
 
 Este plan establece una operación básica para el frontend React/Vite, Cloud Functions, Firebase Authentication, Firestore, Storage y sus reglas. No sustituye los acuerdos de nivel de servicio de Firebase ni autoriza el uso de datos personales fuera de la finalidad del sistema.
 
+Las contraseñas de prueba que estuvieron en el historial se cambiaron el 2026-11-03.
+
 ## 2. Responsables
 
 | Rol operativo | Responsabilidades |
