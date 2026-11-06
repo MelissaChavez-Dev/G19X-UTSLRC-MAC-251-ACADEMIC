@@ -2,7 +2,7 @@
 
 Proyecto de estadía profesional desarrollado por **Melissa Alejandra Chávez**, estudiante de la carrera de TSU en Desarrollo de Software Multiplataforma de la **Universidad Tecnológica de San Luis Río Colorado (UTSLRC)**.
 
-> **Estado del proyecto:** finalizado desde el **19 de octubre**; no se realizarán más cambios. Las credenciales de acceso y de la API ya se entregaron en la plataforma **TODO academy**, en la sección **«Mis documentos»**.
+> **Estado del proyecto:** finalizado desde el **19 de octubre**; Las credenciales de acceso y de la API se encuentran en la plataforma **TODO academy**, en la sección **«Mis documentos»** en un archivo .zip .
 > **Última actualización:** 06 de noviembre de 2026, ningún cambio grande al funcionamiente, unicamente se agregaron cosas al gitignore y  se actualizaron contraseñas por cuestiones de seguridad. 
 
 **Aplicación desplegada:** [welfare-supra.netlify.app](https://welfare-supra.netlify.app/login) 
