@@ -15,7 +15,7 @@ dist-ssr
 *.local
 .netlify/
 Credenciales-keys_DASHBOARD_EJECUTIVO_ORGANIZACIONAL
-
+*.zip
 # Variables de entorno y credenciales
 .env
 .env.local
